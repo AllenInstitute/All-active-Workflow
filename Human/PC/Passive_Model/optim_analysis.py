@@ -543,7 +543,7 @@ def plot_Response(opt,checkpoint_file, responses_filename):
                 if 'LongDCSupra' in name:
                     ax[index/n_col,index%n_col].set_xlim([0, 3000])
                 elif 'LongDC' in name:
-                    ax[index/n_col,index%n_col].set_xlim([0, 1500])
+                    ax[index/n_col,index%n_col].set_xlim([0, 1600])
                     
                 logger.debug('Plotting response comparisons for %s \n'%name.split('.')[0])
                 index += 1
