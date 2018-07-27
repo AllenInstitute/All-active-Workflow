@@ -1,10 +1,9 @@
-directory structure for the scripts to work:
+### Directory structure for the scripts to work:
 
-Put the .nwb and .swc file in a directory named 'cell_types'
+* Put the .nwb and .swc file in a directory named 'cell_types'
+* Then run starter_optim.py
 
-Then run starter_optim.py
-
-This will create the following directory structure:
+#### Make sure you have the following directory structure:
 
 ./--|                   |
     |----cell_types-----|--*.nwb
