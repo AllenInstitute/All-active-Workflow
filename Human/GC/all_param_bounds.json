@@ -1,723 +1,90 @@
-[
-    {
-        "param_name": "g_pas", 
-        "bounds": [
+{
+        "g_pas": [
             1e-7, 
             1e-2
         ], 
-        "dist_type": "uniform", 
-        "type": "section", 
-        "sectionlist": "somatic"
-    }, 
-    {
-        "param_name": "e_pas", 
-        "bounds": [
+        "e_pas": [
             -110, 
             -70
         ],  
-        "type": "section", 
-        "sectionlist": "somatic", 
-        "dist_type": "uniform"
-    }, 
-    {
-        "param_name": "g_pas", 
-        "bounds": [
-            1e-7, 
-            1e-2
-        ], 
-        "dist_type": "uniform", 
-        "type": "section", 
-        "sectionlist": "axonal"
-    }, 
-    {
-        "param_name": "e_pas", 
-        "bounds": [
-            -110, 
-            -70
-        ],
-        "type": "section", 
-        "sectionlist": "axonal", 
-        "dist_type": "uniform"
-    }, 
-    {
-        "param_name": "g_pas", 
-        "bounds": [
-            1e-7, 
-            1e-2
-        ],
-        "dist_type": "uniform", 
-        "type": "section", 
-        "sectionlist": "apical"
-    }, 
-    {
-        "param_name": "e_pas", 
-        "bounds": [
-            -110, 
-            -70
-        ], 
-        "type": "section", 
-        "sectionlist": "apical", 
-        "dist_type": "uniform"
-    }, 
-    {
-        "param_name": "g_pas", 
-        "bounds": [
-            1e-7, 
-            1e-2
-        ], 
-        "dist_type": "uniform", 
-        "type": "section", 
-        "sectionlist": "basal"
-    }, 
-    {
-        "param_name": "e_pas", 
-        "bounds": [
-            1e-7, 
-            1e-2
-        ],
-        "type": "section", 
-        "sectionlist": "basal", 
-        "dist_type": "uniform"
-    }, 
-    {
-        "param_name": "cm", 
-        "bounds": [
+        "cm": [
             0.1, 
             5
         ],
-        "type": "section", 
-        "sectionlist": "somatic", 
-        "dist_type": "uniform"
-    }, 
-    {
-        "param_name": "Ra", 
-        "bounds": [
+        "Ra": [
             50, 
             1000
         ],
-        "type": "section", 
-        "sectionlist": "somatic", 
-        "dist_type": "uniform"
-    }, 
-    {
-        "param_name": "cm", 
-        "bounds": [
-            0.1, 
-            5
+        "gkbar_Kir21": [
+            1e-7, 
+            1e-2
+        ], 
+        "gkbar_Kv11": [
+            1e-7, 
+            1e-2
         ],
-        "type": "section", 
-        "sectionlist": "axonal", 
-        "dist_type": "uniform"
-    }, 
-    {
-        "param_name": "Ra", 
-        "bounds": [
-            50, 
-            1000
+        "gkbar_Kv14": [
+            1e-7, 
+            1e-2
         ],
-        "type": "section", 
-        "sectionlist": "axonal", 
-        "dist_type": "uniform"
-    }, 
-    {
-        "param_name": "cm", 
-        "bounds": [
-            0.1, 
-            5
+        "gkbar_Kv34": [
+            1e-7, 
+            1e-2
+        ], 
+        "gkbar_Kv723": [
+            1e-7, 
+            1e-2
         ],
-        "type": "section", 
-        "sectionlist": "apical", 
-        "dist_type": "uniform"
-    }, 
-    {
-        "param_name": "Ra", 
-        "bounds": [
-            50, 
-            1000
+        "gbar_Cav12": [
+            1e-7, 
+            1e-2
         ],
-        "type": "section", 
-        "sectionlist": "apical", 
-        "dist_type": "uniform"
-    }, 
-    {
-        "param_name": "cm", 
-        "bounds": [
-            0.1, 
-            5
-        ],
-        "type": "section", 
-        "sectionlist": "basal", 
-        "dist_type": "uniform"
-    }, 
-    {
-        "param_name": "Ra", 
-        "bounds": [
-            50, 
-            1000
-        ],
-        "type": "section", 
-        "sectionlist": "basal", 
-        "dist_type": "uniform"
-    }, 
-    {
-        "param_name": "gkbar_Kir21", 
-        "mech": "Kir21", 
-        "bounds": [
+        "gbar_Cav13": [
             1e-7, 
             1e-2
         ], 
-        "dist_type": "uniform", 
-        "type": "range", 
-        "sectionlist": "axonal"
-    }, 
-    {
-        "param_name": "gkbar_Kv11", 
-        "mech": "Kv11", 
-        "bounds": [
+        "gkbar_SK2": [
             1e-7, 
             1e-2
         ], 
-        "dist_type": "uniform", 
-        "type": "range", 
-        "sectionlist": "axonal"
-    }, 
-    {
-        "param_name": "gkbar_Kv14", 
-        "mech": "Kv14", 
-        "bounds": [
-            1e-7, 
-            1e-2
-        ], 
-        "dist_type": "uniform", 
-        "type": "range", 
-        "sectionlist": "axonal"
-    }, 
-    {
-        "param_name": "gkbar_Kv34", 
-        "mech": "Kv34", 
-        "bounds": [
-            1e-7, 
-            1e-2
-        ], 
-        "dist_type": "uniform", 
-        "type": "range", 
-        "sectionlist": "axonal"
-    }, 
-    {
-        "param_name": "gkbar_Kv723", 
-        "mech": "Kv723", 
-        "bounds": [
-            1e-7, 
-            1e-2
-        ], 
-        "dist_type": "uniform", 
-        "type": "range", 
-        "sectionlist": "axonal"
-    }, 
-    {
-        "param_name": "gbar_Cav12", 
-        "mech": "Cav12", 
-        "bounds": [
-            1e-7, 
-            1e-2
-        ], 
-        "dist_type": "uniform", 
-        "type": "range", 
-        "sectionlist": "axonal"
-    }, 
-    {
-        "param_name": "gbar_Cav13", 
-        "mech": "Cav13", 
-        "bounds": [
-            1e-7, 
-            1e-2
-        ], 
-        "dist_type": "uniform", 
-        "type": "range", 
-        "sectionlist": "axonal"
-    }, 
-    {
-        "param_name": "gbar_Cav22", 
-        "mech": "Cav22", 
-        "bounds": [
-            1e-7, 
-            1e-2
-        ], 
-        "dist_type": "uniform", 
-        "type": "range", 
-        "sectionlist": "axonal"
-    }, 
-    {
-        "param_name": "gbar_Cav32", 
-        "mech": "Cav32", 
-        "bounds": [
-            1e-7, 
-            1e-2
-        ], 
-        "dist_type": "uniform", 
-        "type": "range", 
-        "sectionlist": "axonal"
-    }, 
-    {
-        "param_name": "gabkbar_BK_gc", 
-        "mech": "BK_gc", 
-        "bounds": [
-            1e-7, 
-            1e-2
-        ], 
-        "dist_type": "uniform", 
-        "type": "range", 
-        "sectionlist": "axonal"
-    }, 
-    {
-        "param_name": "gakbar_BK_gc", 
-        "mech": "BK_gc", 
-        "bounds": [
-            1e-7, 
-            1e-2
-        ], 
-        "dist_type": "uniform", 
-        "type": "range", 
-        "sectionlist": "axonal"
-    }, 
-    {
-        "param_name": "gkbar_SK2", 
-        "mech": "SK2", 
-        "bounds": [
-            1e-7, 
-            1e-2
-        ], 
-        "dist_type": "uniform", 
-        "type": "range", 
-        "sectionlist": "axonal"
-    }, 
-    {
-        "param_name": "gbar_na8st", 
-        "mech": "na8st", 
-        "bounds": [
-            1e-4, 
-            20
-        ], 
-        "dist_type": "uniform", 
-        "type": "range", 
-        "sectionlist": "axonal"
-    }, 
-    {
-        "param_name": "tau_Cabuffer", 
-        "mech": "Cabuffer", 
-        "bounds": [
-            20, 
-            1000
-        ], 
-        "dist_type": "uniform", 
-        "type": "range", 
-        "sectionlist": "axonal"
-    }, 
-    {
-        "param_name": "brat_Cabuffer", 
-        "mech": "Cabuffer", 
-        "bounds": [
-            100, 
-            1000
-        ], 
-        "dist_type": "uniform", 
-        "type": "range", 
-        "sectionlist": "axonal"
-    }, 
-    {
-        "param_name": "gkbar_Kv21", 
-        "mech": "Kv21", 
-        "bounds": [
+        "gkbar_Kv21": [
             1e-2, 
             1e-7
         ], 
-        "dist_type": "uniform", 
-        "type": "range", 
-        "sectionlist": "somatic"
-    }, 
-    {
-        "param_name": "gbar_Cav12", 
-        "mech": "Cav12", 
-        "bounds": [
-            1e-2, 
-            1e-7
-        ], 
-        "dist_type": "uniform", 
-        "type": "range", 
-        "sectionlist": "somatic"
-    }, 
-    {
-        "param_name": "gbar_Cav13", 
-        "mech": "Cav13", 
-        "bounds": [
+        "gakbar_BK_gc": [
             1e-7, 
             1e-2
         ], 
-        "dist_type": "uniform", 
-        "type": "range", 
-        "sectionlist": "somatic"
-    }, 
-    {
-        "param_name": "gbar_Cav22", 
-        "mech": "Cav22", 
-        "bounds": [
-            1e-7, 
-            1e-2
-        ], 
-        "dist_type": "uniform", 
-        "type": "range", 
-        "sectionlist": "somatic"
-    }, 
-    {
-        "param_name": "gbar_Cav32", 
-        "mech": "Cav32", 
-        "bounds": [
-            1e-7, 
-            1e-2
-        ], 
-        "dist_type": "uniform", 
-        "type": "range", 
-        "sectionlist": "somatic"
-    }, 
-    {
-        "param_name": "gabkbar_BK_gc", 
-        "mech": "BK_gc", 
-        "bounds": [
-            1e-7, 
-            1e-2
-        ], 
-        "dist_type": "uniform", 
-        "type": "range", 
-        "sectionlist": "somatic"
-    }, 
-    {
-        "param_name": "gakbar_BK_gc", 
-        "mech": "BK_gc", 
-        "bounds": [
-            1e-7, 
-            1e-2
-        ], 
-        "dist_type": "uniform", 
-        "type": "range", 
-        "sectionlist": "somatic"
-    }, 
-    {
-        "param_name": "gbar_na8st", 
-        "mech": "na8st", 
-        "bounds": [
+        "gbar_na8st": [
             1e-4, 
             20
         ], 
-        "dist_type": "uniform", 
-        "type": "range", 
-        "sectionlist": "somatic"
-    }, 
-    {
-        "param_name": "tau_Cabuffer", 
-        "mech": "Cabuffer", 
-        "bounds": [
+        "gkbar_Kv42": [
+            1e-7, 
+            1e-2
+        ], 
+        "gbar_Cav22": [
+            1e-7, 
+            1e-2
+        ], 
+        "gbar_Cav32": [
+            1e-7, 
+            1e-2
+        ], 
+        "gkbar_SK2": [
+            1e-7, 
+            1e-2
+        ], 
+        "gbar_HCN": [
+            1e-7, 
+            1e-2
+        ],  
+        "tau_Cabuffer": [
             50, 
             1000
         ], 
-        "dist_type": "uniform", 
-        "type": "range", 
-        "sectionlist": "somatic"
-    }, 
-    {
-        "param_name": "brat_Cabuffer", 
-        "mech": "Cabuffer", 
-        "bounds": [
+        "brat_Cabuffer": [
             100, 
             1000
-        ], 
-        "dist_type": "uniform", 
-        "type": "range", 
-        "sectionlist": "somatic"
-    }, 
-    {
-        "param_name": "gkbar_Kir21", 
-        "mech": "Kir21", 
-        "bounds": [
-            1e-7, 
-            1e-2
-        ], 
-        "dist_type": "uniform", 
-        "type": "range", 
-        "sectionlist": "apical"
-    }, 
-    {
-        "param_name": "gkbar_Kv42", 
-        "mech": "Kv42", 
-        "bounds": [
-            1e-7, 
-            1e-2
-        ], 
-        "dist_type": "uniform", 
-        "type": "range", 
-        "sectionlist": "apical"
-    }, 
-    {
-        "param_name": "gbar_Cav12", 
-        "mech": "Cav12", 
-        "bounds": [
-            1e-7, 
-            1e-2
-        ], 
-        "dist_type": "uniform", 
-        "type": "range", 
-        "sectionlist": "apical"
-    }, 
-    {
-        "param_name": "gbar_Cav13", 
-        "mech": "Cav13", 
-        "bounds": [
-            1e-7, 
-            1e-2
-        ], 
-        "dist_type": "uniform", 
-        "type": "range", 
-        "sectionlist": "apical"
-    }, 
-    {
-        "param_name": "gbar_Cav22", 
-        "mech": "Cav22", 
-        "bounds": [
-            1e-7, 
-            1e-2
-        ], 
-        "dist_type": "uniform", 
-        "type": "range", 
-        "sectionlist": "apical"
-    }, 
-    {
-        "param_name": "gbar_Cav32", 
-        "mech": "Cav32", 
-        "bounds": [
-            1e-7, 
-            1e-2
-        ], 
-        "dist_type": "uniform", 
-        "type": "range", 
-        "sectionlist": "apical"
-    }, 
-    {
-        "param_name": "gkbar_SK2", 
-        "mech": "SK2", 
-        "bounds": [
-            1e-7, 
-            1e-2
-        ], 
-        "dist_type": "uniform", 
-        "type": "range", 
-        "sectionlist": "apical"
-    }, 
-    {
-        "param_name": "gbar_HCN", 
-        "mech": "HCN", 
-        "bounds": [
-            1e-7, 
-            1e-2
-        ], 
-        "dist_type": "uniform", 
-        "type": "range", 
-        "sectionlist": "apical"
-    }, 
-    {
-        "param_name": "tau_Cabuffer", 
-        "mech": "Cabuffer", 
-        "bounds": [
-            50, 
-            1000
-        ], 
-        "dist_type": "uniform", 
-        "type": "range", 
-        "sectionlist": "apical"
-    }, 
-    {
-        "param_name": "brat_Cabuffer", 
-        "mech": "Cabuffer", 
-        "bounds": [
-            100, 
-            1000
-        ], 
-        "dist_type": "uniform", 
-        "type": "range", 
-        "sectionlist": "apical"
-    }, 
-    {
-        "param_name": "gkbar_Kir21", 
-        "mech": "Kir21", 
-        "bounds": [
-            1e-7, 
-            1e-2
-        ], 
-        "dist_type": "uniform", 
-        "type": "range", 
-        "sectionlist": "basal"
-    }, 
-    {
-        "param_name": "gkbar_Kv42", 
-        "mech": "Kv42", 
-        "bounds": [
-            1e-7, 
-            1e-2
-        ], 
-        "dist_type": "uniform", 
-        "type": "range", 
-        "sectionlist": "basal"
-    }, 
-    {
-        "param_name": "gbar_Cav12", 
-        "mech": "Cav12", 
-        "bounds": [
-            1e-7, 
-            1e-2
-        ], 
-        "dist_type": "uniform", 
-        "type": "range", 
-        "sectionlist": "basal"
-    }, 
-    {
-        "param_name": "gbar_Cav13", 
-        "mech": "Cav13", 
-        "bounds": [
-            1e-7, 
-            1e-2
-        ], 
-        "dist_type": "uniform", 
-        "type": "range", 
-        "sectionlist": "basal"
-    }, 
-    {
-        "param_name": "gbar_Cav22", 
-        "mech": "Cav22", 
-        "bounds": [
-            1e-7, 
-            1e-2
-        ], 
-        "dist_type": "uniform", 
-        "type": "range", 
-        "sectionlist": "basal"
-    }, 
-    {
-        "param_name": "gbar_Cav32", 
-        "mech": "Cav32", 
-        "bounds": [
-            1e-7, 
-            1e-2
-        ], 
-        "dist_type": "uniform", 
-        "type": "range", 
-        "sectionlist": "basal"
-    }, 
-    {
-        "param_name": "gkbar_SK2", 
-        "mech": "SK2", 
-        "bounds": [
-            1e-7, 
-            1e-2
-        ], 
-        "dist_type": "uniform", 
-        "type": "range", 
-        "sectionlist": "basal"
-    }, 
-    {
-        "param_name": "gbar_HCN", 
-        "mech": "HCN", 
-        "bounds": [
-            1e-7, 
-            1e-2
-        ], 
-        "dist_type": "uniform", 
-        "type": "range", 
-        "sectionlist": "basal"
-    }, 
-    {
-        "param_name": "tau_Cabuffer", 
-        "mech": "Cabuffer", 
-        "bounds": [
-            50, 
-            1000
-        ], 
-        "dist_type": "uniform", 
-        "type": "range", 
-        "sectionlist": "basal"
-    }, 
-    {
-        "param_name": "brat_Cabuffer", 
-        "mech": "Cabuffer", 
-        "bounds": [
-            100, 
-            1000
-        ], 
-        "dist_type": "uniform", 
-        "type": "range", 
-        "sectionlist": "basal"
-    }, 
-    {
-        "param_name": "ena", 
-        "value": 53.0, 
-        "type": "section", 
-        "dist_type": "uniform", 
-        "sectionlist": "somatic"
-    }, 
-    {
-        "param_name": "ek", 
-        "value": -107.0, 
-        "type": "section", 
-        "dist_type": "uniform", 
-        "sectionlist": "somatic"
-    }, 
-    {
-        "param_name": "ena", 
-        "value": 53.0, 
-        "type": "section", 
-        "dist_type": "uniform", 
-        "sectionlist": "apical"
-    }, 
-    {
-        "param_name": "ek", 
-        "value": -107.0, 
-        "type": "section", 
-        "dist_type": "uniform", 
-        "sectionlist": "apical"
-    }, 
-    {
-        "param_name": "ena", 
-        "value": 53.0, 
-        "type": "section", 
-        "dist_type": "uniform", 
-        "sectionlist": "basal"
-    }, 
-    {
-        "param_name": "ek", 
-        "value": -107.0, 
-        "type": "section", 
-        "dist_type": "uniform", 
-        "sectionlist": "basal"
-    }, 
-    {
-        "param_name": "ena", 
-        "value": 53.0, 
-        "type": "section", 
-        "dist_type": "uniform", 
-        "sectionlist": "axonal"
-    }, 
-    {
-        "param_name": "ek", 
-        "value": -107.0, 
-        "type": "section", 
-        "dist_type": "uniform", 
-        "sectionlist": "axonal"
-    }, 
-    {
-        "param_name": "celsius", 
-        "type": "global", 
-        "value": 34
-    }, 
-    {
-        "param_name": "v_init", 
-        "type": "global", 
-        "value": -78
-    }
-]
+        ]
+}
