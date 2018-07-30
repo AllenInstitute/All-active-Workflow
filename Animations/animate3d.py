@@ -12,7 +12,7 @@ import os
  
 ##### TO CREATE A SERIES OF PICTURES
  
-def make_views(ax,angles,elevation=0, width=6, height = 8,
+def make_views(ax,angles,elevation=0, width=4, height = 8,
                 prefix='tmprot_',**kwargs):
     """
     Makes jpeg pictures of the given 3d ax, with different angles.

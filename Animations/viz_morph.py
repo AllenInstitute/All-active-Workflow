@@ -7,7 +7,8 @@ Created on Wed Jul 25 15:25:03 2018
 """
 
 import numpy as np
-import matplotlib.pylab as plt
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
 import os
 from sklearn.decomposition import PCA
 import numpy.linalg as la
@@ -100,6 +101,9 @@ def Main():
     ax = fig.add_subplot(111, projection='3d')
     
     morphology = swc.read_swc(morph_path) 
+    
+    all_x, all_y, all_z = [], [], []
+    
     for n in morphology.compartment_list:
         for c in morphology.children_of(n):
             nx,ny,nz = shift_origin((n['x'],n['y'],n['z']),morphology)
@@ -110,8 +114,22 @@ def Main():
             
             ax.plot([nx_rot, cx_rot], [ny_rot,cy_rot], [nz_rot,cz_rot], 
                     color=color_dict[n['type']],lw =1,alpha =.5,label = label_dict[n['type']])
-    ax.scatter(morph_soma[0], morph_soma[1],morph_soma[2],s=150,color= 'k', alpha =.6)
+            
+            all_x.extend((nx_rot, cx_rot))
+            all_y.extend((ny_rot, cy_rot))
+            all_z.extend((nz_rot, cz_rot))
+            
+    ax.scatter(morph_soma[0], morph_soma[1],morph_soma[2],marker = 'o',
+                           s=150,color= 'k', alpha =.6)
     ax.legend()
+    all_x_min, all_x_max = min(all_x), max(all_x)
+    all_y_min, all_y_max = min(all_y), max(all_y)
+    all_z_min, all_z_max = min(all_z), max(all_z)
+    
+    ax.set_xlim([all_x_min-10, all_x_max+10])
+    ax.set_ylim([all_y_min-10, all_y_max+10])
+    ax.set_zlim([all_z_min-10, all_z_max+10])
+
     ax.axis('off')
     plt.show()
     
