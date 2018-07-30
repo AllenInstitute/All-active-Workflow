@@ -4,6 +4,7 @@
 Created on Fri Jul 27 16:59:00 2018
 
 @author: anin
+Adopted from https://zulko.wordpress.com/2012/09/29/animate-your-3d-plots-with-pythons-matplotlib/
 """
 
 
