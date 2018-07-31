@@ -98,7 +98,7 @@ def run(cell_map, force_feature_extraction=False,dend_recording = None, record_l
                 
                 if temp_spike_count == 0: 
                     shortened_features.remove('Spikecount')
-                    for feature_name in stim_features:
+                    for feature_name in shortened_features:
                         # For one feature, a list with values for every sweep
                         feature_values = [np.mean(trace_dict[feature_name])
                                           for trace_dict in feature_results

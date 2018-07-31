@@ -43,7 +43,8 @@ optframework_stimtype_map = {
 section_map = {'soma' : 'somatic',
                          'apic':'apical',
                          'dend':'basal',
-                         'axon':'axonal'}
+                         'axon':'axonal',
+                         'all' : 'all'}
 
 
 
@@ -337,7 +338,7 @@ def get_params(param_path, v_initial_avg):
                     if data[key][j]['name'] in passive_params:
                         iter_dict = {'param_name':data[key][j]['name']}
                         iter_dict['dist_type'] = 'uniform'   
-                        iter_dict['sectionlist'] =  data[key][j]['section']   
+                        iter_dict['sectionlist'] =  section_map[data[key][j]['section']]   
                         iter_dict['value'] = float(data[key][j]['value'])
                         iter_dict['type'] = 'section'
                         if data[key][j]['mechanism'] != '':

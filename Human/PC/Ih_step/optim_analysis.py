@@ -166,6 +166,9 @@ def plot_diversity(opt, checkpoint_file, param_names):
             if exc.errno != errno.EEXIST:
                 raise
     
+    with open(param_path) as json_file:  
+        params = json.load(json_file)
+    
     optimized_param_dict = {key:optimized_individual_arranged[i] for i,key in \
                             enumerate(param_names_arranged)} 
     
@@ -180,7 +183,8 @@ def plot_diversity(opt, checkpoint_file, param_names):
         opt_name,opt_sect = key.split('.')
         data_key = 'genome'
         for j in range(len(model_data[data_key])):
-            if model_data[data_key][j]['name'] == opt_name:
+            if model_data[data_key][j]['name'] == opt_name and \
+                model_data[data_key][j]['section'] == opt_sect:
                 model_data[data_key][j]['value'] = str(param_dict_final[key])
                 param_dict_final_keys.remove(key)
 
@@ -196,6 +200,8 @@ def plot_diversity(opt, checkpoint_file, param_names):
                 })
 
     model_data['passive'] = [{'ra' : param_dict_final['Ra.all']}]
+    model_data['conditions'][0]['v_init'] = (item['value'] for item in params if \
+                                item["param_name"] == "v_init").next()
     
     with open(fit_json_write_path, 'w') as outfile:
         json.dump(model_data, outfile,indent=4)
