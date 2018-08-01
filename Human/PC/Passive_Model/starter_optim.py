@@ -42,13 +42,20 @@ optframework_stimtype_map = {
     'Ramp to Rheobase': 'RampPulse'
 }
 
+with open('passive_param_bounds.json','r') as bound_file:
+        passive_params_dict = json.load(bound_file)
+        
+passive_params = passive_params_dict.keys()
 
-passive_params = ['cm', 'Ra', 'g_pas', 'e_pas']
-
-section_name_convention = {'soma':'somatic',
+section_map = {'soma':'somatic',
                          'apic':'apical',
                          'dend':'basal',
-                         'axon':'axonal'}
+                         'axon':'axonal',
+                         'all' : 'all'}
+
+path_to_cell_metadata = os.path.abspath(os.path.join('.', os.pardir)) + '/cell_metadata.json'        
+with open(path_to_cell_metadata,'r') as metadata:
+        cell_metadata = json.load(metadata)
        
 def calc_stimparams(time, stimulus_trace):
     """Calculate stimuls start, stop and amplitude from trace"""
@@ -349,24 +356,14 @@ def get_params(param_path, v_initial_avg):
                                 iter_dict['mech'] = data[key][j]['mechanism']
                             model_params.append(iter_dict)
     else:
-        for passive_param in passive_params:
-            
-            if passive_param == 'cm':
-                
-                for sect in section_name_convention.values():
-                  iter_dict = {'param_name':'cm',
-                             'dist_type' : 'uniform',
-                             'sectionlist' : sect,
-                             'type': 'section'}    
-                  model_params.append(iter_dict)  
-            
-            else:
-                    
-                iter_dict = {'param_name':passive_param,
-                             'dist_type' : 'uniform',
-                             'sectionlist' : 'all',
-                             'type': 'section'}    
-                model_params.append(iter_dict)
+        
+        for passive_param,passive_dict in passive_params_dict.items():
+            for sect in passive_dict['section']:
+                 iter_dict = {'param_name': passive_param}
+                 iter_dict['sectionlist'] = section_map[sect]
+                 iter_dict['type'] = 'section'
+                 iter_dict['dist_type'] = 'uniform'
+                 model_params.append(iter_dict)
              
     model_params.append({"param_name": "celsius","type": "global","value": 34})     
     model_params.append({"param_name": "v_init","type": "global","value": v_initial_avg})
@@ -377,25 +374,14 @@ def write_params_json(model_params,cell_id):
     
     release_params = dict()
     
-    with open('passive_param_bounds.json','r') as bound_file:
-        passive_param_bounds = json.load(bound_file)
-    
     for param_dict in model_params:
         param_name = param_dict['param_name']
+        if 'sectionlist' in param_dict.keys():
+            param_sect = param_dict['sectionlist']
+        inverted_sect_key = next(key for key,val in section_map.items() if val == param_sect)
         
-        if param_name in passive_param_bounds.keys():
-            lb,ub = passive_param_bounds[param_name]
-            
-            if 'value' in param_dict.keys():
-                
-                if lb > param_dict['value']:
-                    lb = param_dict['value'] - abs(param_dict['value'])
-                elif ub < param_dict['value']:
-                    ub = param_dict['value'] + abs(param_dict['value'])
-                    
-                release_params[param_name + '.' + param_dict['sectionlist']] = param_dict['value']
-                del param_dict['value']    
-                    
+        if param_name in passive_params:
+            lb,ub = passive_params_dict[param_name]['bounds'][inverted_sect_key]
             bound = [lb, ub]
             param_dict['bounds'] =  bound
             
@@ -431,7 +417,7 @@ def write_mechanisms_json(param_path,cell_id):
 
 
 def Main(): 
-    cell_id = raw_input('Enter the cell_id : ')
+    cell_id = cell_metadata['Cell_id']
     preprocessed_dir,v_initial_avg = get_cell_data()
     morph_path = get_cell_morphology()
     param_path = get_cell_model()
