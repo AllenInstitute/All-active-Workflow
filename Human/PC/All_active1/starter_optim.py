@@ -64,7 +64,12 @@ for param_name,param_item in all_params.items():
     else:
         active_params.append(param_name)
         active_params_dict[param_name] = param_item
-        
+
+
+path_to_cell_metadata = os.path.abspath(os.path.join('.', os.pardir)) + '/cell_metadata.json'        
+with open(path_to_cell_metadata,'r') as metadata:
+        cell_metadata = json.load(metadata)
+
         
 def calc_stimparams(time, stimulus_trace):
     """Calculate stimuls start, stop and amplitude from trace"""
@@ -444,7 +449,7 @@ def write_mechanisms_json(model_params,cell_id):
 
 
 def Main(): 
-    cell_id = raw_input('Enter the cell_id : ')
+    cell_id = cell_metadata['Cell_id']
     preprocessed_dir,v_initial_avg = get_cell_data()
     morph_path = get_cell_morphology()
     param_path = get_cell_model()
