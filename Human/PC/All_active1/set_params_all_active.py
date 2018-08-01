@@ -34,17 +34,20 @@ all_params = {
                             'mechanism': 'NaTa_t',
                             'bounds':{'axon':[1e-7,4]}
                               },
-                'gbar_Nap_Et2': {'section' : ['axon'],
+                'gbar_Nap_Et2': {'section' : ['axon','soma', 'apic', 'dend'],
                             'mechanism': 'Nap_Et2',
-                            'bounds':{'axon':[1e-7,4]}
+                            'bounds':{'axon':[1e-7,4],'soma':[1e-7,1], 'apic':[1e-7, 1], 
+                                      'dend' : [1e-7,1]}
                               },               
-                'gbar_K_Tst': {'section' : ['axon'],
+                'gbar_K_Tst': {'section' : ['axon','soma', 'apic', 'dend'],
                               'mechanism' : 'K_Tst',
-                              'bounds': {'axon':[1e-7 ,1e-1]}
+                              'bounds': {'axon':[1e-7 ,1e-1],'soma':[1e-7,1e-1],'apic':[1e-7, 1e-1], 
+                                      'dend' : [1e-7,1e-1]}
                               }, 
-                'gbar_K_Pst': {'section' : ['axon'],
+                'gbar_K_Pst': {'section' : ['axon','soma', 'apic', 'dend'],
                               'mechanism' : 'K_Pst',
-                              'bounds': {'axon':[1e-7 ,1e-1]}
+                              'bounds': {'axon':[1e-7 ,1],'soma':[1e-7,1],'apic':[1e-7, 1], 
+                                      'dend' : [1e-7,1]}
                               },        
 #                'gbar_Kv2like': {'section' : ['axon'],
 #                                'mechanism' : 'Kv2like'
@@ -76,7 +79,7 @@ all_params = {
                         },
                  'gbar_Im':{'section' : ['apic', 'dend'],
                          'mechanism' : 'Im',
-                         'bounds':{'soma':[1e-7,1e-3], 'axon':[1e-7,1e-3]},
+                         'bounds':{'apic':[1e-7,1e-3], 'dend':[1e-7,1e-3]},
                          }
                 }
 

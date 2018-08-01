@@ -23,10 +23,25 @@
     }, 
     "gbar_K_Tst": {
         "section": [
-            "axon"
+            "axon", 
+            "soma", 
+            "apic", 
+            "dend"
         ], 
         "bounds": {
             "axon": [
+                1e-07, 
+                0.1
+            ], 
+            "soma": [
+                1e-07, 
+                0.1
+            ], 
+            "dend": [
+                1e-07, 
+                0.1
+            ], 
+            "apic": [
                 1e-07, 
                 0.1
             ]
@@ -62,12 +77,27 @@
     }, 
     "gbar_K_Pst": {
         "section": [
-            "axon"
+            "axon", 
+            "soma", 
+            "apic", 
+            "dend"
         ], 
         "bounds": {
             "axon": [
                 1e-07, 
-                0.1
+                1
+            ], 
+            "soma": [
+                1e-07, 
+                1
+            ], 
+            "dend": [
+                1e-07, 
+                1
+            ], 
+            "apic": [
+                1e-07, 
+                1
             ]
         }, 
         "mechanism": "K_Pst"
@@ -219,12 +249,27 @@
     }, 
     "gbar_Nap_Et2": {
         "section": [
-            "axon"
+            "axon", 
+            "soma", 
+            "apic", 
+            "dend"
         ], 
         "bounds": {
             "axon": [
                 1e-07, 
                 4
+            ], 
+            "soma": [
+                1e-07, 
+                1
+            ], 
+            "dend": [
+                1e-07, 
+                1
+            ], 
+            "apic": [
+                1e-07, 
+                1
             ]
         }, 
         "mechanism": "Nap_Et2"
@@ -235,11 +280,11 @@
             "dend"
         ], 
         "bounds": {
-            "soma": [
+            "dend": [
                 1e-07, 
                 0.001
             ], 
-            "axon": [
+            "apic": [
                 1e-07, 
                 0.001
             ]

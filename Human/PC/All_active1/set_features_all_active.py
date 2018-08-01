@@ -23,7 +23,8 @@ feature_set = {
                               'AP_width',
 #                              'AP_duration_half_width',
                               'adaptation_index2',
-                              'AHP_depth'],
+                              'AHP_depth',
+                              'check_AISInitiation'],
 #       'dendritic_features' :['AP_amplitude_from_voltagebase',
 #                              'AP_width']
             }
