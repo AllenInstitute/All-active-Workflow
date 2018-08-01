@@ -16,7 +16,6 @@ import errno
 import logging
 from matplotlib.backends.backend_pdf import PdfPages
 import math
-import bluepyopt.ephys as ephys
 
 
 logger = logging.getLogger(__name__)
@@ -37,12 +36,18 @@ section_map = {'somatic':'soma', 'axonal':'axon', 'apical':'apic',
 
 with open(fit_protocol_path) as json_file:  
     train_protocols = json.load(json_file)
+
+path_to_cell_metadata = os.path.abspath(os.path.join('.', os.pardir)) + '/cell_metadata.json'        
+with open(path_to_cell_metadata,'r') as metadata:
+        cell_metadata = json.load(metadata)
     
-cell_id = 525133308
-layer = 'Layer 2'
-analysis_write_path = str(cell_id) + '_analysis.pdf'
+cell_id = cell_metadata['Cell_id']
+layer = cell_metadata['Layer']
+area = cell_metadata['Area']
+species = cell_metadata['Species']
+
+analysis_write_path = cell_id + '_analysis.pdf'
 pdf_pages =  PdfPages(analysis_write_path)
-cell_name = 'l2pc_human'
 
 
 
@@ -83,7 +88,9 @@ def plot_diversity(opt, checkpoint_file, param_names):
         'label' : 'hall of fame',
         'fitness' : 2,
         'cell_id' : cell_id,
-        'layer' : layer})
+        'layer' : layer,
+        'area' : area,
+        'species' : species})
         hof_df=hof_df.append(temp_df) 
     
 
@@ -158,7 +165,7 @@ def plot_diversity(opt, checkpoint_file, param_names):
 
     # save optimized parameters in fit.json format
     
-    fit_json_write_path = 'fitted_params/optim_param_'+str(cell_id)+ '.json'
+    fit_json_write_path = 'fitted_params/optim_param_'+cell_id+ '.json'
     if not os.path.exists(os.path.dirname(fit_json_write_path)):
         try:
             os.makedirs(os.path.dirname(fit_json_write_path))
@@ -221,7 +228,9 @@ def plot_diversity(opt, checkpoint_file, param_names):
             'label' : 'Released',
             'fitness': 5,
             'cell_id' : cell_id,
-            'layer' : layer})
+            'layer' : layer,
+            'area' : area,
+            'species' : species})
     else:
           released_df = pd.DataFrame([])  
     
@@ -231,10 +240,12 @@ def plot_diversity(opt, checkpoint_file, param_names):
         'label' : 'Optimized',
         'fitness': 10,
         'cell_id' : cell_id,
-        'layer' : layer})
+        'layer' : layer,
+        'area' : area,
+        'species' : species})
     param_df = [optimized_df, released_df,hof_df] 
     param_df = pd.concat(param_df)   
-    param_df.to_csv('params.csv')
+    param_df.to_csv('params_'+cell_id+'.csv')
     
     print 'Saving the parameters in .csv for plotting in R'    
     
@@ -394,7 +405,7 @@ def feature_comp(opt, checkpoint_file,responses_filename):
     stim_df = pd.read_csv(stim_file, sep='\s*,\s*',
                            header=0, encoding='ascii', engine='python')
     
-    csv_filename = 'error' + '_' + str(cell_id) + '.csv'        
+    csv_filename = 'error' + '_' + cell_id + '.csv'        
 
     feature_df = pd.DataFrame([])
     for key,val in objectives.iteritems():
@@ -403,6 +414,8 @@ def feature_comp(opt, checkpoint_file,responses_filename):
             'stim_amp': stim_df[stim_df['DistinctID'] == proto]['Amplitude_Start'],
             'cell_id' : cell_id,
             'layer' : layer,
+            'area' : area,
+            'species' : species,
             'feature' : key.split('.')[-1],
             'label' : 'Optimized'
             })

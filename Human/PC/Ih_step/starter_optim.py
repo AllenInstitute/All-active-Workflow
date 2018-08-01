@@ -48,7 +48,18 @@ section_map = {'soma' : 'somatic',
 
 
 
-passive_params = ['cm', 'Ra', 'g_pas', 'e_pas']
+with open('passive_and_Ih_bounds.json','r') as bound_file:
+        passive_and_Ih_params = json.load(bound_file)
+        
+Ih_params, passive_params = [],[]
+Ih_params_dict = {}
+
+for param_name,param_item in passive_and_Ih_params.items():
+    if 'mechanism' not in param_item.keys():
+        passive_params.append(param_name)
+    elif param_item['mechanism'] == 'Ih':
+        Ih_params.append(param_name)
+        Ih_params_dict[param_name] = param_item
 
 active_params = {'gbar_Ih' : {
                             'section' : ['soma', 'apic', 'dend'],
@@ -56,7 +67,11 @@ active_params = {'gbar_Ih' : {
                               }
                 }
 
-    
+
+path_to_cell_metadata = os.path.abspath(os.path.join('.', os.pardir)) + '/cell_metadata.json'        
+with open(path_to_cell_metadata,'r') as metadata:
+        cell_metadata = json.load(metadata)
+        
 def calc_stimparams(time, stimulus_trace):
     """Calculate stimuls start, stop and amplitude from trace"""
 
@@ -325,7 +340,6 @@ def get_cell_model(exten = '.json'):
     dir_list = list()
     os.path.walk(topdir, step, exten)
     param_path = [str_path for str_path in dir_list if 'fit_opt' in str_path][0]
-#    release_param_path = [str_path for str_path in dir_list if 'fit_parameters' in str_path][0]
     return param_path
 
 def get_params(param_path, v_initial_avg):
@@ -345,7 +359,7 @@ def get_params(param_path, v_initial_avg):
                             iter_dict['mech'] = data[key][j]['mechanism']
                         model_params.append(iter_dict)
        
-        for active_param,active_dict in active_params.items():
+        for active_param,active_dict in Ih_params_dict.items():
             for sect in active_dict['section']:
                  iter_dict = {'param_name': active_param}
                  iter_dict['sectionlist'] = section_map[sect]
@@ -360,25 +374,17 @@ def get_params(param_path, v_initial_avg):
     return model_params
 
 def write_params_json(model_params,cell_id):
+    
     release_params = dict()
-    
-    with open('passive_and_Ih_bounds.json','r') as bound_file:
-        param_bounds = json.load(bound_file)
-    
+   
     for param_dict in model_params:
         param_name = param_dict['param_name']
+        if 'sectionlist' in param_dict.keys():
+            param_sect = param_dict['sectionlist']
+        inverted_sect_key = next(key for key,val in section_map.items() if val == param_sect)
         
-        if param_name in active_params.keys():
-            lb,ub = param_bounds[param_name]
-            if 'value' in param_dict.keys():
-                if lb > param_dict['value']:
-                    lb = param_dict['value'] - abs(param_dict['value'])
-                elif ub < param_dict['value']:
-                    ub = param_dict['value'] + abs(param_dict['value'])
-                    
-                release_params[param_name + '.' + param_dict['sectionlist']] = param_dict['value']
-                del param_dict['value'] 
-                
+        if param_name in Ih_params:
+            lb,ub = Ih_params_dict[param_name]['bounds'][inverted_sect_key]
             bound = [lb, ub]
             param_dict['bounds'] =  bound
             mech_param_dict = param_dict.get('mech')
@@ -390,12 +396,13 @@ def write_params_json(model_params,cell_id):
              
              lb = param_dict['value'] - .5*abs(param_dict['value'])
              ub = param_dict['value'] +.5*abs(param_dict['value'])
-             lb = max(lb, param_bounds[param_name][0])
-             ub = min(ub, param_bounds[param_name][1])
+             lb = max(lb, passive_and_Ih_params[param_name]['bounds']\
+                      [inverted_sect_key][0]) #override
+             ub = min(ub, passive_and_Ih_params[param_name]['bounds']\
+                      [inverted_sect_key][1]) #override
              
              bound = [lb, ub]
              param_dict['bounds'] =  bound
-#             release_params[param_name + '.' + param_dict['sectionlist']] = param_dict['value']
              del param_dict['value']
     param_write_path = 'config/'+ cell_id + '/parameters.json'
     
@@ -436,7 +443,7 @@ def write_mechanisms_json(model_params,cell_id):
 
 
 def Main(): 
-    cell_id = raw_input('Enter the cell_id : ')
+    cell_id = cell_metadata['Cell_id']
     preprocessed_dir,v_initial_avg = get_cell_data()
     morph_path = get_cell_morphology()
     param_path = get_cell_model()
