@@ -27,7 +27,9 @@
      │               │── evaluator_helper.py
      │               │── feature_set.json
      │               │── *bounds.json
-     │               │── modfiles/ 
+     │               │── optim_analysis.py                      # Analysis Script 
+     │               │── jobscript.sh                           # Batch Script 
+     │               │── modfiles/                              # mechanism files 
      │               ├── ...
      │
      ├── ...
