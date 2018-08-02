@@ -4,5 +4,6 @@
     "Cell_id": "525133308", 
     "Area": "FroL", 
     "Cre_line": "", 
-    "Species": "Human"
+    "Species": "Human",
+    "Dendrite_type": "Spiny"
 }
