@@ -26,7 +26,7 @@
      │               │── model_helper.py
      │               │── evaluator_helper.py
      │               │── feature_set.json
-     │               │─ *bounds.json
+     │               │── *bounds.json
      │               │── modfiles/ 
      │               ├── ...
      │
