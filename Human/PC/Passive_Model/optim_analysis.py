@@ -264,10 +264,6 @@ def plot_diversity(opt, checkpoint_file, param_names):
         json.dump(optimized_param_dict, outfile,indent=4)
         
     print 'Saving the parameters in fit.json format'
-   
-    optim_param_write_path = 'optim_param_unformatted.json'
-    with open(optim_param_write_path, 'w') as outfile:
-        json.dump(optimized_param_dict, outfile,indent=4)
         
         
    # save parameters in a csv file to later plot in R
@@ -298,7 +294,7 @@ def plot_diversity(opt, checkpoint_file, param_names):
     param_df = pd.concat(param_df)   
     param_df.to_csv('params_'+cell_id+'.csv')
     
-    print 'Saving the parameters in .csv for plotting in R'    
+    logger.debug('Saving the parameters in .csv for plotting in R')    
     
 #####################################################################
 
