@@ -14,7 +14,7 @@ passive_and_Ih_params = {
                                     'axon':[1e-1,10]},
                         },
                 'Ra' : {'section' : ['all'],
-                        'bounds' : {'all':[50, 1000]}
+                        'bounds' : {'all':[50, 200]}
                         },
                 'g_pas' : {'section' : ['all'],
                         'bounds' : {'all':[1e-7, 1e-2]}
