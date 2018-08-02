@@ -16,8 +16,6 @@ import errno
 import logging
 from matplotlib.backends.backend_pdf import PdfPages
 import math
-import uncertainpy as un
-import bluepyopt.ephys as ephys
 from collections import defaultdict
 
 
@@ -48,6 +46,9 @@ cell_id = cell_metadata['Cell_id']
 layer = cell_metadata['Layer']
 area = cell_metadata['Area']
 species = cell_metadata['Species']    
+cre_line = cell_metadata['Cre_line']
+dendrite_type = cell_metadata['Dendrite_type']
+
 
 analysis_write_path = cell_id + '_analysis.pdf'
 pdf_pages =  PdfPages(analysis_write_path)
@@ -140,7 +141,9 @@ def plot_diversity(opt, checkpoint_file, param_names):
         'cell_id' : cell_id,
         'layer' : layer,
         'area' : area,
-        'species' : species})
+        'species' : species,
+        'cre_line' : cell_metadata['Cre_line'],
+        'dendrite_type' : cell_metadata['Dendrite_type']})
         hof_df=hof_df.append(temp_df) 
     
 
@@ -276,7 +279,9 @@ def plot_diversity(opt, checkpoint_file, param_names):
             'cell_id' : cell_id,
             'layer' : layer,
             'area' : area,
-            'species' : species})
+            'species' : species,
+            'cre_line' : cell_metadata['Cre_line'],
+            'dendrite_type' : cell_metadata['Dendrite_type']})
     else:
           released_df = pd.DataFrame([])  
     
@@ -288,7 +293,9 @@ def plot_diversity(opt, checkpoint_file, param_names):
         'cell_id' : cell_id,
         'layer' : layer,
         'area' : area,
-        'species' : species})
+        'species' : species,
+        'cre_line' : cell_metadata['Cre_line'],
+        'dendrite_type' : cell_metadata['Dendrite_type']})
         
     param_df = [optimized_df, released_df,hof_df] 
     param_df = pd.concat(param_df)   
@@ -358,6 +365,7 @@ def plot_GA_evolution(checkpoint_file):
     pdf_pages.savefig(fig)
     plt.close(fig)
     pdf_pages.close()
+    
 #########################################################################
 
 
@@ -461,6 +469,8 @@ def feature_comp(opt, checkpoint_file,responses_filename):
             'layer' : layer,
             'area' : area,
             'species' : species,
+            'cre_line' : cell_metadata['Cre_line'],
+            'dendrite_type' : cell_metadata['Dendrite_type'],
             'feature' : key.split('.')[-1],
             'label' : 'Optimized'
             })
@@ -584,4 +594,3 @@ def plot_Response(opt,checkpoint_file, responses_filename):
     
 
 
-#    pdf_pages.close()

@@ -334,7 +334,7 @@ def get_cell_model(exten = '.json'):
        param_path = None 
     return param_path  
 
-def get_params(param_path, v_initial_avg):
+def get_params(param_path, v_init = -80):
     model_params = list()
     
     # if there is an existing all-active model param path would be non empty
@@ -366,7 +366,7 @@ def get_params(param_path, v_initial_avg):
                  model_params.append(iter_dict)
              
     model_params.append({"param_name": "celsius","type": "global","value": 34})     
-    model_params.append({"param_name": "v_init","type": "global","value": v_initial_avg})
+    model_params.append({"param_name": "v_init","type": "global","value": v_init})
     
     return model_params
 
@@ -418,7 +418,7 @@ def write_mechanisms_json(param_path,cell_id):
 
 def Main(): 
     cell_id = cell_metadata['Cell_id']
-    preprocessed_dir,v_initial_avg = get_cell_data()
+    preprocessed_dir,_ = get_cell_data()
     morph_path = get_cell_morphology()
     param_path = get_cell_model()
     if param_path == None:
@@ -430,7 +430,7 @@ def Main():
             'ephys': preprocessed_dir,
             'morphology': morph_path,
             'feature_set_map':'feature_set.json',
-            'v_init' : v_initial_avg
+            'v_init' : -80
 
         }
         
@@ -440,7 +440,7 @@ def Main():
     
 
     
-    model_params= get_params(param_path,v_initial_avg)  
+    model_params= get_params(param_path)  
     _, param_write_path,\
                     release_params = write_params_json(model_params,cell_id) 
     
