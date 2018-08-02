@@ -48,7 +48,7 @@ def run(cell_map, force_feature_extraction=False,dend_recording = None, record_l
 
         for cell_name in cell_map:
             ephys_location = cell_map[cell_name]['ephys']
-            v_init_model = cell_map[cell_name]['v_init']
+#            v_init_model = cell_map[cell_name]['v_init']
             cell_provenance_map[cell_name] = load_json(
                 os.path.join(
                     ephys_location,
@@ -93,8 +93,8 @@ def run(cell_map, force_feature_extraction=False,dend_recording = None, record_l
                     data = np.loadtxt(sweep_fullpath)
                     time = data[:, 0]
                     voltage = data[:, 1]
-                    v_init_cell = voltage[0]
-                    v_init_correction = v_init_cell - v_init_model 
+#                    v_init_cell = voltage[0]
+#                    v_init_correction = v_init_cell - v_init_model 
                     
                     # Correct LJP
 #                    voltage = voltage - specs['junctionpotential']
@@ -161,8 +161,8 @@ def run(cell_map, force_feature_extraction=False,dend_recording = None, record_l
                         continue
                     if mean == 0:
                         std = 0.05
-                    if feature_name in ['voltage_base', 'steady_state_voltage']:
-                            mean -= v_init_correction
+#                    if feature_name in ['voltage_base', 'steady_state_voltage']:
+#                            mean -= v_init_correction
                     features_meanstd[stim_name]['soma'][
                         feature_name] = [mean , std]
                     
