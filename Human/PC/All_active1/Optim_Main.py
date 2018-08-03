@@ -165,15 +165,18 @@ def main():
         import optim_analysis
 
         if args.checkpoint is not None and os.path.isfile(args.checkpoint):
-            logger.debug('Checking for Depolarization block for enhanced stimulus')
-            DB_protocol_path = 'DB_protocols.json'
-            DB_response_path = 'DB_response.pkl'
-            hof_index = optim_analysis.DB_check(args.checkpoint,DB_protocol_path,DB_response_path)
-            
-            if hof_index is None:
-                hof_index = 0
-                logger.debug('None passed Depolarization block check')
-            
+#            logger.debug('Checking for Depolarization block for enhanced stimulus')
+#            DB_protocol_path = 'DB_protocols.json'
+#            DB_response_path = 'DB_response.pkl'
+#            hof_index = optim_analysis.DB_check(args.checkpoint,DB_protocol_path,DB_response_path)
+#            
+#            if hof_index is None:
+#                hof_index = 0
+#                logger.debug('None passed Depolarization block check')
+#            else:
+#                logger.debug('Best index = %s'%hof_index)
+           
+            hof_index = 0
             logger.debug('Plotting Response Comparisons')
             optim_analysis.plot_Response(opt,args.checkpoint,
                                          args.responses,hof_index)

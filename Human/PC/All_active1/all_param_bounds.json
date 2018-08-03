@@ -24,26 +24,16 @@
     "gbar_K_Tst": {
         "section": [
             "axon", 
-            "soma", 
-            "apic", 
-            "dend"
+            "soma"
         ], 
         "bounds": {
             "axon": [
                 0, 
-                0.1
+                1
             ], 
             "soma": [
                 0, 
-                0.1
-            ], 
-            "dend": [
-                0, 
-                0.1
-            ], 
-            "apic": [
-                0, 
-                0.1
+                1
             ]
         }, 
         "mechanism": "K_Tst"
@@ -78,9 +68,7 @@
     "gbar_K_Pst": {
         "section": [
             "axon", 
-            "soma", 
-            "apic", 
-            "dend"
+            "soma"
         ], 
         "bounds": {
             "axon": [
@@ -88,14 +76,6 @@
                 1
             ], 
             "soma": [
-                0, 
-                1
-            ], 
-            "dend": [
-                0, 
-                1
-            ], 
-            "apic": [
                 0, 
                 1
             ]

@@ -39,15 +39,13 @@ all_params = {
                             'bounds':{'axon':[0,5],'soma':[0,1], 'apic':[0, 1], 
                                       'dend' : [0,1]}
                               },               
-                'gbar_K_Tst': {'section' : ['axon','soma', 'apic', 'dend'],
+                'gbar_K_Tst': {'section' : ['axon','soma'],
                               'mechanism' : 'K_Tst',
-                              'bounds': {'axon':[0 ,1e-1],'soma':[0,1e-1],'apic':[0, 1e-1], 
-                                      'dend' : [0,1e-1]}
+                              'bounds': {'axon':[0 ,1],'soma':[0,1]}
                               }, 
-                'gbar_K_Pst': {'section' : ['axon','soma', 'apic', 'dend'],
+                'gbar_K_Pst': {'section' : ['axon','soma'],
                               'mechanism' : 'K_Pst',
-                              'bounds': {'axon':[0,1],'soma':[0,1],'apic':[0, 1], 
-                                      'dend' : [0,1]}
+                              'bounds': {'axon':[0,1],'soma':[0,1]}
                               },        
 #                'gbar_Kv2like': {'section' : ['axon'],
 #                                'mechanism' : 'Kv2like'

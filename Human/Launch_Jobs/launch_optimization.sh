@@ -75,5 +75,13 @@ cd $ALL_ACTIV_DIR
 python starter_optim.py
 nrnivmodl modfiles/
 echo "Launching Stage 2 Opimization"
-RES2=$(sbatch start_haswell.sh) && sbatch --dependency=afternotok:${RES2##* } restart_haswell.sh  # sbatch command goes here
+RES2=$(sbatch start_haswell.sh) && RES3=$(sbatch --dependency=afternotok:${RES2##* } restart_haswell.sh)  # sbatch command goes here
+STATUS_3=$(sacct -j ${RES3##* } -o State| sed -n '3 p'| xargs) # get the status of the job 
+if [[ $STATUS_3 = "COMPLETED" ]]; then
+    echo "Stage 2 finished successfully" > Stage1_status.txt
+    echo "This is the end"
+
+else
+    echo "Stage 2 did NOT finish successfully. Run restart_haswell. " > Stage1_status.txt
+fi
 cd ..
