@@ -45,3 +45,7 @@ for seed in 1; do
 done
 
 wait $pids
+
+
+# Launch the All-active optimization (Stage 2)
+sh launch_stage2.sh

@@ -45,3 +45,6 @@ for seed in 1; do
 done
 
 wait $pids
+
+# Launch the passive+Ih optimization (Stage 1)
+sh launch_stage1.sh
