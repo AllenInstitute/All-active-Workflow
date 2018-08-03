@@ -12,7 +12,7 @@ import os
 metadata_path = 'cell_metadata.json'
 
 def save_cell_info(*args):
-    """Create and save a dictionary with all the metadata"""
+    """ Create and save a dictionary with all the metadata """
     
     cell_keys = ['Cell_id', 'Model_id', 'Species', 'Cre_line', 'Area', 'Layer','Dendrite_type']
     cell_info_dict = {}
