@@ -77,7 +77,7 @@ all_params = {
                         },
                  'gbar_Im':{'section' : ['apic', 'dend'],
                          'mechanism' : 'Im',
-                         'bounds':{'apic':[1e-7,1e-2], 'dend':[1e-7,1e-2]},
+                         'bounds':{'apic':[1e-7,1e-2], 'dend':[1e-7,1e-2]}
                          }
                 }
 
