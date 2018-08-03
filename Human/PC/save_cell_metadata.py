@@ -36,6 +36,7 @@ def main():
                                                    layer, dendrite_type)
         
     
+# Run this file in the parent directory (cell_id) to save the metadata
     
 if __name__ == '__main__':
     main()
