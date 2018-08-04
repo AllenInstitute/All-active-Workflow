@@ -9,7 +9,7 @@
 #SBATCH --mail-type=ALL
 
 
-set -e
+#set -e
 set -x
 
 PWD=$(pwd)
@@ -17,7 +17,7 @@ LOGS=$PWD/logs
 mkdir -p $LOGS
 
 OFFSPRING_SIZE=512
-MAX_NGEN=100
+MAX_NGEN=50
 
 export IPYTHONDIR=${PWD}/.ipython
 export IPYTHON_PROFILE=benchmark.${SLURM_JOBID}

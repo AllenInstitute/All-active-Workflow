@@ -31,7 +31,7 @@ cd $PASS_IH_DIR
 python starter_optim.py
 nrnivmodl modfiles/
 echo "Launching Stage 1 Opimization"
-RES1=$(sbatch start_haswell.sh)  # sbatch command goes here
-echo ${RES_1#* } > Job_1.txt
+RES_1=$(sbatch start_haswell.sh)  # sbatch command goes here
+echo ${RES_1##* } > Job_1.txt
 
 

@@ -30,5 +30,5 @@ cd $ALL_ACTIV_DIR
 python starter_optim.py
 nrnivmodl modfiles/
 echo "Launching Stage 2 Opimization"
-RES2=$(sbatch start_haswell.sh) && RES3=$(sbatch --dependency=afternotok:${RES2##* } restart_haswell.sh)  # sbatch command goes here
+RES_2=$(sbatch start_haswell.sh) && RES_3=$(sbatch --dependency=afternotok:${RES2##* } restart_haswell.sh)  # sbatch command goes here
 rm -rf preprocessed/ 
