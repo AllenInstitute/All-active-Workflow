@@ -1,0 +1,61 @@
+{
+    "e_pas": {
+        "section": [
+            "all"
+        ], 
+        "bounds": {
+            "all": [
+                -110, 
+                -60
+            ]
+        }
+    }, 
+    "Ra": {
+        "section": [
+            "all"
+        ], 
+        "bounds": {
+            "all": [
+                50, 
+                200
+            ]
+        }
+    }, 
+    "cm": {
+        "section": [
+            "soma", 
+            "apic", 
+            "dend", 
+            "axon"
+        ], 
+        "bounds": {
+            "soma": [
+                0.1, 
+                10
+            ], 
+            "axon": [
+                0.1, 
+                10
+            ], 
+            "dend": [
+                0.1, 
+                10
+            ], 
+            "apic": [
+                0.1, 
+                10
+            ]
+        }
+    }, 
+    "g_pas": {
+        "section": [
+            "all"
+        ], 
+        "bounds": {
+            "all": [
+                1e-07, 
+                0.01
+            ]
+        }
+    }
+}

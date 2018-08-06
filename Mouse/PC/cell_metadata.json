@@ -1,0 +1,9 @@
+{
+    "Model_id": "497233125", 
+    "Layer": "4", 
+    "Cell_id": "468193142", 
+    "Area": "VISp", 
+    "Dendrite_type": "spiny", 
+    "Cre_line": "Scnn1a-Tg3-Cre", 
+    "Species": "Mouse"
+}
