@@ -10,7 +10,7 @@ mkdir $PASS_IH_DIR
 cp pwd.txt $PASS_IH_DIR/
 
 
-STATUS_0=$(sacct -j ${JOBID_0##* } -o State| sed -n '3 p'| xargs) # get the status of the job 
+STATUS_0=$(sacct -j ${JOBID_0} -o State| sed -n '3 p'| xargs) # get the status of the job 
 if [[ $STATUS_0 = "COMPLETED" ]]; then
     echo "Stage 0 finished successfully" > Stage0_status.txt
 else

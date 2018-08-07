@@ -61,11 +61,7 @@ for param_name,param_item in passive_and_Ih_params.items():
         Ih_params.append(param_name)
         Ih_params_dict[param_name] = param_item
 
-active_params = {'gbar_Ih' : {
-                            'section' : ['soma', 'apic', 'dend'],
-                            'mechanism': 'Ih'
-                              }
-                }
+
 
 
 path_to_cell_metadata = os.path.abspath(os.path.join('.', os.pardir)) + '/cell_metadata.json'        
@@ -425,7 +421,7 @@ def write_mechanisms_json(model_params,cell_id):
     model_mechs['all'].append('pas')
    
     for param_dict in model_params:
-        if param_dict['param_name'] in active_params:
+        if param_dict['param_name'] in Ih_params:
             model_mechs[param_dict['sectionlist']].append(param_dict['mech']) 
         
     mechanism_write_path = 'config/'+ cell_id + '/mechanism.json'

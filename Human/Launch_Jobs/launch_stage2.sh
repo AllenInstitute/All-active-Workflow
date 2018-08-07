@@ -9,7 +9,7 @@ export ALL_ACTIV_DIR=$PARENT_DIR/All_Active1
 mkdir $ALL_ACTIV_DIR
 
 
-STATUS_1=$(sacct -j ${JOBID_1##* } -o State| sed -n '3 p'| xargs) # get the status of the job 
+STATUS_1=$(sacct -j ${JOBID_1} -o State| sed -n '3 p'| xargs) # get the status of the job 
 if [[ $STATUS_1 = "COMPLETED" ]]; then
     echo "Stage 1 finished successfully" > Stage1_status.txt
 else
