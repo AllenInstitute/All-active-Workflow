@@ -16,8 +16,6 @@ import errno
 import logging
 from matplotlib.backends.backend_pdf import PdfPages
 import math
-import uncertainpy as un
-import bluepyopt.ephys as ephys
 
 logger = logging.getLogger(__name__)
 
@@ -25,17 +23,40 @@ logger = logging.getLogger(__name__)
 with open('config_file.json') as json_file:  
     data = json.load(json_file)
 
+section_map_inv = {'somatic':'soma', 'axonal':'axon', 'apical':'apic',
+               'basal':'dend', 'all':'all'}
+
 
 release_params = data['release_params']        
 fit_json_path = data['fit_json']
 fit_protocol_path = data['protocols']
+param_path = data['parameters']
 
 with open(fit_protocol_path) as json_file:  
     train_protocols = json.load(json_file)
     
-cell_id = 468193142
-layer = 'Layer 4'
-analysis_write_path = str(cell_id) + '_analysis.pdf'
+with open(fit_json_path) as json_file:  
+    model_data = json.load(json_file)
+
+with open('passive_param_bounds.json','r') as bound_file:
+        passive_params_dict = json.load(bound_file)
+ 
+with open(param_path) as json_file:  
+    params = json.load(json_file)
+    
+path_to_cell_metadata = os.path.abspath(os.path.join('.', os.pardir)) + '/cell_metadata.json'        
+with open(path_to_cell_metadata,'r') as metadata:
+        cell_metadata = json.load(metadata)
+    
+cell_id = cell_metadata['Cell_id']
+layer = cell_metadata['Layer']
+area = cell_metadata['Area']
+species = cell_metadata['Species']    
+cre_line = cell_metadata['Cre_line']
+dendrite_type = cell_metadata['Dendrite_type']
+
+
+analysis_write_path = cell_id + '_analysis_Stage0.pdf'
 pdf_pages =  PdfPages(analysis_write_path)
 
 def plot_diversity(opt, checkpoint_file, param_names):
@@ -76,7 +97,14 @@ def plot_diversity(opt, checkpoint_file, param_names):
         'label' : 'hall of fame',
         'fitness' : 2,
         'cell_id' : cell_id,
-        'layer' : layer})
+        'layer' : layer,
+        'cell_id' : cell_id,
+        'layer' : layer,
+        'area' : area,
+        'species' : species,
+        'cre_line' : cell_metadata['Cre_line'],
+        'dendrite_type' : cell_metadata['Dendrite_type']})
+    
         hof_df=hof_df.append(temp_df) 
         
     for index, param_name in enumerate(param_names_arranged):
@@ -147,20 +175,16 @@ def plot_diversity(opt, checkpoint_file, param_names):
     plt.close(fig)
 
 
-
     # save optimized parameters in fit.json format
     
     optimized_param_dict = {key:optimized_individual_arranged[i] for i,key in \
                             enumerate(param_names_arranged)} 
-    section_map = {'somatic':'soma', 'axonal':'axon', 'apical':'apic', 'basal':'dend', 'all':'all'}
     
     param_dict_final = {key.split('.')[0]+'.'+
-                     section_map[key.split('.')[1]] : optimized_param_dict[key] 
+                     section_map_inv[key.split('.')[1]] : optimized_param_dict[key] 
                                             for key in optimized_param_dict.keys()} 
     
-    with open(fit_json_path) as json_file:  
-        model_data = json.load(json_file)
-    
+
     for key in param_dict_final.keys():
         opt_name,opt_sect = key.split('.')
         data_key = 'genome'
@@ -168,23 +192,40 @@ def plot_diversity(opt, checkpoint_file, param_names):
         remove_indices = list()
         for j in range(len(model_data[data_key])):
 
-            if model_data[data_key][j]['name'] == opt_name:
+            if model_data[data_key][j]['name'] == opt_name and \
+                       model_data[data_key][j]['section'] not in passive_params_dict[opt_name]['section']:
                if opt_name not in repeat_list:                     
                    model_data[data_key][j]['value'] = str(param_dict_final[key])
                    model_data[data_key][j]['section'] = 'all'
                    repeat_list.append(opt_name)
                else:
                    remove_indices.append(j)
+            elif model_data[data_key][j]['name'] == opt_name and model_data[data_key][j]['section'] == opt_sect:
+               model_data[data_key][j]['value'] = str(param_dict_final[key])
+               model_data[data_key][j]['section'] = opt_sect
+               
         model_data[data_key] = [i for j, i in enumerate(model_data[data_key]) if j not in remove_indices]
-    fit_json_write_path = 'optim_param.json'
+    
+    model_data['passive'] = [{'ra' : param_dict_final['Ra.all']}]
+    model_data['conditions'][0]['v_init'] = (item['value'] for item in params if \
+                                item["param_name"] == "v_init").next()   
+    
+    fit_json_write_path = 'fitted_params/optim_param_'+cell_id+ '.json'
+    if not os.path.exists(os.path.dirname(fit_json_write_path)):
+        try:
+            os.makedirs(os.path.dirname(fit_json_write_path))
+        except OSError as exc: # Guard against race condition
+            if exc.errno != errno.EEXIST:
+                raise
     optim_param_write_path = 'optim_param_unformatted.json'
+   
     with open(fit_json_write_path, 'w') as outfile:
         json.dump(model_data, outfile,indent=4)
         
     with open(optim_param_write_path, 'w') as outfile:
         json.dump(optimized_param_dict, outfile,indent=4)
         
-    print 'Saving the parameters in fit.json format'
+    logger.debug('Saving the parameters in fit.json format')
     
    # save parameters in a csv file to later plot in R
             
@@ -194,20 +235,29 @@ def plot_diversity(opt, checkpoint_file, param_names):
         'label' : 'Released',
         'fitness': 5,
         'cell_id' : cell_id,
-        'layer' : layer})
-    
+        'layer' : layer,
+        'area' : area,
+        'species' : species,
+        'cre_line' : cell_metadata['Cre_line'],
+        'dendrite_type' : cell_metadata['Dendrite_type']})
+
     optimized_df = pd.DataFrame({'param_name' : param_names_arranged,
         'section':sect_names_arranged,                         
         'value' : optimized_individual_arranged,
         'label' : 'Optimized',
         'fitness': 10,
         'cell_id' : cell_id,
-        'layer' : layer})
+        'layer' : layer,
+        'area' : area,
+        'species' : species,
+        'cre_line' : cell_metadata['Cre_line'],
+        'dendrite_type' : cell_metadata['Dendrite_type']})
+        
     param_df = [optimized_df, released_df,hof_df] 
     param_df = pd.concat(param_df)   
     param_df.to_csv('params.csv')
     
-    print 'Saving the parameters in .csv for plotting in R'    
+    logger.debug('Saving the parameters in .csv for plotting in R')    
     
 #####################################################################
 
@@ -276,11 +326,16 @@ def plot_GA_evolution(checkpoint_file):
 
 def get_responses(cell_evaluator, individuals, filename):
     responses = []
+    response_status = 'Optimized Responses'
+    
     if filename and os.path.exists(filename):
+        logger.debug('Retrieving %s \n'%response_status)
         with open(filename) as fd:
             return pickle.load(fd)
 
-    for individual in individuals:
+    for i,individual in enumerate(individuals):
+        if i == 0:
+           logger.debug('Calculating %s \n'%response_status) 
         individual_dict = cell_evaluator.param_dict(individual)
         responses.append(
             cell_evaluator.run_protocols(
@@ -295,39 +350,18 @@ def get_responses(cell_evaluator, individuals, filename):
 
 
 
-def feature_comp(opt, checkpoint_file):
+def feature_comp(opt, checkpoint_file,responses_filename):
     checkpoint = pickle.load(open(checkpoint_file, "r"))
     hof = checkpoint['halloffame']
 
-    # objectives
-    parameter_values = opt.evaluator.param_dict(hof[0])
-    fitness_protocols = opt.evaluator.fitness_protocols
-    responses = {}
-    responses_release = {}
+    responses = get_responses(opt.evaluator, hof, responses_filename)
+    responses = responses[0] #select the optimized response     
     
-    nrn = ephys.simulators.NrnSimulator()
-    
-    for protocol in fitness_protocols.values():
-        response = protocol.run(
-            cell_model=opt.evaluator.cell_model,
-            param_values=parameter_values,
-            sim=nrn)
-        response_release = protocol.run(
-                cell_model=opt.evaluator.cell_model,
-                param_values=release_params,
-                sim=nrn)
-        responses.update(response)
-        responses_release.update(response_release)
-    
-    with open('release_response.txt', 'w') as fd:
-        pickle.dump(responses_release, fd)
-        
+    # objectives       
     objectives = opt.evaluator.fitness_calculator.calculate_scores(responses)
-    objectives_release = opt.evaluator.fitness_calculator.calculate_scores(responses_release)
     
     import collections
     objectives = collections.OrderedDict(sorted(objectives.iteritems()))
-    objectives_release = collections.OrderedDict(sorted(objectives_release.iteritems()))
     
     feature_split_names = [name.split('.')[-1] for name in objectives.keys()]
     features = np.unique(np.asarray(feature_split_names))
@@ -342,7 +376,6 @@ def feature_comp(opt, checkpoint_file):
         if exc.errno != errno.EEXIST:
             raise
     plt.style.use('ggplot') 
-#    fig, ax = plt.subplots(1, 3, figsize=(10,4))       
     for i, feature in enumerate(features):
         fig, ax = plt.subplots(1, figsize=(8,8))    
         iter_dict = dict()
@@ -351,13 +384,11 @@ def feature_comp(opt, checkpoint_file):
         for key in objectives.keys():
             if key.split('.')[-1] == feature:
                 iter_dict[key] = objectives[key]
-                iter_dict_release[key] = objectives_release[key]
                 amp = train_protocols[key.split('.')[0]]['stimuli'][0]['amp']
                 amp_reduced = round(amp,2)
                 tick_label.append(amp_reduced)    
         index = np.arange(len(iter_dict.keys()))
-#        ytick_pos = index + bar_width / 2
-#        index = tick_label        
+     
         xtick_pos = index
         iter_dict = collections.OrderedDict(sorted(iter_dict.iteritems()))
         iter_dict_release = collections.OrderedDict(sorted(iter_dict_release.iteritems()))
@@ -368,14 +399,6 @@ def feature_comp(opt, checkpoint_file):
               color='b',
               alpha=opacity,
               label='Optimized')
-              
-#        ax.barh(index + bar_width,
-#              iter_dict_release.values(),
-#              bar_width,
-#              align='center',
-#              color='r',
-#              alpha=opacity,
-#              label='Released')  
         ax.set_xticks(xtick_pos)
         ax.set_xticklabels(tick_label, fontsize= 8)
         for tick in ax.yaxis.get_major_ticks():
@@ -384,29 +407,36 @@ def feature_comp(opt, checkpoint_file):
         ax.set_xlabel('Stimulus Amplitude (nA)',fontsize= 12)        
         ax.legend(prop={'size': 12},loc ='best')
         ax.set_title(feature, fontsize= 14)
-#        fig.suptitle('Feature Comparison')
         fig.tight_layout(rect=[0.05, 0.05, .95, 0.95])
         pdf_pages.savefig(fig)
         plt.close(fig)    
-       
-#        fig.savefig(feature_draw_path+feature+'.png')
-        
+               
         logger.debug('Plotting comparisons for %s \n'%feature)
     
     stim_file = 'preprocessed/StimMapReps.csv'
     stim_df = pd.read_csv(stim_file, sep='\s*,\s*',
                            header=0, encoding='ascii', engine='python')
-    voltage_deflection_df = pd.DataFrame([])
-    for key,val in objectives.iteritems():
-        if key.split('.')[-1] == 'voltage_deflection_vb_ssse':
-            proto = key.split('.')[0]
-            temp_df = pd.DataFrame({'deflection_fit' : val,
-                                'stim_amp': stim_df[stim_df['DistinctID'] == proto]['Amplitude_Start'],
-                                'cell_id' : cell_id
-                                })
-            voltage_deflection_df=voltage_deflection_df.append(temp_df) 
+    
+    csv_filename = 'error' + '_' + cell_id + '.csv'        
 
-    voltage_deflection_df.to_csv('voltage_deflection_fit.csv')
+    feature_df = pd.DataFrame([])
+    for key,val in objectives.iteritems():
+        proto = key.split('.')[0]
+        temp_df = pd.DataFrame({'error_fit' : val,
+            'stim_amp': stim_df[stim_df['DistinctID'] == proto]['Amplitude_Start'],
+            'cell_id' : cell_id,
+            'layer' : layer,
+            'area' : area,
+            'species' : species,
+            'cre_line' : cell_metadata['Cre_line'],
+            'dendrite_type' : cell_metadata['Dendrite_type'],
+            'feature' : key.split('.')[-1],
+            'label' : 'Optimized'
+            })
+
+        
+        feature_df=feature_df.append(temp_df) 
+    feature_df.to_csv(csv_filename)
 
 #############################################################################
 
@@ -419,14 +449,7 @@ def plot_Response(opt,checkpoint_file, responses_filename):
                            header=0, encoding='ascii', engine='python')
     checkpoint = pickle.load(open(checkpoint_file, "r"))
     hof = checkpoint['halloffame']
-#    responses_release = pickle.load(open('release_response.txt', "r"))
 
-    response_draw_path = 'figures/Responses/'
-    try:
-        os.makedirs(os.path.dirname(response_draw_path))
-    except OSError as exc: # Guard against race condition
-        if exc.errno != errno.EEXIST:
-            raise
     responses = get_responses(opt.evaluator, hof, responses_filename)
     response = responses[0]
 
@@ -492,7 +515,6 @@ def plot_Response(opt,checkpoint_file, responses_filename):
                             linewidth=1,
                             label = 'Cell Response',
                             alpha = 0.5)  
-                data = None
                 ax[index/n_col,index%n_col].legend(handles = [l1,l3],prop={'size': 7})
                 if (analysis_state == '(T)' and index/n_col == n_row_train-1) or \
                                 (analysis_state == '(V)' and index/n_col == n_row_val-1): 
@@ -501,12 +523,22 @@ def plot_Response(opt,checkpoint_file, responses_filename):
                                 (analysis_state == '(V)' and index%n_col == 0): 
                     ax[index/n_col,index%n_col].set_ylabel('Voltage (mV)')
                 ax[index/n_col,index%n_col].set_title(name.split('.')[0], fontsize=8)
+                
+                if 'LongDCSupra' in name:
+                    ax[index/n_col,index%n_col].set_xlim([0, 3000])
+                elif 'LongDC' in name:
+                    ax[index/n_col,index%n_col].set_xlim([0, 1600])
+                
                 logger.debug('Plotting response comparisons for %s \n'%name.split('.')[0])
                 index += 1
             if analysis_state == '(T)':
                 index_train = index
+                if index_train == training_plots:
+                    fig_train.legend(handles = (l1,l3), loc = 'lower center', ncol=2)
             else:
                 index_val = index
+                if index_val == validation_plots:
+                    fig_val.legend(handles = (l1,l3), loc = 'lower center', ncol=2)
             
     fig_train.suptitle('Training Set',fontsize=16) 
     fig_val.suptitle('Test Set',fontsize=16)       
@@ -518,159 +550,3 @@ def plot_Response(opt,checkpoint_file, responses_filename):
     plt.close(fig_val)
     
     
-def param_Sensitivity(opt):
-    nrn = ephys.simulators.NrnSimulator()
-    fitness_protocols = opt.evaluator.fitness_protocols
-    key = 'LongDC_56'
-    def nrnsim_bpopt(g_pas,e_pas,cm,Ra):
-        sensitivity_params = {'g_pas.all' : g_pas,
-                              'e_pas.all' : e_pas,
-                              'cm.all' : cm,
-                              'Ra.all' : Ra
-                              }
-        sensitivity_response = fitness_protocols[key].run(\
-                    cell_model=opt.evaluator.cell_model,
-                    param_values=sensitivity_params,
-                    sim=nrn)
-        name_loc = key + '.soma.v'
-        time = np.asarray(sensitivity_response[name_loc]['time'])
-        value = np.asarray(sensitivity_response[name_loc]['voltage'])
-        info = {'stimulus_start':train_protocols[key]['stimuli'][0]['delay'], 
-                'stimulus_end':train_protocols[key]['stimuli'][0]['stim_end']}
-        return time, value, info
-    
-    optim_param_write_path = 'optim_param_unformatted.json'
-    with open(optim_param_write_path) as read_file:
-        optim_param = json.load(read_file)
-    parameters ={ 'g_pas' : optim_param['g_pas.all'],
-                  'e_pas' : optim_param['e_pas.all'],
-                  'cm' : optim_param['cm.all'],
-                  'Ra' : optim_param['Ra.all']                 
-                 }
-    features_to_run = ["voltage_deflection_vb_ssse",
-                   "decay_time_constant_after_stim",
-                   "steady_state_voltage",
-                   "voltage_base"]
-    features = un.EfelFeatures(features_to_run=features_to_run)
-
-    model = un.Model(run=nrnsim_bpopt,adaptive=True,
-                 labels=["Time (ms)", "Membrane potential (mV)"])
-    parameters = un.Parameters(parameters)
-    parameters.set_all_distributions(un.uniform(.1))
-    
-    # Perform the uncertainty quantification
-    UQ = un.UncertaintyQuantification(model,
-                                      parameters=parameters,
-                                      features=features)
-    UQ.quantify()
-    
-    import matplotlib as mpl
-    mpl.rcParams.update(mpl.rcParamsDefault)
-    l5pc =  un.Data("data/nrnsim_bpopt.h5")
-    time = l5pc["nrnsim_bpopt"].time
-    evaluations = l5pc["nrnsim_bpopt"].evaluations
-#    sobol_first = l5pc["nrnsim_bpopt"].sobol_first
-    variance = l5pc["nrnsim_bpopt"].variance
-    mean = l5pc["nrnsim_bpopt"].mean
-    percentile_95 = l5pc["nrnsim_bpopt"].percentile_95
-    percentile_5 = l5pc["nrnsim_bpopt"].percentile_5
-    
-    ylabel = 'Membrane Potential (mV)'
-    xlabel = 'Time (ms)'
-    fig,ax1 = plt.subplots(1,figsize=(6,6))
-        
-    plt.style.use("ggplot")
-    
-    l2 = ax1.fill_between(time,
-            percentile_5,
-            percentile_95,
-            color = 'steelblue',
-            alpha = 0.8,
-            label = '90% prediction interval')
-    
-    ax2 = ax1.twinx()
-    l3, = ax2.plot(time, variance, label = 'Variance',
-             alpha = 0.8)
-    l1, = ax1.plot(time, mean,color='black',
-                   label='Mean')
-    ax1.set_xlabel(xlabel, color='black')
-    ax1.tick_params('y', colors='black')
-     
-    ax1.set_ylabel(ylabel)
-    
-    ax2.set_ylabel('Variance $(\mathrm{mV}^2)$', color='r')
-    ax2.tick_params('y', colors='r')
-    ax2.grid(False)
-    ax1.grid(True)
-    
-    # Shrink current axis's height by 10% on the bottom
-    box = ax1.get_position()
-    ax1.set_position([box.x0, box.y0 + box.height * 0.2,
-                 box.width*.9, box.height * 0.8])
-    box2 = ax2.get_position()
-    ax2.set_position([box2.x0, box2.y0 + box2.height * 0.2,
-                 box2.width*.9, box2.height * 0.8])    
-    ax1.legend(handles = [l1,l2,l3], bbox_to_anchor=(0.5, -0.16),
-                   loc='upper center', ncol = 3)
-    fig.suptitle('Sensitivity Analysis')
-    pdf_pages.savefig(fig)
-    plt.close(fig)
-    
-    import random
-
-    random.seed(1)
-    len_evaluations = np.shape(evaluations)[0]
-    plot_num = 9
-    rand_indices = random.sample(range(len_evaluations),plot_num)
-    plot_col = 3
-    plot_row = int(math.ceil(plot_num/float(plot_col)))
-    fig, axes = plt.subplots(plot_row, plot_col, figsize=(8,6), sharex=True, sharey=True)
-    for i in range(plot_num):
-        ind_1 = i/plot_col
-        ind_2 = i%plot_col
-        axes[ind_1,ind_2].plot(time,evaluations[rand_indices[i]], lw =1)
-        if ind_2 == 0:
-            axes[ind_1,ind_2].set_ylabel('Voltage')
-        if ind_1 == 2:
-            axes[ind_1,ind_2].set_xlabel(xlabel)   
-    fig.suptitle('Example membrane potentials',fontsize=12)    
-    fig.tight_layout(rect=[0, 0.05, .95, 0.95])
-    pdf_pages.savefig(fig)
-    plt.close(fig)
-    
-    features = l5pc.keys()
-    nr_plots = len(features)
-    bar_width = 0.75
-    opacity = 0.8
-    x_labels =l5pc.uncertain_parameters
-    
-    x = np.arange(len(x_labels))
-    plot_row = int(math.ceil(nr_plots/float(plot_col)))
-    fig, axes = plt.subplots(plot_row, plot_col, figsize=(8,6))
-    fig_empty_index = range(nr_plots,plot_row*plot_col)
-    if len(fig_empty_index) != 0:
-        for ind in fig_empty_index:
-            axes[ind/plot_col,ind%plot_col].axis('off')
-    
-    axes[-1,-1].axis('off') 
-    cmap = plt.get_cmap('RdBu')
-    colors = cmap(np.linspace(0, 1, len(x)))
-    
-    for i in range(nr_plots):
-        ind_1 = i/plot_col
-        ind_2 = i%plot_col
-        axes[ind_1,ind_2].bar(x, l5pc[features[i]].sobol_first_sum, 
-            bar_width,align='center',alpha=opacity,color=colors)
-    
-        axes[ind_1,ind_2].set_xticklabels(x_labels, rotation=90)
-        axes[ind_1,ind_2].set_xticks(x)
-        feature = features[i]
-        if feature == 'nrnsim_bpopt':
-            feature = 'l5pc'
-        axes[ind_1,ind_2].set_title(feature,fontsize=10)
-    fig.suptitle('Normalized Sum of First Order Sobol Indices')        
-    fig.tight_layout(rect=[0, 0.03, .95, 0.95])
-    pdf_pages.savefig(fig)
-    plt.close(fig)
-
-#    pdf_pages.close()

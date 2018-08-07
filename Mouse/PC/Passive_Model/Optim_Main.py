@@ -95,6 +95,7 @@ The folling environment variables are considered:
     parser.add_argument('--response_release', required=False, default=None,
                         help='Response pickle file to avoid recalculation')
     parser.add_argument('--analyse', action="store_true")
+    parser.add_argument('--short_analyse', action="store_true")
     parser.add_argument('--compile', action="store_true")
     parser.add_argument('--seed', type=int, default=1,
                         help='Seed to use for optimization')
@@ -142,7 +143,7 @@ def main():
             logger.debug('Plotting Response Comparisons')
             optim_analysis.plot_Response(opt,args.checkpoint,args.responses)
             logger.debug('Plotting Feature Comparisons')
-            optim_analysis.feature_comp(opt,args.checkpoint)
+            optim_analysis.feature_comp(opt,args.checkpoint,args.responses)
             
         else:
             print('No checkpoint file available run optimization '
@@ -158,7 +159,12 @@ def main():
         
         logger.debug('Plotting Evolution of the Objective')
         optim_analysis.plot_GA_evolution(args.checkpoint)
-        
+     
+    elif args.short_analyse:
+        import optim_analysis_short
+        logger.debug('Extracting the optimized parameters')
+        optim_analysis_short.save_optimized_params(args.checkpoint,
+                                     opt.evaluator.param_names)
 
 
 if __name__ == '__main__':

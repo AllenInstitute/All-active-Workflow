@@ -116,7 +116,7 @@ def run(cell_map, force_feature_extraction=False,dend_recording = None, record_l
                         if math.isnan(mean) or math.isnan(std):
                             continue
                         if mean == 0:
-                            continue
+                            std = 0.05
                         
 #                        if feature_name in ['voltage_base', 'steady_state_voltage']:
 #                            mean -= v_init_correction
