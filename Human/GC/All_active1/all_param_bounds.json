@@ -1,0 +1,400 @@
+{
+    "gkbar_Kv723": {
+        "section": [
+            "axon"
+        ], 
+        "bounds": {
+            "axon": [
+                1e-07, 
+                0.01
+            ]
+        }, 
+        "mechanism": "Kv723"
+    }, 
+    "gbar_Cav32": {
+        "section": [
+            "soma", 
+            "apic", 
+            "dend", 
+            "axon"
+        ], 
+        "bounds": {
+            "soma": [
+                1e-07, 
+                0.01
+            ], 
+            "axon": [
+                1e-07, 
+                0.01
+            ], 
+            "dend": [
+                1e-07, 
+                0.01
+            ], 
+            "apic": [
+                1e-07, 
+                0.01
+            ]
+        }, 
+        "mechanism": "Cav32"
+    }, 
+    "gbar_HCN": {
+        "section": [
+            "soma", 
+            "apic", 
+            "dend"
+        ], 
+        "bounds": {
+            "soma": [
+                1e-07, 
+                0.0001
+            ], 
+            "dend": [
+                1e-07, 
+                0.0001
+            ], 
+            "apic": [
+                1e-07, 
+                0.0001
+            ]
+        }, 
+        "mechanism": "HCN"
+    }, 
+    "gbar_Cav12": {
+        "section": [
+            "soma", 
+            "apic", 
+            "dend", 
+            "axon"
+        ], 
+        "bounds": {
+            "soma": [
+                1e-07, 
+                0.01
+            ], 
+            "axon": [
+                1e-07, 
+                0.01
+            ], 
+            "dend": [
+                1e-07, 
+                0.01
+            ], 
+            "apic": [
+                1e-07, 
+                0.01
+            ]
+        }, 
+        "mechanism": "Cav12"
+    }, 
+    "cm": {
+        "section": [
+            "soma", 
+            "apic", 
+            "dend", 
+            "axon"
+        ], 
+        "bounds": {
+            "soma": [
+                0.1, 
+                5
+            ], 
+            "axon": [
+                0.1, 
+                5
+            ], 
+            "dend": [
+                0.1, 
+                5
+            ], 
+            "apic": [
+                0.1, 
+                5
+            ]
+        }
+    }, 
+    "tau_Cabuffer": {
+        "section": [
+            "soma", 
+            "apic", 
+            "dend", 
+            "axon"
+        ], 
+        "bounds": {
+            "soma": [
+                20, 
+                1000
+            ], 
+            "axon": [
+                20, 
+                1000
+            ], 
+            "dend": [
+                20, 
+                1000
+            ], 
+            "apic": [
+                20, 
+                1000
+            ]
+        }, 
+        "mechanism": "Cabuffer"
+    }, 
+    "gbar_Cav22": {
+        "section": [
+            "soma", 
+            "apic", 
+            "dend", 
+            "axon"
+        ], 
+        "bounds": {
+            "soma": [
+                1e-07, 
+                0.01
+            ], 
+            "axon": [
+                1e-07, 
+                0.01
+            ], 
+            "dend": [
+                1e-07, 
+                0.01
+            ], 
+            "apic": [
+                1e-07, 
+                0.01
+            ]
+        }, 
+        "mechanism": "Cav22"
+    }, 
+    "gkbar_Kv21": {
+        "section": [
+            "soma"
+        ], 
+        "bounds": {
+            "soma": [
+                1e-07, 
+                0.01
+            ]
+        }, 
+        "mechanism": "Kv21"
+    }, 
+    "gbar_Cav13": {
+        "section": [
+            "soma", 
+            "apic", 
+            "dend", 
+            "axon"
+        ], 
+        "bounds": {
+            "soma": [
+                1e-07, 
+                0.01
+            ], 
+            "axon": [
+                1e-07, 
+                0.01
+            ], 
+            "dend": [
+                1e-07, 
+                0.01
+            ], 
+            "apic": [
+                1e-07, 
+                0.01
+            ]
+        }, 
+        "mechanism": "Cav13"
+    }, 
+    "brat_Cabuffer": {
+        "section": [
+            "soma", 
+            "apic", 
+            "dend", 
+            "axon"
+        ], 
+        "bounds": {
+            "soma": [
+                100, 
+                1000
+            ], 
+            "axon": [
+                100, 
+                1000
+            ], 
+            "dend": [
+                100, 
+                1000
+            ], 
+            "apic": [
+                100, 
+                1000
+            ]
+        }, 
+        "mechanism": "Cabuffer"
+    }, 
+    "gbar_na8st": {
+        "section": [
+            "soma", 
+            "axon"
+        ], 
+        "bounds": {
+            "soma": [
+                0.0001, 
+                20
+            ], 
+            "axon": [
+                0.0001, 
+                20
+            ]
+        }, 
+        "mechanism": "na8st"
+    }, 
+    "gkbar_Kv34": {
+        "section": [
+            "axon"
+        ], 
+        "bounds": {
+            "axon": [
+                1e-07, 
+                0.01
+            ]
+        }, 
+        "mechanism": "Kv34"
+    }, 
+    "gkbar_Kv11": {
+        "section": [
+            "axon"
+        ], 
+        "bounds": {
+            "axon": [
+                1e-07, 
+                0.01
+            ]
+        }, 
+        "mechanism": "Kv11"
+    }, 
+    "Ra": {
+        "section": [
+            "all"
+        ], 
+        "bounds": {
+            "all": [
+                50, 
+                1000
+            ]
+        }
+    }, 
+    "gkbar_Kv14": {
+        "section": [
+            "axon"
+        ], 
+        "bounds": {
+            "axon": [
+                1e-07, 
+                0.01
+            ]
+        }, 
+        "mechanism": "Kv14"
+    }, 
+    "g_pas": {
+        "section": [
+            "all"
+        ], 
+        "bounds": {
+            "all": [
+                1e-07, 
+                0.01
+            ]
+        }
+    }, 
+    "gkbar_SK2": {
+        "section": [
+            "apic", 
+            "axon", 
+            "dend"
+        ], 
+        "bounds": {
+            "axon": [
+                1e-07, 
+                0.01
+            ], 
+            "dend": [
+                1e-07, 
+                0.01
+            ], 
+            "apic": [
+                1e-07, 
+                0.01
+            ]
+        }, 
+        "mechanism": "SK2"
+    }, 
+    "gkbar_Kir21": {
+        "section": [
+            "axon", 
+            "apic", 
+            "dend"
+        ], 
+        "bounds": {
+            "axon": [
+                1e-07, 
+                0.01
+            ], 
+            "dend": [
+                1e-07, 
+                0.01
+            ], 
+            "apic": [
+                1e-07, 
+                0.01
+            ]
+        }, 
+        "mechanism": "Kir21"
+    }, 
+    "gkbar_Kv42": {
+        "section": [
+            "apic", 
+            "dend"
+        ], 
+        "bounds": {
+            "dend": [
+                1e-07, 
+                0.01
+            ], 
+            "apic": [
+                1e-07, 
+                0.01
+            ]
+        }, 
+        "mechanism": "Kv42"
+    }, 
+    "gakbar_BK_gc": {
+        "section": [
+            "soma", 
+            "axon"
+        ], 
+        "bounds": {
+            "soma": [
+                1e-07, 
+                0.01
+            ], 
+            "axon": [
+                1e-07, 
+                0.01
+            ]
+        }, 
+        "mechanism": "BK_gc"
+    }, 
+    "e_pas": {
+        "section": [
+            "all"
+        ], 
+        "bounds": {
+            "all": [
+                -110, 
+                -70
+            ]
+        }
+    }
+}
