@@ -16,7 +16,7 @@ if [ ! -d "$PASS_DIR" ]; then
 	fi
 	
 else
-	echo "All data already downloded" 
+	echo "All data already downloaded" 
 fi
 
 # Launch the passive optimization (Stage 0)
