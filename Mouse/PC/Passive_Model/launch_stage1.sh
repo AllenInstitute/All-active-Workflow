@@ -18,6 +18,7 @@ else
 fi
 python Optim_Main.py --checkpoint checkpoints/seed1.pkl --short_analyse
 echo "Saving the Optimized parameters for the next stage"
+#rm -rf preprocessed/ 
 
 
 # Launch the passive+Ih optimization (Stage 1)
