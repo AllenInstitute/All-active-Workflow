@@ -26,23 +26,6 @@ if os.path.exists('time_info_back_up.txt'):
 logging.basicConfig(level=logging.DEBUG) 
 logger = logging.getLogger()
 
-weight_dict= {
-              'steady_state_voltage':1, 
-#              'voltage_deflection_vb_ssse':1,
-#              'sag_amplitude' : 1,
-              'mean_frequency' : 2,
-              'time_to_first_spike':1,
-#              'time_to_last_spike':1,
-              'AP_amplitude_from_voltagebase':1,
-              'ISI_log_slope':1,
-              'AP_width':1,
-              'AHP_depth':1,
-#              'AHP_depth_abs_slow':2,
-              'adaptation_index2':1
-#              'min_voltage_between_spikes':1
-              }
-
-
 
 with open('config_file.json') as json_file:  
     path_data = json.load(json_file)

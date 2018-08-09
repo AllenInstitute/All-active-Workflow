@@ -167,19 +167,26 @@ def get_stim_map(stim_map_filename, dend_recording = None, locations = None):
         if line is not '':
             stim_name, stim_type, holding_current, amplitude_start, amplitude_end, \
                 stim_start, stim_end, duration, sweeps = line.split(',')
-            iter_dict= dict()
-            iter_dict['type'] = stim_type.strip()
-            iter_dict['hypamp'] = 1e9 * float(holding_current)
-            iter_dict['amp'] = 1e9 * float(amplitude_start)
-            iter_dict['amp_end'] = 1e9 * float(amplitude_end)
-            iter_dict['delay'] = float(stim_start)
-            iter_dict['duration'] = float(stim_end) - float(stim_start)
-            iter_dict['stim_end'] = float(stim_end)
-            iter_dict['totduration'] = float(duration)
-            iter_dict['sweep_filenames'] = [
+            iter_dict1, iter_dict2 = dict(), dict()
+            iter_dict1['type'] = stim_type.strip()
+            iter_dict1['amp'] = 1e9 * float(amplitude_start)
+            iter_dict1['amp_end'] = 1e9 * float(amplitude_end)
+            iter_dict1['delay'] = float(stim_start)
+            iter_dict1['duration'] = float(stim_end) - float(stim_start)
+            iter_dict1['stim_end'] = float(stim_end)
+            iter_dict1['totduration'] = float(duration)
+            iter_dict1['sweep_filenames'] = [
                 x.strip() for x in sweeps.split('|')]
             
-            iter_list = [iter_dict]
+            iter_dict2['type'] = 'SquarePulse'
+            iter_dict2['amp'] = 1e9 * float(holding_current)
+            iter_dict2['amp_end'] = 1e9 * float(holding_current)
+            iter_dict2['delay'] = 0
+            iter_dict2['duration'] = float(duration)
+            iter_dict2['stim_end'] = float(duration)
+            iter_dict2['totduration'] = float(duration)
+            
+            iter_list = [iter_dict1, iter_dict2]
             stim_map[stim_name]['stimuli'] = iter_list
             if dend_recording:
                 record_list = list()

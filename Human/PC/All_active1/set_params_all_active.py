@@ -34,10 +34,9 @@ all_params = {
                             'mechanism': 'NaTa_t',
                             'bounds':{'axon':[0,10]}
                               },
-                'gbar_Nap_Et2': {'section' : ['axon','soma', 'apic', 'dend'],
+                'gbar_Nap_Et2': {'section' : ['axon','soma'],
                             'mechanism': 'Nap_Et2',
-                            'bounds':{'axon':[0,5],'soma':[0,1], 'apic':[0, 1], 
-                                      'dend' : [0,1]}
+                            'bounds':{'axon':[0,5],'soma':[0,1]}
                               },               
                 'gbar_K_Tst': {'section' : ['axon','soma'],
                               'mechanism' : 'K_Tst',

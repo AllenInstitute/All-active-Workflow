@@ -80,14 +80,18 @@ def calc_stimparams(time, stimulus_trace):
         stim_stop = time[-1]        # until the end
         stim_amp_start = 0
         stim_amp_end = 0
+        hold_curr = 0
+
     else:
         # if the stimulus is not zero
         stim_start = time[nonzero_indices[0]]
         stim_stop = time[nonzero_indices[-1]]
         stim_amp_start = stimulus_trace[nonzero_indices[0]] * 1e12
         stim_amp_end = stimulus_trace[nonzero_indices[-1]] * 1e12
+        hold_curr = np.mean(stimulus_trace[nonzero_indices[-1]+1000:\
+                                           nonzero_indices[-1] + 20000])*1e12
     tot_duration = time[-1]    
-    return stim_start, stim_stop, stim_amp_start, stim_amp_end, tot_duration
+    return stim_start, stim_stop, stim_amp_start, stim_amp_end, tot_duration, hold_curr
 
 def write_stimmap_csv(stim_map, output_dir, stim_sweep_map):
     """Write StimMap.csv"""
@@ -238,19 +242,9 @@ def get_cell_data(exten = '.nwb'):
             trace_name = '%s_%d' % (
             distinct_id_map[stim_type], sweep_number)
             
-            stim_start, stim_stop, stim_amp_start, stim_amp_end, tot_duration = calc_stimparams(
+            stim_start, stim_stop, stim_amp_start, stim_amp_end, tot_duration,hold_curr = calc_stimparams(
                 time, stimulus_trace)
-
-            '''
-            if abs(stim_amp - sweep_data['aibs_stimulus_amplitude_pa']) \
-                    > 0.1:
-                if 'Ramp' not in stim_type:
-                    raise Exception(
-                        "Amplitude doesn't match for Sweep %d, type %s" %
-                        (sweep_number, stim_type))
-            '''
-
-            
+           
 
             response_trace_short_filename = '%s.%s' % (trace_name, 'txt')
 
@@ -275,12 +269,12 @@ def get_cell_data(exten = '.nwb'):
                 np.savetxt(response_trace_file,
                               np.transpose([time, response_trace]))
             # Ignore holding current
-            holding_current = 0.0  # sweep['bias_current']
+            holding_current = hold_curr # sweep['bias_current']
 
             stim_map[distinct_id_map[stim_type]].append([
                 trace_name,
                 optframework_stimtype_map[stim_type],
-                holding_current,
+                holding_current/1e12,
                 stim_amp_start /1e12,
                 stim_amp_end/1e12,
                 stim_start * 1e3,

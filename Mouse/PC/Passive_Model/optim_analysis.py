@@ -369,12 +369,7 @@ def feature_comp(opt, checkpoint_file,responses_filename):
     
     bar_width = 0.35
     opacity = 0.4
-    feature_draw_path = 'figures/Features/'
-    try:
-        os.makedirs(os.path.dirname(feature_draw_path))
-    except OSError as exc: # Guard against race condition
-        if exc.errno != errno.EEXIST:
-            raise
+
     plt.style.use('ggplot') 
     for i, feature in enumerate(features):
         fig, ax = plt.subplots(1, figsize=(8,8))    

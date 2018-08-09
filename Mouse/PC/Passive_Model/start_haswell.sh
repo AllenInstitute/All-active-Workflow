@@ -7,7 +7,7 @@
 #SBATCH -L SCRATCH
 #SBATCH --mail-user=anirban.nandi@wustl.edu
 #SBATCH --mail-type=ALL
-#SBATCH -J 468193142_Passive
+#SBATCH -J Stage0
 
 
 
@@ -47,3 +47,6 @@ for seed in 1; do
 done
 
 wait $pids
+
+# Launch the passive+Ih optimization (Stage 1)
+sh launch_stage1.sh

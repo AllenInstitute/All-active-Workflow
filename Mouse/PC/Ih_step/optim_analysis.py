@@ -38,8 +38,6 @@ param_path = data['parameters']
 with open(fit_json_path) as json_file:  
         model_data = json.load(json_file)
         
-with open('passive_and_Ih_bounds.json','r') as bound_file:
-        passive_and_Ih_params = json.load(bound_file)
 
 with open(fit_protocol_path) as json_file:  
     train_protocols = json.load(json_file)
@@ -187,23 +185,13 @@ def plot_diversity(opt, checkpoint_file, param_names):
     for key in param_dict_final.keys():
         opt_name,opt_sect = key.split('.')
         data_key = 'genome'
-        repeat_list = list()
-        remove_indices = list()
+        
         for j in range(len(model_data[data_key])):
 
-            if model_data[data_key][j]['name'] == opt_name and \
-                       model_data[data_key][j]['section'] not in passive_and_Ih_params[opt_name]['section']:
-               if opt_name not in repeat_list:                     
-                   model_data[data_key][j]['value'] = str(param_dict_final[key])
-                   model_data[data_key][j]['section'] = 'all'
-                   repeat_list.append(opt_name)
-               else:
-                   remove_indices.append(j)
-            elif model_data[data_key][j]['name'] == opt_name and model_data[data_key][j]['section'] == opt_sect:
+            if model_data[data_key][j]['name'] == opt_name and model_data[data_key][j]['section'] == opt_sect:
                model_data[data_key][j]['value'] = str(param_dict_final[key])
-               model_data[data_key][j]['section'] = opt_sect
                
-        model_data[data_key] = [i for j, i in enumerate(model_data[data_key]) if j not in remove_indices]
+        #model_data[data_key] = [i for j, i in enumerate(model_data[data_key]) if j not in remove_indices]
     
     
     model_data['passive'] = [{'ra' : param_dict_final['Ra.all']}]
