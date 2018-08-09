@@ -1,0 +1,16 @@
+{
+    "somatic_features": [
+        "voltage_base", 
+        "steady_state_voltage", 
+        "mean_frequency", 
+        "time_to_first_spike", 
+        "AP_height", 
+        "doublet_ISI", 
+        "ISI_CV", 
+        "AP_width", 
+        "adaptation_index2", 
+        "AHP_depth_abs", 
+        "AHP_depth_abs_slow", 
+        "check_AISInitiation"
+    ]
+}
