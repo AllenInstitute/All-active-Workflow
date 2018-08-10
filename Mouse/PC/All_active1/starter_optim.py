@@ -364,13 +364,15 @@ def get_params(param_path,release_param_path, v_init = -80):
              model_params.append(iter_dict)
              
     for sect in section_map.values():
-        for rev in rev_potential:
-            iter_dict =  {'param_name':rev, 'sectionlist':sect, 'dist_type': 'uniform', 'type':'section'}
-            if rev == 'ena':
-                iter_dict['value'] = 53.0
-            elif rev == 'ek':
-                iter_dict['value'] = -107.0 
-            model_params.append(iter_dict) 
+        if sect != 'all':
+            for rev in rev_potential:
+                if rev == 'ena' and sect != 'basal':
+                    iter_dict =  {'param_name':rev, 'sectionlist':sect, 'dist_type': 'uniform',
+                                  'type':'section','value':rev_potential[rev]}
+                elif rev == 'ek':
+                    iter_dict = {'param_name':rev, 'sectionlist':sect, 'dist_type': 'uniform',
+                                  'type':'section','value':rev_potential[rev]}
+                model_params.append(iter_dict) 
     model_params.append({"param_name": "celsius","type": "global","value": 34})     
     model_params.append({"param_name": "v_init","type": "global","value": v_init})
     
@@ -393,9 +395,9 @@ def get_params(param_path,release_param_path, v_init = -80):
         for rev in rev_potential:
             iter_dict_release =  {'param_name':rev, 'sectionlist':sect, 'dist_type': 'uniform', 'type':'section'}
             if rev == 'ena':
-                iter_dict_release['value'] = 53.0
+                iter_dict_release['value'] = rev_potential[rev]
             elif rev == 'ek':
-                iter_dict_release['value'] = -107.0 
+                iter_dict_release['value'] = rev_potential[rev]
             model_params_release.append(iter_dict_release) 
     model_params_release.append({"param_name": "celsius","type": "global","value": 34})     
     model_params_release.append({"param_name": "v_init","type": "global",

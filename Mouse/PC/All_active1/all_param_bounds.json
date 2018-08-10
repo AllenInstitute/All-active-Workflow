@@ -2,17 +2,12 @@
     "gbar_NaTs2_t": {
         "section": [
             "soma", 
-            "apic", 
-            "dend"
+            "apic"
         ], 
         "bounds": {
             "soma": [
                 0, 
                 10
-            ], 
-            "dend": [
-                0, 
-                0.1
             ], 
             "apic": [
                 0, 

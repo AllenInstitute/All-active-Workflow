@@ -41,7 +41,6 @@ def run(cell_map, force_feature_extraction=False,dend_recording = None, record_l
 
         for cell_name in cell_map:
             ephys_location = cell_map[cell_name]['ephys']
-#            v_init_model = cell_map[cell_name]['v_init']
             cell_provenance_map[cell_name] = load_json(
                 os.path.join(
                     ephys_location,
@@ -71,8 +70,7 @@ def run(cell_map, force_feature_extraction=False,dend_recording = None, record_l
                     data = np.loadtxt(sweep_fullpath)
                     time = data[:, 0]
                     voltage = data[:, 1]
-#                    v_init_cell = voltage[0]
-#                    v_init_correction = v_init_cell - v_init_model 
+
                     
                     # Correct LJP
                     voltage = voltage # LJP already corrected
@@ -118,8 +116,6 @@ def run(cell_map, force_feature_extraction=False,dend_recording = None, record_l
                         if mean == 0:
                             std = 0.05
                         
-#                        if feature_name in ['voltage_base', 'steady_state_voltage']:
-#                            mean -= v_init_correction
                         features_meanstd[stim_name]['soma'][
                             feature_name] = [mean , std]
                     if stim_name in features_meanstd.keys():
@@ -178,6 +174,8 @@ def get_stim_map(stim_map_filename, dend_recording = None, locations = None):
             iter_dict1['sweep_filenames'] = [
                 x.strip() for x in sweeps.split('|')]
             
+            if 'Ramp' in stim_name:
+                holding_current = 0
             iter_dict2['type'] = 'SquarePulse'
             iter_dict2['amp'] = 1e9 * float(holding_current)
             iter_dict2['amp_end'] = 1e9 * float(holding_current)
@@ -185,6 +183,11 @@ def get_stim_map(stim_map_filename, dend_recording = None, locations = None):
             iter_dict2['duration'] = float(duration)
             iter_dict2['stim_end'] = float(duration)
             iter_dict2['totduration'] = float(duration)
+            
+            if float(holding_current) != 0.0:
+                iter_list = [iter_dict1, iter_dict2]
+            else:
+                iter_list = [iter_dict1]
             
             iter_list = [iter_dict1, iter_dict2]
             stim_map[stim_name]['stimuli'] = iter_list

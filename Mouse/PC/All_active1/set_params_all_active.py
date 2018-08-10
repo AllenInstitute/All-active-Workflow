@@ -26,9 +26,9 @@ all_params = {
                         'mechanism': 'Ih',
                         'bounds' : {'soma':[1e-7,1e-4], 'apic':[1e-7, 1e-4], 'dend' : [1e-7,1e-4]}
                         },
-                'gbar_NaTs2_t': {'section' : ['soma', 'apic', 'dend'],
+                'gbar_NaTs2_t': {'section' : ['soma', 'apic'],
                             'mechanism': 'NaTs2_t',
-                            'bounds':{'soma':[0,10], 'apic':[0, 1e-1], 'dend' : [0,1e-1]}
+                            'bounds':{'soma':[0,10], 'apic' : [0,1e-1]}
                               }, 
                 'gbar_NaTa_t': {'section' : ['axon'],
                             'mechanism': 'NaTa_t',

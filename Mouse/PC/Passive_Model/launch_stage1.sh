@@ -24,7 +24,7 @@ echo "Saving the Optimized parameters for the next stage"
 # Launch the passive+Ih optimization (Stage 1)
 
 cp -r cell_types/ $PASS_IH_DIR/
-rm -rf cell_types/
+#rm -rf cell_types/
 mv fit_opt.json $PASS_IH_DIR/cell_types/
 cp -r $PASS_IH_REPO/* $PASS_IH_DIR/
 cd $PASS_IH_DIR

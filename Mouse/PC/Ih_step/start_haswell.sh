@@ -26,7 +26,7 @@ export IPYTHON_PROFILE=benchmark.${SLURM_JOBID}
 
 ipcontroller --init --ip='*' --sqlitedb --profile=${IPYTHON_PROFILE} &
 sleep 10
-srun -n 256 -c 2 --cpu_bind=cores --output="${LOGS}/engine_%j_%2t.out" ipengine --profile=${IPYTHON_PROFILE} &
+srun -n 256 -c 2 --cpu_bind=cores --output="${LOGS}/engine_%j_%2t.out" ipengine --timeout=300 --profile=${IPYTHON_PROFILE} &
 sleep 10
 
 CHECKPOINTS_DIR="checkpoints"
