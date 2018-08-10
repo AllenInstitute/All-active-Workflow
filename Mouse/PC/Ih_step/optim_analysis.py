@@ -571,7 +571,6 @@ def plot_Response(opt,opt_release,checkpoint_file, responses_filename,response_r
                             label = 'Cell Response',
                             alpha = 0.5)  
                 
-                ax[index/n_col,index%n_col].legend(handles = [l1,l3],prop={'size': 7})
                 if (analysis_state == '(T)' and index/n_col == n_row_train-1) or \
                                 (analysis_state == '(V)' and index/n_col == n_row_val-1): 
                     ax[index/n_col,index%n_col].set_xlabel('Time (ms)')
