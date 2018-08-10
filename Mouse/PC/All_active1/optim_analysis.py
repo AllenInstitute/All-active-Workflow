@@ -555,7 +555,16 @@ def plot_Response(opt,opt_release,checkpoint_file, responses_filename,
     
     plt.style.use('ggplot') 
     training_plots = 0
-    protocol_names = stim_df['DataPath'].sort_values()
+    
+    protocol_names_original = stim_df['DataPath'].tolist()
+    amp_start_original = stim_df['Stim_Start'].tolist()
+    amp_end_original = stim_df['Stim_End'].tolist()
+
+    protocol_names = sorted(protocol_names_original)
+    idx = np.argsort(protocol_names_original)
+    amp_start_list = [amp_start_original[i] for i in idx]
+    amp_end_list = [amp_end_original[i] for i in idx]
+    
     for i, trace_rep in enumerate(protocol_names):
         rep_id = trace_rep.split('|')[0]
         if rep_id.split('.')[0] in opt.evaluator.fitness_protocols.keys():
@@ -587,7 +596,7 @@ def plot_Response(opt,opt_release,checkpoint_file, responses_filename,
     index_plot = 0
     fig_index = 0
     response = responses[0]
-    for _,trace_rep in enumerate(protocol_names):
+    for ix,trace_rep in enumerate(protocol_names):
         rep_id = trace_rep.split('|')[0]
         if rep_id.split('.')[0] in train_protocols.keys():
             state = ' (Train)'
@@ -634,10 +643,10 @@ def plot_Response(opt,opt_release,checkpoint_file, responses_filename,
                 if index%n_col == 0: 
                     ax_comp[index/n_col,index%n_col].set_ylabel('Voltage (mV)')
                 ax_comp[index/n_col,index%n_col].set_title(name.split('.')[0] + state, fontsize=8)
-                if 'LongDCSupra' in name:
-                    ax_comp[index/n_col,index%n_col].set_xlim([0, 3000])
-                elif 'LongDC' in name:
-                    ax_comp[index/n_col,index%n_col].set_xlim([0, 1500])
+                
+                if 'LongDC' in name:
+                    ax_comp[index/n_col,index%n_col].set_xlim([amp_start_list[ix]-200,\
+                                                              amp_end_list[ix]+200])
                         
                 logger.debug('Plotting response comparisons for %s \n'%name.split('.')[0])
                 index += 1

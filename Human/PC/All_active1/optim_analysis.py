@@ -63,7 +63,7 @@ species = cell_metadata['Species']
 cre_line = cell_metadata['Cre_line']
 dendrite_type = cell_metadata['Dendrite_type']
 
-analysis_write_path = cell_id + '_analysis.pdf'
+analysis_write_path = cell_id + '_analysis_Stage2.pdf'
 pdf_pages =  PdfPages(analysis_write_path)
 
 def plot_diversity(opt, checkpoint_file, param_names, hof_index):
@@ -420,7 +420,11 @@ def feature_comp(opt, checkpoint_file,responses_filename):
         ax.set_ylabel('Objective value (# std)',fontsize= 12)
         ax.set_xlabel('Stimulus Amplitude (nA)',fontsize= 12)        
         ax.legend(prop={'size': 10},loc ='best')
-        ax.set_title(feature, fontsize= 12)
+        if 'soma' in feature:
+            feature_title = feature.split('.')[1]
+        else:
+            feature_title = feature.split('.')[1] + ' at ' + feature.split('.')[0]
+        ax.set_title(feature_title, fontsize= 12)
         fig.tight_layout(rect=[0.05, 0.05, .95, 0.95])
         pdf_pages.savefig(fig)
         plt.close(fig)    
@@ -477,7 +481,16 @@ def plot_Response(opt,checkpoint_file, responses_filename,hof_index):
     
     plt.style.use('ggplot') 
     training_plots = 0
-    protocol_names = stim_df['DataPath'].sort_values()
+    
+    protocol_names_original = stim_df['DataPath'].tolist()
+    amp_start_original = stim_df['Stim_Start'].tolist()
+    amp_end_original = stim_df['Stim_End'].tolist()
+
+    protocol_names = sorted(protocol_names_original)
+    idx = np.argsort(protocol_names_original)
+    amp_start_list = [amp_start_original[i] for i in idx]
+    amp_end_list = [amp_end_original[i] for i in idx]
+    
     for i, trace_rep in enumerate(protocol_names):
         rep_id = trace_rep.split('|')[0]
         if rep_id.split('.')[0] in opt.evaluator.fitness_protocols.keys():
@@ -508,7 +521,7 @@ def plot_Response(opt,checkpoint_file, responses_filename,hof_index):
     index = 0
     index_plot = 0
     fig_index = 0
-    for _,trace_rep in enumerate(protocol_names):
+    for ix,trace_rep in enumerate(protocol_names):
         rep_id = trace_rep.split('|')[0]
         if rep_id.split('.')[0] in train_protocols.keys():
             state = ' (Train)'
@@ -549,10 +562,11 @@ def plot_Response(opt,checkpoint_file, responses_filename,hof_index):
                     ax_comp[index/n_col,index%n_col].set_xlabel('Time (ms)')
                 if index%n_col == 0: 
                     ax_comp[index/n_col,index%n_col].set_ylabel('Voltage (mV)')
-                if 'LongDCSupra' in name:
-                    ax_comp[index/n_col,index%n_col].set_xlim([0, 3000])
-                elif 'LongDC' in name:
-                    ax_comp[index/n_col,index%n_col].set_xlim([0, 1600])
+                
+                if 'LongDC' in name:
+                    ax_comp[index/n_col,index%n_col].set_xlim([amp_start_list[ix]-200,\
+                                                              amp_end_list[ix] +200])
+                
                 ax_comp[index/n_col,index%n_col].set_title(name.split('.')[0] + state, fontsize=8)
                 logger.debug('Plotting response comparisons for %s \n'%name.split('.')[0])
                 index += 1
