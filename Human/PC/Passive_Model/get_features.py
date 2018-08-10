@@ -41,7 +41,6 @@ def run(cell_map, force_feature_extraction=False,dend_recording = None, record_l
 
         for cell_name in cell_map:
             ephys_location = cell_map[cell_name]['ephys']
-#            v_init_model = cell_map[cell_name]['v_init']
             cell_provenance_map[cell_name] = load_json(
                 os.path.join(
                     ephys_location,
@@ -74,9 +73,6 @@ def run(cell_map, force_feature_extraction=False,dend_recording = None, record_l
                     data = np.loadtxt(sweep_fullpath)
                     time = data[:, 0]
                     voltage = data[:, 1]
-#                    v_init_cell = voltage[0]
-#                    v_init_correction = v_init_cell - v_init_model 
-
                     
                     # Correct LJP
                     voltage = voltage # LJP already corrected while saving the data in .txt
@@ -170,19 +166,32 @@ def get_stim_map(stim_map_filename, dend_recording = None, locations = None):
         if line is not '':
             stim_name, stim_type, holding_current, amplitude_start, amplitude_end, \
                 stim_start, stim_end, duration, sweeps = line.split(',')
-            iter_dict= dict()
-            iter_dict['type'] = stim_type.strip()
-            iter_dict['hypamp'] = 1e9 * float(holding_current)
-            iter_dict['amp'] = 1e9 * float(amplitude_start)
-            iter_dict['amp_end'] = 1e9 * float(amplitude_end)
-            iter_dict['delay'] = float(stim_start)
-            iter_dict['duration'] = float(stim_end) - float(stim_start)
-            iter_dict['stim_end'] = float(stim_end)
-            iter_dict['totduration'] = float(duration)
-            iter_dict['sweep_filenames'] = [
+            iter_dict1, iter_dict2 = dict(), dict()
+            iter_dict1['type'] = stim_type.strip()
+            iter_dict1['amp'] = 1e9 * float(amplitude_start)
+            iter_dict1['amp_end'] = 1e9 * float(amplitude_end)
+            iter_dict1['delay'] = float(stim_start)
+            iter_dict1['duration'] = float(stim_end) - float(stim_start)
+            iter_dict1['stim_end'] = float(stim_end)
+            iter_dict1['totduration'] = float(duration)
+            iter_dict1['sweep_filenames'] = [
                 x.strip() for x in sweeps.split('|')]
             
-            iter_list = [iter_dict]
+            if 'Ramp' in stim_name:
+                holding_current = 0
+            iter_dict2['type'] = 'SquarePulse'
+            iter_dict2['amp'] = 1e9 * float(holding_current)
+            iter_dict2['amp_end'] = 1e9 * float(holding_current)
+            iter_dict2['delay'] = 0
+            iter_dict2['duration'] = float(duration)
+            iter_dict2['stim_end'] = float(duration)
+            iter_dict2['totduration'] = float(duration)
+            
+            if float(holding_current) != 0.0:
+                iter_list = [iter_dict1, iter_dict2]
+            else:
+                iter_list = [iter_dict1]
+                
             stim_map[stim_name]['stimuli'] = iter_list
             if dend_recording:
                 record_list = list()

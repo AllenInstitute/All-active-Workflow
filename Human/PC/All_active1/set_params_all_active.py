@@ -40,7 +40,7 @@ all_params = {
                               },               
                 'gbar_K_Tst': {'section' : ['axon','soma'],
                               'mechanism' : 'K_Tst',
-                              'bounds': {'axon':[0 ,1],'soma':[0,1]}
+                              'bounds': {'axon':[0,1],'soma':[0,1]}
                               }, 
                 'gbar_K_Pst': {'section' : ['axon','soma'],
                               'mechanism' : 'K_Pst',

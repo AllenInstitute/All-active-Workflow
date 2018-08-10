@@ -9,6 +9,12 @@ import math
 import collections
 import errno
 import efel
+import copy
+
+
+spike_proto_end = 2
+no_spike_proto_kink = 1
+spike_proto_kink_index = 1
 
 def entries_to_remove(entries, the_dict):
     for key in entries:
@@ -18,7 +24,7 @@ def entries_to_remove(entries, the_dict):
 
 
 def run(cell_map, force_feature_extraction=False,dend_recording = None, record_locations = None,\
-                        feature_frac = None, max_spike_proto = 2, max_no_spike_proto = 1):
+                        feature_frac = None):
     """Get feature values"""
     cell_name = cell_map.keys()[0]
     features_json_filename = 'config/'+ cell_name +'/features.json'
@@ -48,7 +54,6 @@ def run(cell_map, force_feature_extraction=False,dend_recording = None, record_l
 
         for cell_name in cell_map:
             ephys_location = cell_map[cell_name]['ephys']
-#            v_init_model = cell_map[cell_name]['v_init']
             cell_provenance_map[cell_name] = load_json(
                 os.path.join(
                     ephys_location,
@@ -60,11 +65,7 @@ def run(cell_map, force_feature_extraction=False,dend_recording = None, record_l
                 cell_map[cell_name]['feature_set_map'])
             cell_stim_map= stim_map
             training_stim_map = dict()
-            
-#            spike_protocols = 0
-#            no_spike_protocols = 0  
 
-            
             spiking_proto_dict = {}
             non_spiking_proto_dict = {}
             
@@ -76,8 +77,7 @@ def run(cell_map, force_feature_extraction=False,dend_recording = None, record_l
                 
                 print "\n### Getting features from %s of cell %s ###\n" \
                     % (stim_name, cell_name)
-                
-                
+                                
                 
                 no_Spike = False  #boolean variable to control the inclusion of dendritic features
 
@@ -93,11 +93,10 @@ def run(cell_map, force_feature_extraction=False,dend_recording = None, record_l
                     data = np.loadtxt(sweep_fullpath)
                     time = data[:, 0]
                     voltage = data[:, 1]
-#                    v_init_cell = voltage[0]
-#                    v_init_correction = v_init_cell - v_init_model 
+
                     
                     # Correct LJP
-#                    voltage = voltage - specs['junctionpotential']
+                    voltage = voltage # Already corrected while saving the .txt files
                     time = time
 
                     # Prepare sweep for eFEL
@@ -155,14 +154,11 @@ def run(cell_map, force_feature_extraction=False,dend_recording = None, record_l
                        std = 0.05 * abs(mean)/math.sqrt(len(feature_values)) 
                     
                     if math.isnan(mean) or math.isnan(std):
-                    #if an AP related feature has nan values then there was no spike in the trace
                         if 'AP' in feature_name and not no_Spike:
                             no_Spike = True
                         continue
                     if mean == 0:
                         std = 0.05
-#                    if feature_name in ['voltage_base', 'steady_state_voltage']:
-#                            mean -= v_init_correction
                     features_meanstd[stim_name]['soma'][
                         feature_name] = [mean , std]
                     
@@ -184,21 +180,21 @@ def run(cell_map, force_feature_extraction=False,dend_recording = None, record_l
                     del training_stim_map[stim_name]['extra_recordings']
             
             
-#            copy_non_spiking_proto_dict = copy.deepcopy(non_spiking_proto_dict)
-#            for key,val in copy_non_spiking_proto_dict.items():
-#                if val > min(spiking_proto_dict.values()):
-#                    del non_spiking_proto_dict[key]
-#                    del features_meanstd[key]
-#                    del training_stim_map[key]
+            copy_spiking_proto_dict = copy.deepcopy(spiking_proto_dict)
+            for key,val in copy_spiking_proto_dict.items():
+                if val < max(non_spiking_proto_dict.values()):
+                    del spiking_proto_dict[key]
+                    del features_meanstd[key]
+                    del training_stim_map[key]
                     
                     
             spiking_proto_keys = sorted(spiking_proto_dict,
                             key=spiking_proto_dict.__getitem__)
             first_spiking_proto_key = spiking_proto_keys[0]
-            del_spiking_proto_keys = spiking_proto_keys[1:-max_spike_proto]
+            del_spiking_proto_keys = spiking_proto_keys[spike_proto_kink_index:-spike_proto_end]
            
             del_non_spiking_proto_keys = sorted(non_spiking_proto_dict, 
-                        key=non_spiking_proto_dict.__getitem__)[:-max_no_spike_proto]
+                        key=non_spiking_proto_dict.__getitem__)[:-no_spike_proto_kink]
             
             del_proto_keys = del_spiking_proto_keys + del_non_spiking_proto_keys
             features_meanstd = entries_to_remove(del_proto_keys, features_meanstd)
@@ -252,19 +248,28 @@ def get_stim_map(stim_map_filename, dend_recording = None, locations = None):
         if line is not '':
             stim_name, stim_type, holding_current, amplitude_start, amplitude_end, \
                 stim_start, stim_end, duration, sweeps = line.split(',')
-            iter_dict= dict()
-            iter_dict['type'] = stim_type.strip()
-            iter_dict['hypamp'] = 1e9 * float(holding_current)
-            iter_dict['amp'] = 1e9 * float(amplitude_start)
-            iter_dict['amp_end'] = 1e9 * float(amplitude_end)
-            iter_dict['delay'] = float(stim_start)
-            iter_dict['duration'] = float(stim_end) - float(stim_start)
-            iter_dict['stim_end'] = float(stim_end)
-            iter_dict['totduration'] = float(duration)
-            iter_dict['sweep_filenames'] = [
+            iter_dict1, iter_dict2 = dict(), dict()
+            iter_dict1['type'] = stim_type.strip()
+            iter_dict1['amp'] = 1e9 * float(amplitude_start)
+            iter_dict1['amp_end'] = 1e9 * float(amplitude_end)
+            iter_dict1['delay'] = float(stim_start)
+            iter_dict1['duration'] = float(stim_end) - float(stim_start)
+            iter_dict1['stim_end'] = float(stim_end)
+            iter_dict1['totduration'] = float(duration)
+            iter_dict1['sweep_filenames'] = [
                 x.strip() for x in sweeps.split('|')]
             
-            iter_list = [iter_dict]
+            if 'Ramp' in stim_name:
+                holding_current = 0
+            iter_dict2['type'] = 'SquarePulse'
+            iter_dict2['amp'] = 1e9 * float(holding_current)
+            iter_dict2['amp_end'] = 1e9 * float(holding_current)
+            iter_dict2['delay'] = 0
+            iter_dict2['duration'] = float(duration)
+            iter_dict2['stim_end'] = float(duration)
+            iter_dict2['totduration'] = float(duration)
+            
+            iter_list = [iter_dict1, iter_dict2]
             stim_map[stim_name]['stimuli'] = iter_list
             if dend_recording:
                 record_list = list()

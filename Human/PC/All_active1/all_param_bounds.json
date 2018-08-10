@@ -230,9 +230,7 @@
     "gbar_Nap_Et2": {
         "section": [
             "axon", 
-            "soma", 
-            "apic", 
-            "dend"
+            "soma"
         ], 
         "bounds": {
             "axon": [
@@ -240,14 +238,6 @@
                 5
             ], 
             "soma": [
-                0, 
-                1
-            ], 
-            "dend": [
-                0, 
-                1
-            ], 
-            "apic": [
                 0, 
                 1
             ]

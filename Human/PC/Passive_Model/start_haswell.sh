@@ -9,7 +9,7 @@
 #SBATCH --mail-type=ALL
 
 
-#set -e
+set -e
 set -x
 
 PWD=$(pwd)
