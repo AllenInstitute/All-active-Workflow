@@ -189,7 +189,6 @@ def get_stim_map(stim_map_filename, dend_recording = None, locations = None):
             else:
                 iter_list = [iter_dict1]
             
-            iter_list = [iter_dict1, iter_dict2]
             stim_map[stim_name]['stimuli'] = iter_list
             if dend_recording:
                 record_list = list()
