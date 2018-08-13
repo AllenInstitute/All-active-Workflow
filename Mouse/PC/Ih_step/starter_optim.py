@@ -373,7 +373,7 @@ def get_params(param_path,release_param_path,  v_init = -80):
                          model_params_release.append(iter_dict_release)
                 
         model_params_release.append({"param_name": "celsius","type": "global","value": 34})     
-        model_params_release.append({"param_name": "v_init","type": "global","value": v_init})
+        model_params_release.append({"param_name": "v_init","type": "global","value": -90})
 
     return model_params,model_params_release
 
