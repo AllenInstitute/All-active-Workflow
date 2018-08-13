@@ -13,7 +13,7 @@ import numpy as np
 import errno
 import json
 import collections
-
+import re
 
 import get_features
 import all_features
@@ -57,6 +57,20 @@ active_params_dict = {}
 
 with open('all_param_bounds.json','r') as bound_file:
         all_params = json.load(bound_file)
+
+ena_sect, ek_sect = [],[]
+
+for param_name,param_dict in all_params.items():
+    if re.search('gbar_Na', param_name):           # Use re.IGNORECASE if needed
+        for sect in param_dict['section']: 
+            ena_sect.append(sect)
+    elif re.search('gbar_K', param_name):
+        for sect in param_dict['section']:         # Use re.IGNORECASE if needed
+            ek_sect.append(sect)
+
+ena_sect = list(set(ena_sect))
+ek_sect = list(set(ek_sect))
+
 
 for param_name,param_item in all_params.items():
     if 'mechanism' not in param_item.keys():
@@ -363,15 +377,17 @@ def get_params(param_path,release_param_path, v_init = -80):
              iter_dict['mech'] = active_dict['mechanism']
              model_params.append(iter_dict)
              
-    for sect in section_map.values():
-        if sect != 'all':
-            for rev in rev_potential:
-                if rev == 'ena' and sect != 'basal':
-                    iter_dict =  {'param_name':rev, 'sectionlist':sect, 'dist_type': 'uniform',
-                                  'type':'section','value':rev_potential[rev]}
-                elif rev == 'ek':
-                    iter_dict = {'param_name':rev, 'sectionlist':sect, 'dist_type': 'uniform',
-                                  'type':'section','value':rev_potential[rev]}
+    
+    for rev in rev_potential:
+        if rev == 'ena':
+            for sect in ena_sect:
+                iter_dict =  {'param_name':rev, 'sectionlist':section_map[sect], 'dist_type': 'uniform',
+                          'type':'section','value':rev_potential[rev]}
+                model_params.append(iter_dict)
+        elif rev == 'ek':
+            for sect in ek_sect:
+                iter_dict = {'param_name':rev, 'sectionlist':section_map[sect], 'dist_type': 'uniform',
+                          'type':'section','value':rev_potential[rev]}
                 model_params.append(iter_dict) 
     model_params.append({"param_name": "celsius","type": "global","value": 34})     
     model_params.append({"param_name": "v_init","type": "global","value": v_init})
@@ -391,7 +407,7 @@ def get_params(param_path,release_param_path, v_init = -80):
                             iter_dict_release['type'] = 'range'
                      model_params_release.append(iter_dict_release)
     
-    for sect in section_map.values():
+    for sect in list(set(section_map.values())-set(['all'])):
         for rev in rev_potential:
             iter_dict_release =  {'param_name':rev, 'sectionlist':sect, 'dist_type': 'uniform', 'type':'section'}
             if rev == 'ena':
@@ -400,8 +416,7 @@ def get_params(param_path,release_param_path, v_init = -80):
                 iter_dict_release['value'] = rev_potential[rev]
             model_params_release.append(iter_dict_release) 
     model_params_release.append({"param_name": "celsius","type": "global","value": 34})     
-    model_params_release.append({"param_name": "v_init","type": "global",
-                                 "value": -90})
+    model_params_release.append({"param_name": "v_init","type": "global","value": -90})
 
     return model_params,model_params_release
 
