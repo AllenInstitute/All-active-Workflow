@@ -9,6 +9,11 @@ import math
 import collections
 import errno
 import efel
+import copy
+
+spike_proto_end = 2
+no_spike_proto_kink = 1
+spike_proto_kink_index = 1
 
 def entries_to_remove(entries, the_dict):
     for key in entries:
@@ -18,7 +23,7 @@ def entries_to_remove(entries, the_dict):
 
 
 def run(cell_map, force_feature_extraction=False,dend_recording = None, record_locations = None,\
-                        feature_frac = None, max_spike_proto = 2, max_no_spike_proto = 1):
+                        feature_frac = None):
     """Get feature values"""
     cell_name = cell_map.keys()[0]
     features_json_filename = 'config/'+ cell_name +'/features.json'
@@ -48,7 +53,6 @@ def run(cell_map, force_feature_extraction=False,dend_recording = None, record_l
 
         for cell_name in cell_map:
             ephys_location = cell_map[cell_name]['ephys']
-#            v_init_model = cell_map[cell_name]['v_init']
             cell_provenance_map[cell_name] = load_json(
                 os.path.join(
                     ephys_location,
@@ -61,8 +65,7 @@ def run(cell_map, force_feature_extraction=False,dend_recording = None, record_l
             cell_stim_map= stim_map
             training_stim_map = dict()
             
-#            spike_protocols = 0
-#            no_spike_protocols = 0  
+
 
             
             spiking_proto_dict = {}
@@ -97,7 +100,7 @@ def run(cell_map, force_feature_extraction=False,dend_recording = None, record_l
 #                    v_init_correction = v_init_cell - v_init_model 
                     
                     # Correct LJP
-#                    voltage = voltage - specs['junctionpotential']
+                    voltage = voltage #LJP already corrected
                     time = time
 
                     # Prepare sweep for eFEL
@@ -129,7 +132,6 @@ def run(cell_map, force_feature_extraction=False,dend_recording = None, record_l
                     feature_results = efel.getFeatureValues(sweeps, stim_features)
                     
                     non_spiking_proto_dict[stim_name] = stim_params['stimuli'][0]['amp']
-#                    if stim_params['stimuli'][0]['amp'] >= 0:
                     if dend_recording:
                         del cell_stim_map[stim_name]['extra_recordings']
                  
@@ -183,21 +185,21 @@ def run(cell_map, force_feature_extraction=False,dend_recording = None, record_l
                     del training_stim_map[stim_name]['extra_recordings']
             
             
-#            copy_non_spiking_proto_dict = copy.deepcopy(non_spiking_proto_dict)
-#            for key,val in copy_non_spiking_proto_dict.items():
-#                if val > min(spiking_proto_dict.values()):
-#                    del non_spiking_proto_dict[key]
-#                    del features_meanstd[key]
-#                    del training_stim_map[key]
+            copy_spiking_proto_dict = copy.deepcopy(spiking_proto_dict)
+            for key,val in copy_spiking_proto_dict.items():
+                if val < max(non_spiking_proto_dict.values()):
+                    del spiking_proto_dict[key]
+                    del features_meanstd[key]
+                    del training_stim_map[key]
                     
                     
             spiking_proto_keys = sorted(spiking_proto_dict,
                             key=spiking_proto_dict.__getitem__)
             first_spiking_proto_key = spiking_proto_keys[0]
-            del_spiking_proto_keys = spiking_proto_keys[1:-max_spike_proto]
+            del_spiking_proto_keys = spiking_proto_keys[spike_proto_kink_index:-spike_proto_end]
            
             del_non_spiking_proto_keys = sorted(non_spiking_proto_dict, 
-                        key=non_spiking_proto_dict.__getitem__)[:-max_no_spike_proto]
+                        key=non_spiking_proto_dict.__getitem__)[:-no_spike_proto_kink]
             
             del_proto_keys = del_spiking_proto_keys + del_non_spiking_proto_keys
             features_meanstd = entries_to_remove(del_proto_keys, features_meanstd)
@@ -270,7 +272,11 @@ def get_stim_map(stim_map_filename, dend_recording = None, locations = None):
             iter_dict2['stim_end'] = float(duration)
             iter_dict2['totduration'] = float(duration)
             
-            iter_list = [iter_dict1, iter_dict2]
+            if float(holding_current) != 0.0:
+                iter_list = [iter_dict1, iter_dict2]
+            else:
+                iter_list = [iter_dict1]
+                
             stim_map[stim_name]['stimuli'] = iter_list
             if dend_recording:
                 record_list = list()
