@@ -30,7 +30,7 @@ fit_json_path = data['fit_json']
 fit_protocol_path = data['protocols']
 param_path = data['parameters']
 
-section_map = {'somatic':'soma', 'axonal':'axon', 'apical':'apic',
+section_map_inv = {'somatic':'soma', 'axonal':'axon', 'apical':'apic',
                'basal':'dend', 'all':'all'}
 
 
@@ -184,7 +184,7 @@ def plot_diversity(opt, checkpoint_file, param_names):
                             enumerate(param_names_arranged)} 
     
     param_dict_final = {key.split('.')[0]+'.'+
-                     section_map[key.split('.')[1]] : optimized_param_dict[key] 
+                     section_map_inv[key.split('.')[1]] : optimized_param_dict[key] 
                                         for key in optimized_param_dict.keys()} 
     with open(fit_json_path) as json_file:  
         model_data = json.load(json_file)
@@ -453,7 +453,16 @@ def plot_Response(opt,checkpoint_file, responses_filename):
     plt.style.use('ggplot') 
     training_plots = 0
     validation_plots = 0
-    protocol_names = stim_df['DataPath'].sort_values()
+    
+    protocol_names_original = stim_df['DataPath'].tolist()
+    amp_start_original = stim_df['Stim_Start'].tolist()
+    amp_end_original = stim_df['Stim_End'].tolist()
+
+    protocol_names = sorted(protocol_names_original)
+    idx = np.argsort(protocol_names_original)
+    amp_start_list = [amp_start_original[i] for i in idx]
+    amp_end_list = [amp_end_original[i] for i in idx]
+    
     for i, trace_rep in enumerate(protocol_names):
         rep_id = trace_rep.split('|')[0]
         if rep_id.split('.')[0] in opt.evaluator.fitness_protocols.keys():
@@ -522,7 +531,8 @@ def plot_Response(opt,checkpoint_file, responses_filename):
                 ax[index/n_col,index%n_col].set_title(name.split('.')[0], fontsize=8)
                 
                 if 'LongDC' in name:
-                    ax[index/n_col,index%n_col].set_xlim([1000, 2500])
+                    ax[index/n_col,index%n_col].set_xlim([amp_start_list[i]-200,\
+                                                              amp_end_list[i]+200])
                     
                 logger.debug('Plotting response comparisons for %s \n'%name.split('.')[0])
                 index += 1
