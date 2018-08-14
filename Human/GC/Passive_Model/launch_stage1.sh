@@ -19,14 +19,14 @@ else
 fi
 python Optim_Main.py --checkpoint checkpoints/seed1.pkl --short_analyse
 echo "Saving the Optimized parameters for the next stage"
-rm -rf preprocessed/ 
+#rm -rf preprocessed/ 
 
 
 # Launch the passive+Ih optimization (Stage 1)
 
 cp -r cell_types/ $PASS_IH_DIR/
 cp cell_id.txt $PASS_IH_DIR/
-rm -rf cell_types/
+#rm -rf cell_types/
 mv fit_opt.json $PASS_IH_DIR/cell_types/
 cp -r $PASS_IH_REPO/* $PASS_IH_DIR/
 cd $PASS_IH_DIR
