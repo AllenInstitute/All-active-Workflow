@@ -186,7 +186,11 @@ def get_stim_map(stim_map_filename, dend_recording = None, locations = None):
             iter_dict2['stim_end'] = float(duration)
             iter_dict2['totduration'] = float(duration)
             
-            iter_list = [iter_dict1, iter_dict2]
+            if float(holding_current) != 0.0:
+                iter_list = [iter_dict1, iter_dict2]
+            else:
+                iter_list = [iter_dict1]
+                
             stim_map[stim_name]['stimuli'] = iter_list
             if dend_recording:
                 record_list = list()
