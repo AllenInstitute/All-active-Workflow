@@ -24,12 +24,17 @@ echo "Saving the Optimized parameters for the next stage"
 # Launch the passive+Ih optimization (Stage 1)
 
 cp -r cell_types/ $PASS_IH_DIR/
+cp cell_id.txt $PASS_IH_DIR/
 #rm -rf cell_types/
 mv fit_opt.json $PASS_IH_DIR/cell_types/
 cp -r $PASS_IH_REPO/* $PASS_IH_DIR/
 cd $PASS_IH_DIR
 python starter_optim.py
 nrnivmodl modfiles/
+STAGE="_STAGE1"
+CELL_ID=$(<cell_id.txt)
+JOBNAME=$CELL_ID$STAGE
+sed -i -e "s/Stage1/$JOBNAME/g" start_haswell.sh
 echo "Launching Stage 1 Opimization"
 RES_1=$(sbatch start_haswell.sh)  # sbatch command goes here
 echo ${RES_1##* } > Job_1.txt

@@ -2,7 +2,7 @@
 
 #SBATCH -q premium
 #SBATCH -N 8
-#SBATCH -t 2:00:00
+#SBATCH -t 4:00:00
 #SBATCH -C haswell
 #SBATCH -L SCRATCH
 #SBATCH --mail-user=anirban.nandi@wustl.edu
@@ -24,9 +24,9 @@ MAX_NGEN=50
 export IPYTHONDIR=${PWD}/.ipython
 export IPYTHON_PROFILE=benchmark.${SLURM_JOBID}
 
-ipcontroller --init --ip='*' --sqlitedb --profile=${IPYTHON_PROFILE} &
+ipcontroller --init --ip='*' --sqlitedb --ping=30000 --profile=${IPYTHON_PROFILE} &
 sleep 10
-srun -n 256 -c 2 --cpu_bind=cores --output="${LOGS}/engine_%j_%2t.out" ipengine --timeout=300 --profile=${IPYTHON_PROFILE} &
+srun -n 256 --output="${LOGS}/engine_%j_%2t.out" ipengine --timeout=3000 --profile=${IPYTHON_PROFILE} &
 sleep 10
 
 CHECKPOINTS_DIR="checkpoints"

@@ -18,12 +18,12 @@ LOGS=$PWD/logs
 mkdir -p $LOGS
 
 OFFSPRING_SIZE=1024
-MAX_NGEN=100
+MAX_NGEN=500
 
 export IPYTHONDIR=${PWD}/.ipython
 export IPYTHON_PROFILE=benchmark.${SLURM_JOBID}
 
-ipcontroller --init --ip='*' --sqlitedb --profile=${IPYTHON_PROFILE} &
+ipcontroller --init --ip='*' --sqlitedb --ping=30000 --profile=${IPYTHON_PROFILE} &
 sleep 10
 srun -n 512 --output="${LOGS}/engine_%j_%2t.out" ipengine --timeout=3000 --profile=${IPYTHON_PROFILE} &
 sleep 10
