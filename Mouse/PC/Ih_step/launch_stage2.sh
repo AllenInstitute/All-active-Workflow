@@ -2,7 +2,7 @@
 #SBATCH -M escori 
 #SBATCH -q xfer 
 #SBATCH -t 0:10:00 
-#SBATCH -J launch_stage1 
+#SBATCH -J launch_stage2 
 
 export ALL_ACTIV_REPO="/project/projectdirs/m2043/AIBS/ani/Mouse/PC/All_Active1_Repo"
 

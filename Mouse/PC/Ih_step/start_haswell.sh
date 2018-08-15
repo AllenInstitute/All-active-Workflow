@@ -17,7 +17,7 @@ trap "$func $sig" "$sig"
 done 
 } 
 
-# trap function to launch the passive+Ih optimization (Stage 1)
+# trap function to launch the passive+Ih optimization (Stage 2)
 func_trap() { 
 sbatch launch_stage2.sh 
 echo Launching Stage1 through xfer job because of timeout
