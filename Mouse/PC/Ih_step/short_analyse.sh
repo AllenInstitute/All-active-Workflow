@@ -1,1 +1,1 @@
-./Optim_Main.py --checkpoint  checkpoints/seed1.pkl   --short_analyse
+python Optim_Main.py --checkpoint  checkpoints_backup/seed1.pkl   --short_analyse
