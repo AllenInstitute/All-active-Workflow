@@ -14,11 +14,14 @@ import sys
 import textwrap
 import json
 from datetime import datetime
+import shutil
 from shutil import copyfile
 
 import evaluator_helper
 import checkpoint_decider
 
+cp_backup = 'checkpoints_backup'
+cp_source = 'checkpoints'
 
 if os.path.exists('time_info_back_up.txt'):
     copyfile('time_info_back_up.txt', 'time_info.txt')
@@ -54,10 +57,22 @@ def create_optimizer(args):
             start_time = datetime.now()
             ret = lview.map_sync(func, it)
             logger.debug('Generation took %s', datetime.now() - start_time)
+            
+            # Create a back-up checkpoint directory 
+            # (to save optimization results in case checkpoint file is corrupted)
+            
+            if os.path.exists(cp_backup):
+                shutil.rmtree(cp_backup)
+            shutil.copytree(cp_source, cp_backup)
+            
+            # Save timing information for each generation
             f =  open('time_info.txt','a')
             f.write('%s\n'%(datetime.now() - start_time))
             f.close()
+            
+            # Create a back-up of the timing information
             copyfile('time_info.txt', 'time_info_back_up.txt')
+            
             return ret
 
         map_function = mapper

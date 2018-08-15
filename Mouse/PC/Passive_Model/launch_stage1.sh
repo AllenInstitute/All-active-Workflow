@@ -16,7 +16,7 @@ if [[ $STATUS_0 = "COMPLETED" ]]; then
 else
     echo "Stage 0 did NOT finish successfully" > Stage0_status.txt
 fi
-python Optim_Main.py --checkpoint checkpoints/seed1.pkl --short_analyse
+python Optim_Main.py --checkpoint checkpoints_backup/seed1.pkl --short_analyse
 echo "Saving the Optimized parameters for the next stage"
 #rm -rf preprocessed/ 
 
