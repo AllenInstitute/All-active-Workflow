@@ -1,13 +1,13 @@
 #!/bin/bash
 
 #SBATCH -q premium 
-#SBATCH -t 12:00:00
+#SBATCH -t 4:00:00
 #SBATCH -N 16
 #SBATCH -C haswell
 #SBATCH -L SCRATCH
-#SBATCH -J 525133308_All_active
 #SBATCH --mail-user=anin@alleninstitute.org
 #SBATCH --mail-type=ALL
+#SBATCH -J Stage2
 
 
 set -e
@@ -23,9 +23,9 @@ MAX_NGEN=100
 export IPYTHONDIR=${PWD}/.ipython
 export IPYTHON_PROFILE=benchmark.${SLURM_JOBID}
 
-ipcontroller --init --ip='*' --sqlitedb --profile=${IPYTHON_PROFILE} &
+ipcontroller --init --ip='*' --sqlitedb --ping=30000 --profile=${IPYTHON_PROFILE} &
 sleep 10
-srun -n 512 --output="${LOGS}/engine_%j_%2t.out" ipengine --timeout=300 --profile=${IPYTHON_PROFILE} &
+srun -n 512 --output="${LOGS}/engine_%j_%2t.out" ipengine --timeout=3000 --profile=${IPYTHON_PROFILE} &
 sleep 10
 
 CHECKPOINTS_DIR="checkpoints"
