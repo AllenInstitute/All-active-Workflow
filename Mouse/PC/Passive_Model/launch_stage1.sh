@@ -1,4 +1,8 @@
-#!/bin/bash
+#!/bin/bash -l 
+#SBATCH -M escori 
+#SBATCH -q xfer 
+#SBATCH -t 0:10:00 
+#SBATCH -J launch_stage1 
 
 export PASS_IH_REPO="/project/projectdirs/m2043/AIBS/ani/Mouse/PC/Passive_Ih_Repo"
 

@@ -8,7 +8,23 @@
 #SBATCH --mail-user=anirban.nandi@wustl.edu
 #SBATCH --mail-type=ALL
 #SBATCH -J Stage1
+#SBATCH --signal=B:USR1@60
 
+run_dependent_script() { 
+func="$1" ; shift 
+for sig ; do 
+trap "$func $sig" "$sig" 
+done 
+} 
+
+# trap function to launch the passive+Ih optimization (Stage 1)
+func_trap() { 
+sbatch launch_stage2.sh 
+echo Launching Stage1 through xfer job because of timeout
+} 
+
+#submit xfer.slurm upon signal USR1 
+run_dependent_script func_trap USR1 
 
 
 set -e
@@ -49,5 +65,5 @@ done
 wait $pids
 
 
-# Launch the passive+Ih optimization (Stage 1)
+# Launch the passive+Ih optimization (Stage 1) once the job finishes successfully
 sh launch_stage2.sh
