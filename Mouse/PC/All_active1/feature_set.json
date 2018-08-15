@@ -4,11 +4,11 @@
         "steady_state_voltage", 
         "mean_frequency", 
         "time_to_first_spike", 
-        "AP_height", 
+        "AP_amplitude_from_voltagebase", 
         "ISI_CV", 
         "AP_width", 
         "adaptation_index2", 
-        "AHP_depth_abs", 
+        "AHP_depth", 
         "check_AISInitiation"
     ]
 }

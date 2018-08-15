@@ -14,14 +14,15 @@ feature_set = {
                               'steady_state_voltage',
                               'mean_frequency',
                               'time_to_first_spike',
-                              'AP_height',
+#                              'AP_height',
+                              'AP_amplitude_from_voltagebase',
 #                              'doublet_ISI',
                               'ISI_CV',
                               'AP_width',
                               'adaptation_index2',
-                              'AHP_depth_abs',
+                              'AHP_depth',
 #                              'AHP_depth_abs_slow',
-                              'check_AISInitiation'],
+                              'check_AISInitiation']
 #       'dendritic_features' :['AP_amplitude_from_voltagebase',
 #                              'AP_width']
             }
