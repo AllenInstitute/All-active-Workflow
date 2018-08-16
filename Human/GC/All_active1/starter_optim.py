@@ -304,17 +304,6 @@ def get_cell_data(exten = '.nwb'):
             stim_start, stim_stop, stim_amp_start, stim_amp_end, tot_duration, hold_curr = calc_stimparams(
                 time, stimulus_trace)
 
-            '''
-            if abs(stim_amp - sweep_data['aibs_stimulus_amplitude_pa']) \
-                    > 0.1:
-                if 'Ramp' not in stim_type:
-                    raise Exception(
-                        "Amplitude doesn't match for Sweep %d, type %s" %
-                        (sweep_number, stim_type))
-            '''
-
-            
-
             response_trace_short_filename = '%s.%s' % (trace_name, 'txt')
 
             response_trace_filename = os.path.join(
