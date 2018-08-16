@@ -120,7 +120,7 @@ def calc_stimparams(time, stimulus_trace):
 
     # approximate the amp, it is the mean between the start and end
     hold_curr = np.mean(stimulus_trace[end_ind+1000:end_ind + 20000])*1e12
-    stim_amp = np.mean(stimulus_trace[start_ind:end_ind] ) * 1e12
+    stim_amp = np.mean(stimulus_trace[start_ind:end_ind] ) * 1e12 - hold_curr
     stim_amp_start=stim_amp
     stim_amp_end=stim_amp
     tot_duration = time[-1]
