@@ -11,6 +11,7 @@ import json
 import pickle
 import numpy as np
 import pandas as pd
+import matplotlib
 import matplotlib.pyplot as plt
 import errno
 import logging
@@ -18,6 +19,7 @@ from matplotlib.backends.backend_pdf import PdfPages
 import math
 import bluepyopt.ephys as ephys
 
+matplotlib.use('Agg')
 
 logger = logging.getLogger(__name__)
 

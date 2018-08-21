@@ -11,6 +11,7 @@ import json
 import pickle
 import numpy as np
 import pandas as pd
+import matplotlib
 import matplotlib.pyplot as plt
 import errno
 import logging
@@ -24,6 +25,7 @@ import efel
 from scipy import interpolate
 
 import evaluator_helper
+matplotlib.use('Agg')
 
 
 logger = logging.getLogger(__name__)
