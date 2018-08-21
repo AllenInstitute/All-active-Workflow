@@ -24,6 +24,8 @@ fi
 
 cp -r $PASSIVE_REPO/* $PASS_DIR/
 cd $PASS_DIR
+python set_features_passive.py
+python set_params_passive.py
 python starter_optim.py
 STAGE="_STAGE0"
 JOBNAME=$CELL_ID$STAGE
