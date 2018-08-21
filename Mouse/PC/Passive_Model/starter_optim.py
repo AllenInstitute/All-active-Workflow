@@ -74,10 +74,11 @@ def calc_stimparams(time, stimulus_trace):
         # if the stimulus is not zero
         stim_start = time[nonzero_indices[0]]
         stim_stop = time[nonzero_indices[-1]]
-        stim_amp_start = stimulus_trace[nonzero_indices[0]] * 1e12
-        stim_amp_end = stimulus_trace[nonzero_indices[-1]] * 1e12
         hold_curr = np.mean(stimulus_trace[nonzero_indices[-1]+1000:\
-                                           nonzero_indices[-1] + 20000])*1e12
+                                   nonzero_indices[-1] + 20000])*1e12
+        stim_amp_start = stimulus_trace[nonzero_indices[0]] * 1e12 - hold_curr
+        stim_amp_end = stimulus_trace[nonzero_indices[-1]] * 1e12 - hold_curr
+        
     tot_duration = time[-1]    
     return stim_start, stim_stop, stim_amp_start, stim_amp_end, tot_duration, hold_curr
 
@@ -414,10 +415,11 @@ def Main():
     features_write_path,protocols_write_path,all_protocols_write_path = get_features.run(cell_map, 
             force_feature_extraction=True)
     
-    model_dir = '.' 
-    shell_cmd = 'nrnivmodl ' + model_dir + '/modfiles'
+#    model_dir = '.' 
+#    shell_cmd = 'nrnivmodl ' + model_dir + '/modfiles'
+#    
+#    os.system(shell_cmd)
     
-    os.system(shell_cmd)
     model_params= get_params(param_path)  
     model_params, param_write_path,\
                     release_params = write_params_json(model_params,cell_id) 
