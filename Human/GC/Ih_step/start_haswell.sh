@@ -1,14 +1,29 @@
 #!/bin/bash
 
-#SBATCH -q premium 
-#SBATCH -t 2:00:00
+#SBATCH -q premium
 #SBATCH -N 8
+#SBATCH -t 4:00:00
 #SBATCH -C haswell
 #SBATCH -L SCRATCH
-#SBATCH -J Stage1
-#SBATCH --mail-user=anin@alleninstitute.org
+#SBATCH --mail-user=anirban.nandi@wustl.edu
 #SBATCH --mail-type=ALL
+#SBATCH -J Stage1
+#SBATCH --signal=B:USR1@300
 
+run_dependent_script() { 
+func="$1" ; shift 
+for sig ; do 
+trap "$func $sig" "$sig" 
+done 
+} 
+
+# trap function to launch the passive+Ih optimization (Stage 2)
+func_trap() { 
+sh launch_stage2.sh
+} 
+
+#submit launch script upon signal USR1 
+run_dependent_script func_trap USR1 
 
 set -e
 set -x
@@ -23,9 +38,9 @@ MAX_NGEN=50
 export IPYTHONDIR=${PWD}/.ipython
 export IPYTHON_PROFILE=benchmark.${SLURM_JOBID}
 
-ipcontroller --init --ip='*' --sqlitedb --profile=${IPYTHON_PROFILE} &
+ipcontroller --init --ip='*' --sqlitedb --ping=30000 --profile=${IPYTHON_PROFILE} &
 sleep 10
-srun -n 256 -c 2 --cpu_bind=cores --output="${LOGS}/engine_%j_%2t.out" ipengine	--timeout=300 --profile=${IPYTHON_PROFILE} &
+srun -n 256 --output="${LOGS}/engine_%j_%2t.out" ipengine --timeout=3000 --profile=${IPYTHON_PROFILE} &
 sleep 10
 
 CHECKPOINTS_DIR="checkpoints"

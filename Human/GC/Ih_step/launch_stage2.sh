@@ -16,7 +16,7 @@ else
     echo "Stage 1 did NOT finish successfully" > Stage1_status.txt
 fi
 
-python Optim_Main.py --checkpoint checkpoints/seed1.pkl --short_analyse
+python Optim_Main.py --checkpoint checkpoints_backup/seed1.pkl --short_analyse
 echo "Saving the Optimized parameters for the next stage"
 #rm -rf preprocessed/ 
 
@@ -29,8 +29,14 @@ cp cell_id.txt $ALL_ACTIV_DIR/
 mv fit_opt.json $ALL_ACTIV_DIR/cell_types/
 cp -r $ALL_ACTIV_REPO/* $ALL_ACTIV_DIR/
 cd $ALL_ACTIV_DIR
+python set_features_all_active.py
+python set_params_all_active.py
 python starter_optim.py
 nrnivmodl modfiles/
+STAGE="_STAGE2"
+CELL_ID=$(<cell_id.txt)
+JOBNAME=$CELL_ID$STAGE
+sed -i -e "s/Stage2/$JOBNAME/g" start_haswell.sh
+sed -i -e "s/Stage2/$JOBNAME/g" restart_haswell.sh
 echo "Launching Stage 2 Opimization"
 RES_2=$(sbatch start_haswell.sh) && RES_3=$(sbatch --dependency=afternotok:${RES_2##* } restart_haswell.sh)  # sbatch command goes here
-#rm -rf preprocessed/ 
