@@ -12,6 +12,7 @@
     }, 
     "gbar_HCN": {
         "section": [
+            "soma", 
             "apic", 
             "dend"
         ], 

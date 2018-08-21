@@ -68,58 +68,64 @@ path_to_cell_metadata = os.path.abspath(os.path.join('.', os.pardir)) + '/cell_m
 with open(path_to_cell_metadata,'r') as metadata:
         cell_metadata = json.load(metadata)
         
+def calc_stimparams_nwb(time, stimulus_trace):
+    """Calculate stimuls start, stop and amplitude from trace"""
+
+    nonzero_indices = np.where(stimulus_trace != 0)[0]
+
+# make sure if the stimulus is ok if there was no input
+
+# if the stimulus is zero
+    if not nonzero_indices.any():   # if the list is empty
+        # arbitrary values for the no-stimulus response
+        stim_start = time[20000]    # after 100ms
+        stim_stop = time[-1]        # until the end
+        stim_amp_start = 0
+        stim_amp_end = 0
+    else:
+        # if the stimulus is not zero
+        stim_start = time[nonzero_indices[0]]
+        stim_stop = time[nonzero_indices[-1]]
+        stim_amp_start = stimulus_trace[nonzero_indices[0]] * 1e12
+        stim_amp_end = stimulus_trace[nonzero_indices[-1]] * 1e12
+    tot_duration = time[-1]    
+    return stim_start, stim_stop, stim_amp_start, stim_amp_end, tot_duration
 
 def calc_stimparams(time, stimulus_trace):
     """Calculate stimuls start, stop and amplitude from trace"""
 
     # if the stimulus is not empty
     # find the max/min of the noisy signal
-    gradient_thresh = 10  # arbitrary
-    gradient_f = np.gradient(stimulus_trace)*1e12
-    gradient_f[abs(gradient_f) <= gradient_thresh] = 0
-    
-    nonzero_indices = np.where(gradient_f != 0)[0]
+    gradient_f = np.gradient(stimulus_trace)
+    signal_max = max(np.gradient(stimulus_trace))
+    signal_min = min(np.gradient(stimulus_trace))
 
-    if not nonzero_indices.any():
-        
-        stim_start = time[20000]    # after 100ms (arbitrary)
-        stim_stop = time[40000]     # after 200ms (arbitrary)
-        stim_amp_start = 0.0
-        stim_amp_end = 0.0
-        hold_curr =  np.mean(stimulus_trace[-20000:])*1e12
-   
-    else:
-        
-        signal_max = max(gradient_f)
-        signal_min = min(gradient_f)
-    
-        # find the max/min of the gradient
-        first_ind = np.where(gradient_f == signal_max)[0][0]
-        second_ind = np.where(gradient_f == signal_min)[0][0]
-    
-        # check for the first and second indexes
-        if first_ind > second_ind:
-            start_ind = second_ind
-            end_ind = first_ind
-        elif first_ind < second_ind:
-            start_ind = first_ind
-            end_ind = second_ind
-    
-        stim_start = time[start_ind]
-        stim_stop = time[end_ind]
-        # maximal amplitude
-    
-        # check for the middle part of the signal
-    
-        # approximate the amp, it is the mean between the start and end
-        hold_curr = np.mean(stimulus_trace[end_ind+1000:end_ind + 20000])*1e12
-        stim_amp = np.mean(stimulus_trace[start_ind:end_ind] ) * 1e12 - hold_curr
-        stim_amp_start=stim_amp
-        stim_amp_end=stim_amp
+    # find the max/min of the gradient
+    first_ind = np.where(gradient_f == signal_max)[0][0]
+    second_ind = np.where(gradient_f == signal_min)[0][0]
+
+    # check for the first and second indexes
+    if first_ind > second_ind:
+        start_ind = second_ind
+        end_ind = first_ind
+    elif first_ind < second_ind:
+        start_ind = first_ind
+        end_ind = second_ind
+
+    stim_start = time[start_ind]
+    stim_stop = time[end_ind]
+    # maximal amplitude
+
+    # check for the middle part of the signal
+
+    # approximate the amp, it is the mean between the start and end
+    hold_curr = np.mean(stimulus_trace[end_ind+1000:end_ind + 20000])*1e12
+    stim_amp = np.mean(stimulus_trace[start_ind:end_ind] ) * 1e12 - hold_curr
+    stim_amp_start=stim_amp
+    stim_amp_end=stim_amp
     tot_duration = time[-1]
 
     return stim_start, stim_stop, stim_amp_start, stim_amp_end, tot_duration, hold_curr
-
 
 def write_stimmap_csv(stim_map, output_dir, stim_sweep_map):
     """Write StimMap.csv"""
@@ -159,7 +165,7 @@ def write_stimmap_csv(stim_map, output_dir, stim_sweep_map):
             rep_sweeps = [stim_sweep_map[rep_name] for rep_name in rep_names]
             stim_reps_sweep_map[trace_name] = rep_sweeps
 
-            tstart_set = set(['%.1f' % rep_params[5]
+            tstart_set = set(['.1f' % rep_params[5]
                               for rep_params in reps[stim_type][amplitude]])
             if len(tstart_set) != 1:
                 raise Exception(
@@ -167,7 +173,7 @@ def write_stimmap_csv(stim_map, output_dir, stim_sweep_map):
                     "times: %s" %
                     (stim_type, amplitude.split('&')[0], str(tstart_set)))
 
-            tstop_set = set(['%.1f' % rep_params[6]
+            tstop_set = set(['.1f' % rep_params[6]
                              for rep_params in reps[stim_type][amplitude]])
             if len(tstop_set) != 1:
                 raise Exception(

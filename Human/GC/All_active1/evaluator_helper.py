@@ -37,7 +37,7 @@ def define_protocols(protocols_write_path):
     AIS_loc = ephys.locations.NrnSeclistCompLocation(
         name='AIS',
         seclist_name='axonal',
-        sec_index=0,
+        sec_index=1,
         comp_x=0.5)
     
     for protocol_name, protocol_definition in protocol_definitions.items():
