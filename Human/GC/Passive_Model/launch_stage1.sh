@@ -5,7 +5,6 @@ export PASS_IH_REPO="/project/projectdirs/m2043/AIBS/ani/Human/GC/Passive_Ih_Rep
 JOBID_0=$(<Job_0.txt)
 PARENT_DIR=$(<pwd.txt)
 
-
 export PASS_IH_DIR=$PARENT_DIR/Ih_Step
 mkdir $PASS_IH_DIR
 cp pwd.txt $PASS_IH_DIR/
@@ -17,7 +16,7 @@ if [[ $STATUS_0 = "COMPLETED" ]]; then
 else
     echo "Stage 0 did NOT finish successfully" > Stage0_status.txt
 fi
-python Optim_Main.py --checkpoint checkpoints/seed1.pkl --short_analyse
+python Optim_Main.py --checkpoint checkpoints_backup/seed1.pkl --short_analyse
 echo "Saving the Optimized parameters for the next stage"
 #rm -rf preprocessed/ 
 
@@ -30,8 +29,14 @@ cp cell_id.txt $PASS_IH_DIR/
 mv fit_opt.json $PASS_IH_DIR/cell_types/
 cp -r $PASS_IH_REPO/* $PASS_IH_DIR/
 cd $PASS_IH_DIR
+python set_features_passive_and_Ih.py
+python set_params_passive_and_Ih.py
 python starter_optim.py
 nrnivmodl modfiles/
+STAGE="_STAGE1"
+CELL_ID=$(<cell_id.txt)
+JOBNAME=$CELL_ID$STAGE
+sed -i -e "s/Stage1/$JOBNAME/g" start_haswell.sh
 echo "Launching Stage 1 Opimization"
 RES_1=$(sbatch start_haswell.sh)  # sbatch command goes here
 echo ${RES_1##* } > Job_1.txt
