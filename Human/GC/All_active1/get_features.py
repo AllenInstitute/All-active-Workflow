@@ -65,8 +65,6 @@ def run(cell_map, force_feature_extraction=False,dend_recording = None, record_l
             cell_stim_map= stim_map
             training_stim_map = dict()
             
-
-
             
             spiking_proto_dict = {}
             non_spiking_proto_dict = {}
@@ -237,8 +235,6 @@ def save_json(content, filename):
             separators=(
                 ',',
                 ': '))
-
-
 
 
 def get_stim_map(stim_map_filename, dend_recording = None, locations = None):

@@ -22,7 +22,7 @@ passive_and_Ih_params = {
                 'e_pas' : {'section' : ['all'],
                         'bounds' : {'all':[-110, -70]}
                         },
-                'gbar_HCN' : {'section' : ['soma', 'apic', 'dend'],
+                'gbar_HCN' : {'section' : ['apic', 'dend'],
                         'mechanism': 'HCN',
                         'bounds' : {'soma':[1e-7,1e-4], 'apic':[1e-7, 1e-4], 'dend' : [1e-7,1e-4]}
                         },
