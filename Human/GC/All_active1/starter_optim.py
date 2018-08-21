@@ -505,10 +505,11 @@ def Main():
     all_features_write_path,trained_features_write_path, untrained_features_write_path \
                                 = all_features.all_features_path(cell_map,
                                                              protocols_write_path)
-    model_dir = '.' 
-    shell_cmd = 'nrnivmodl ' + model_dir + '/modfiles'
+#    model_dir = '.' 
+#    shell_cmd = 'nrnivmodl ' + model_dir + '/modfiles'
+#    
+#    os.system(shell_cmd)
     
-    os.system(shell_cmd)
     model_params= get_params(param_path)  
     model_params, param_write_path,\
         release_params = write_params_json(model_params,cell_id) 

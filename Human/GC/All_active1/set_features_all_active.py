@@ -10,21 +10,22 @@ import json
 
 feature_set = {
         'somatic_features' : [
-#                              'voltage_base',
+                              'voltage_base',
                               'steady_state_voltage',
 #                              'voltage_deflection_vb_ssse',
 #                              'sag_amplitude',
                               'mean_frequency',
                               'time_to_first_spike',
-                              'time_to_last_spike',
+#                              'time_to_last_spike',
                               'AP_amplitude_from_voltagebase',
-                              'min_voltage_between_spikes',
-                              'ISI_log_slope',
+#                              'min_voltage_between_spikes',
+                              'ISI_CV',
                               'AP_width',
 #                              'AP_duration_half_width',
                               'adaptation_index2',
-                              'AHP_depth',
-                              'check_AISInitiation'],
+                              'AHP_depth'
+#                              'check_AISInitiation']
+                              ]
 #       'dendritic_features' :['AP_amplitude_from_voltagebase',
 #                              'AP_width']
             }
