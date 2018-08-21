@@ -28,7 +28,7 @@ all_params = {
                         },
                 'gbar_NaTs2_t': {'section' : ['soma', 'apic'],
                             'mechanism': 'NaTs2_t',
-                            'bounds':{'soma':[0,10], 'apic' : [0,1e-1]}
+                            'bounds':{'soma':[0,5], 'apic' : [0,1e-1]}
                               }, 
                 'gbar_NaTa_t': {'section' : ['axon'],
                             'mechanism': 'NaTa_t',
