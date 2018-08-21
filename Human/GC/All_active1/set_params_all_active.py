@@ -16,7 +16,7 @@ all_params = {
                                     'axon':[1e-1,5]},
                         },
                 'Ra' : {'section' : ['all'],
-                        'bounds' : {'all':[50, 600]}
+                        'bounds' : {'all':[50, 1000]}
                         },
                 'g_pas' : {'section' : ['all'],
                         'bounds' : {'all':[1e-7, 1e-2]}
@@ -24,9 +24,9 @@ all_params = {
                 'e_pas' : {'section' : ['all'],
                         'bounds' : {'all':[-110, -70]}
                         },
-                'gbar_HCN' : {'section' : ['apic', 'dend'],
+                'gbar_HCN' : {'section' : ['soma','apic', 'dend'],
                         'mechanism': 'HCN',
-                        'bounds' : {'apic':[1e-7, 1e-4], 'dend' : [1e-7,1e-4]}
+                        'bounds' : {'soma':[1e-7, 1e-4],'apic':[1e-7, 1e-4], 'dend' : [1e-7,1e-4]}
                         },
                 'gkbar_Kir21': {'section' : ['axon', 'apic', 'dend'],
                             'mechanism': 'Kir21',

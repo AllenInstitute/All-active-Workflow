@@ -14,13 +14,9 @@ import sys
 import textwrap
 import json
 from datetime import datetime
-import shutil
 
 
 import evaluator_helper
-
-cp_backup = 'checkpoints_backup'
-cp_source = 'checkpoints'
 
 logging.basicConfig(level=logging.DEBUG) 
 logger = logging.getLogger()
@@ -51,14 +47,6 @@ def create_optimizer(args):
             start_time = datetime.now()
             ret = lview.map_sync(func, it)
             logger.debug('Generation took %s', datetime.now() - start_time)
-            
-            # Create a back-up checkpoint directory 
-            # (to save optimization results in case checkpoint file is corrupted)
-            
-            if os.path.exists(cp_backup):
-                shutil.rmtree(cp_backup)
-            shutil.copytree(cp_source, cp_backup)
-            
             return ret
 
         map_function = mapper

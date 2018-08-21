@@ -1,4 +1,8 @@
 #!/bin/bash -l 
+#SBATCH -M escori 
+#SBATCH -q xfer 
+#SBATCH -t 0:10:00 
+#SBATCH -J launch_stage1 
 
 export PASS_IH_REPO="/project/projectdirs/m2043/AIBS/ani/Mouse/PC/Passive_Ih_Repo"
 
@@ -29,8 +33,6 @@ cp cell_id.txt $PASS_IH_DIR/
 mv fit_opt.json $PASS_IH_DIR/cell_types/
 cp -r $PASS_IH_REPO/* $PASS_IH_DIR/
 cd $PASS_IH_DIR
-python set_features_passive_and_Ih.py
-python set_params_passive_and_Ih.py
 python starter_optim.py
 nrnivmodl modfiles/
 STAGE="_STAGE1"
