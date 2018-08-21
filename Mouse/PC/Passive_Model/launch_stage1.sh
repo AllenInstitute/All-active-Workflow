@@ -1,4 +1,4 @@
-#!/bin/bash -l 
+#!/bin/bash 
 
 export PASS_IH_REPO="/project/projectdirs/m2043/AIBS/ani/Mouse/PC/Passive_Ih_Repo"
 

@@ -1,4 +1,4 @@
-#!/bin/bash -l 
+#!/bin/bash 
 
 export ALL_ACTIV_REPO="/project/projectdirs/m2043/AIBS/ani/Mouse/PC/All_Active1_Repo"
 
@@ -15,6 +15,7 @@ if [[ $STATUS_1 = "COMPLETED" ]]; then
 else
     echo "Stage 1 did NOT finish successfully" > Stage1_status.txt
 fi
+
 python Optim_Main.py --checkpoint checkpoints_backup/seed1.pkl --short_analyse
 echo "Saving the Optimized parameters for the next stage"
 #rm -rf preprocessed/ 

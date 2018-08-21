@@ -4,7 +4,6 @@
 PARENT_DIR=$(pwd)
 CELL_ID=${PARENT_DIR##*/}
 export PASS_DIR="Passive_Model"
-
 export PASSIVE_REPO="/project/projectdirs/m2043/AIBS/ani/Mouse/PC/Passive_Repo"
 
 if [ ! -d "$PASS_DIR" ]; then
