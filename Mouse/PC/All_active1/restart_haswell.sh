@@ -8,7 +8,7 @@
 #SBATCH --mail-user=anirban.nandi@wustl.edu
 #SBATCH --mail-type=ALL
 #SBATCH -J Stage2
-#SBATCH --signal=B:USR1@60
+#SBATCH --signal=B:USR1@120
 
 run_dependent_script() { 
 func="$1" ; shift 
