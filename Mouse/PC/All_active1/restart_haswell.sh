@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#SBATCH -q premium
+#SBATCH -q regular
 #SBATCH -N 16
 #SBATCH -t 12:00:00
 #SBATCH -C haswell
@@ -19,10 +19,10 @@ done
 
 # trap function to launch the passive+Ih optimization (Stage 2)
 func_trap() {
-mv checkpoints checkpoints_old
+new_cp=checkpoints.${SLURM_JOBID}
+mv checkpoints $new_cp
 mv checkpoints_backup checkpoints 
 sbatch restart_haswell.sh
-#echo Launching Stage2 through xfer job because of timeout
 } 
 
 #submit launch script upon signal USR1 
@@ -36,7 +36,7 @@ LOGS=$PWD/logs
 mkdir -p $LOGS
 
 OFFSPRING_SIZE=1024
-MAX_NGEN=500
+MAX_NGEN=200
 
 export IPYTHONDIR=${PWD}/.ipython
 export IPYTHON_PROFILE=benchmark.${SLURM_JOBID}
@@ -66,6 +66,17 @@ done
 wait $pids
 
 # If job finishes in time analyze result
-mv checkpoints checkpoints_old
-mv checkpoints_backup checkpoints 
-sh analyse.sh
+new_cp=checkpoints.${SLURM_JOBID}
+mv checkpoints $new_cp
+mv checkpoints_backup checkpoints
+
+# check if the job with 4th seed is finished
+
+if [[ $seed = 4 ]]; then
+    sh analyse.sh
+else
+    seed_new=$(($seed+1))
+    sed -i -e "s/seed in $seed/seed in $seed_new/g" start_haswell.sh 
+    sed -i -e "s/seed in $seed/seed in $seed_new/g" restart_haswell.sh
+    sbatch start_haswell.sh 
+fi
