@@ -25,10 +25,9 @@ def all_features_path(cell_map, train_protocols_path):
     """Get feature values"""
     cell_name = cell_map.keys()[0]
     ephys_location = cell_map[cell_name]['ephys']
-    v_init_model = cell_map[cell_name]['v_init']
     stim_map = get_stim_map(os.path.join(ephys_location, 'StimMapReps.csv'))
     feature_set_map = get_feature_set_map(cell_map[cell_name]['feature_set_map'])
-    stim_features = feature_set_map['somatic_features']
+    stim_features = [feat for feat in feature_set_map['somatic_features'] if feat != 'depol_block']
     features_meanstd = collections.defaultdict(
             lambda: collections.defaultdict(
                 lambda: collections.defaultdict(dict)))
@@ -41,8 +40,8 @@ def all_features_path(cell_map, train_protocols_path):
     for stim_name,stim_params in stim_map.items():
                 
                 
-#        print "\n### Getting features from %s of cell %s ###\n" \
-#            % (stim_name, cell_name)
+        print "\n### Getting features from %s of cell %s ###\n" \
+            % (stim_name, cell_name)
                 
     
         sweeps = []
@@ -53,13 +52,8 @@ def all_features_path(cell_map, train_protocols_path):
     
             data = np.loadtxt(sweep_fullpath)
             time = data[:, 0]
-            voltage = data[:, 1]
-            v_init_cell = voltage[0]
-            v_init_correction = v_init_cell - v_init_model 
-            
-            # Correct LJP
-    #        voltage = voltage - specs['junctionpotential']
-            time = time
+            voltage = data[:, 1] # LJP already corrected
+
     
             # Prepare sweep for eFEL
             sweep = {}
@@ -67,7 +61,11 @@ def all_features_path(cell_map, train_protocols_path):
             sweep['V'] = voltage
             sweep['stim_start'] = [stim_map[stim_name]['stimuli'][0]['delay']]
             sweep['stim_end'] = [stim_map[stim_name]['stimuli'][0]['stim_end']]
-    
+            sweep['T;location_AIS'] = time
+            sweep['V;location_AIS'] = voltage
+            sweep['stim_start;location_AIS'] = [stim_map[stim_name]['stimuli'][0]['delay']]
+            sweep['stim_end;location_AIS'] = [stim_map[stim_name]['stimuli'][0]['stim_end']]
+
             sweeps.append(sweep)
     
         # Do the actual feature extraction
@@ -102,8 +100,7 @@ def all_features_path(cell_map, train_protocols_path):
                 continue
             if mean == 0:
                 std = 0.05
-            if feature_name in ['voltage_base', 'steady_state_voltage']:
-                    mean -= v_init_correction
+
             features_meanstd[stim_name]['soma'][
                 feature_name] = [mean , std]
 
