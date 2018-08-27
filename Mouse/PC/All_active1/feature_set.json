@@ -9,6 +9,7 @@
         "AP_width", 
         "adaptation_index2", 
         "AHP_depth", 
+        "depol_block", 
         "check_AISInitiation"
     ]
 }
