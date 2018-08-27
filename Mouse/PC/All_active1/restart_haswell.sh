@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#SBATCH -q regular
+#SBATCH -q premium
 #SBATCH -N 16
 #SBATCH -t 12:00:00
 #SBATCH -C haswell
