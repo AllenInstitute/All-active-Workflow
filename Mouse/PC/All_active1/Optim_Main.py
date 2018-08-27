@@ -177,7 +177,10 @@ def main():
     if args.analyse:
         logger.debug('Doing analyse')
         import optim_analysis
-        cp_dir = args.checkpoint.split('/')[0]
+        if '/' in args.checkpoint:
+            cp_dir = args.checkpoint.split('/')[0]
+        else:
+            cp_dir = '.'  # check in current directory
         args.checkpoint = checkpoint_decider.best_seed(cp_dir)
         
         if args.checkpoint is not None and os.path.isfile(args.checkpoint):
