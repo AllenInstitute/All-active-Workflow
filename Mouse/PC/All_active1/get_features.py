@@ -188,11 +188,14 @@ def run(cell_map, force_feature_extraction=False,dend_recording = None, record_l
                     
             spiking_proto_keys = sorted(spiking_proto_dict,
                             key=spiking_proto_dict.__getitem__)
+            
+            max_proto_key = spiking_proto_keys[-1]
+            max_amp = spiking_proto_dict[max_proto_key]
+            
             first_spiking_proto_key = spiking_proto_keys[0]
             del_spiking_proto_keys = spiking_proto_keys[spike_proto_kink_index:-spike_proto_end]
             del_non_spiking_proto_keys = sorted(non_spiking_proto_dict, 
                         key=non_spiking_proto_dict.__getitem__)[:-no_spike_proto_kink]
-            
             
             
             del_proto_keys = del_spiking_proto_keys + del_non_spiking_proto_keys
@@ -200,11 +203,30 @@ def run(cell_map, force_feature_extraction=False,dend_recording = None, record_l
             first_spiking_proto_key_features = features_meanstd[first_spiking_proto_key]['soma']
              
             del_features = [key for key in first_spiking_proto_key_features.keys() \
-                            if key not in ['mean_frequency', 'check_AISInitiation']]
+                            if key not in ['mean_frequency', 'check_AISInitiation', 'depol_block']]
             
             
+            # DB check for enhanced stimulus (10pA higher than the maximum amplitude)
+           
+            DB_proto_dict = {
+                    'type' :'SquarePulse',
+                    'amp' : max_amp + 0.01,
+                    'delay' : training_stim_map[max_proto_key]['stimuli'][0]['delay'],
+                    'duration' : training_stim_map[max_proto_key]['stimuli'][0]['duration'],
+                    'stim_end' : training_stim_map[max_proto_key]['stimuli'][0]['stim_end'],
+                    'totduration': training_stim_map[max_proto_key]['stimuli'][0]['totduration']
+                    }
+            
+            DB_feature_dict = {
+                    'depol_block' : [1.0,
+                                     0.05]
+                    }
             training_stim_map = entries_to_remove(del_proto_keys, training_stim_map)
             entries_to_remove(del_features, first_spiking_proto_key_features)
+            
+            features_meanstd['DB_check_DC'] = {'soma': DB_feature_dict}
+            training_stim_map['DB_check_DC'] = {'stimuli':[DB_proto_dict]}
+            
             save_json(features_meanstd, features_json_filename)
             save_json(training_stim_map, protocols_json_filename)
             save_json(cell_stim_map, all_protocols_json_filename)
@@ -246,6 +268,7 @@ def get_stim_map(stim_map_filename, dend_recording = None, locations = None):
         if line is not '':
             stim_name, stim_type, holding_current, amplitude_start, amplitude_end, \
                 stim_start, stim_end, duration, sweeps = line.split(',')
+            
             iter_dict1, iter_dict2 = dict(), dict()
             iter_dict1['type'] = stim_type.strip()
             iter_dict1['amp'] = 1e9 * float(amplitude_start)
