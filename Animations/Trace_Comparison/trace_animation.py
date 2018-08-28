@@ -53,7 +53,7 @@ fig, ax = plt.subplots(figsize = (8,6),dpi=80)
 
 ax.set_ylim([-100, 50])
 color_list = ['k', 'b']
-label_list = ['Experiment', 'Optimized']
+label_list = ['Experiment', 'Model']
 lw_list = [1.5,1.5]
 lines = []
 
