@@ -24,6 +24,7 @@ feature_set = {
 #                              'AP_duration_half_width',
                               'adaptation_index2',
                               'AHP_depth',
+                              'depol_block',
                               'check_AISInitiation']
 #       'dendritic_features' :['AP_amplitude_from_voltagebase',
 #                              'AP_width']
