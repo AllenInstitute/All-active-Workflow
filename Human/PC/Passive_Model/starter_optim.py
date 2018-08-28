@@ -77,10 +77,11 @@ def calc_stimparams(time, stimulus_trace):
         # if the stimulus is not zero
         stim_start = time[nonzero_indices[0]]
         stim_stop = time[nonzero_indices[-1]]
-        stim_amp_start = stimulus_trace[nonzero_indices[0]] * 1e12
-        stim_amp_end = stimulus_trace[nonzero_indices[-1]] * 1e12
         hold_curr = np.mean(stimulus_trace[nonzero_indices[-1]+1000:\
-                                           nonzero_indices[-1] + 20000])*1e12
+                                   nonzero_indices[-1] + 20000])*1e12
+        stim_amp_start = stimulus_trace[nonzero_indices[0]] * 1e12 - hold_curr
+        stim_amp_end = stimulus_trace[nonzero_indices[-1]] * 1e12 - hold_curr
+        
     tot_duration = time[-1]    
     return stim_start, stim_stop, stim_amp_start, stim_amp_end, tot_duration,hold_curr
 
