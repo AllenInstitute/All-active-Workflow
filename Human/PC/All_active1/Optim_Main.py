@@ -19,6 +19,7 @@ from shutil import copyfile
 
 
 import evaluator_helper
+import checkpoint_decider
 
 cp_backup = 'checkpoints_backup'
 cp_source = 'checkpoints'
@@ -161,7 +162,11 @@ def main():
     if args.analyse:
         logger.debug('Doing analyse')
         import optim_analysis
-
+        if '/' in args.checkpoint:
+            cp_dir = args.checkpoint.split('/')[0]
+        else:
+            cp_dir = '.'
+        args.checkpoint = checkpoint_decider.best_seed(cp_dir)
         if args.checkpoint is not None and os.path.isfile(args.checkpoint):
 #            logger.debug('Checking for Depolarization block for enhanced stimulus')
 #            DB_protocol_path = 'DB_protocols.json'
