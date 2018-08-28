@@ -1,14 +1,32 @@
 #!/bin/bash
 
-#SBATCH -q premium 
-#SBATCH -t 4:00:00
+#SBATCH -q premium
 #SBATCH -N 16
+#SBATCH -t 12:00:00
 #SBATCH -C haswell
 #SBATCH -L SCRATCH
-#SBATCH --mail-user=anin@alleninstitute.org
+#SBATCH --mail-user=anirban.nandi@wustl.edu
 #SBATCH --mail-type=ALL
 #SBATCH -J Stage2
+#SBATCH --signal=B:USR1@120
 
+run_dependent_script() { 
+func="$1" ; shift 
+for sig ; do 
+trap "$func $sig" "$sig" 
+done 
+} 
+
+# trap function to launch the passive+Ih optimization (Stage 2)
+func_trap() {
+new_cp=checkpoints.${SLURM_JOBID}
+mv checkpoints $new_cp
+mv checkpoints_backup checkpoints 
+sbatch restart_haswell.sh
+} 
+
+#submit launch script upon signal USR1 
+run_dependent_script func_trap USR1 
 
 set -e
 set -x
@@ -18,7 +36,7 @@ LOGS=$PWD/logs
 mkdir -p $LOGS
 
 OFFSPRING_SIZE=1024
-MAX_NGEN=100
+MAX_NGEN=200
 
 export IPYTHONDIR=${PWD}/.ipython
 export IPYTHON_PROFILE=benchmark.${SLURM_JOBID}
@@ -40,9 +58,25 @@ for seed in 1; do
         --max_ngen=${MAX_NGEN}             \
         --seed=${seed}                     \
         --ipyparallel                      \
-        --continu                        \
+        --continu                         \
         --checkpoint "${CHECKPOINTS_DIR}/seed${seed}.pkl" &
     pids+="$! "
 done
 
 wait $pids
+
+# If job finishes in time analyze result
+new_cp=checkpoints.${SLURM_JOBID}
+mv checkpoints $new_cp
+mv checkpoints_backup checkpoints
+
+# check if the job with 4th seed is finished
+
+if [[ $seed = 4 ]]; then
+    sh analyse.sh
+else
+    seed_new=$(($seed+1))
+    sed -i -e "s/seed in $seed/seed in $seed_new/g" start_haswell.sh 
+    sed -i -e "s/seed in $seed/seed in $seed_new/g" restart_haswell.sh
+    sbatch start_haswell.sh 
+fi
