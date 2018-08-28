@@ -5,7 +5,7 @@ Creating the code base for All-active Model generation written on top of Bluepyo
 
 ## Visualizations
 
-![alt text](https://i.imgur.com/uP0DF2u.gif "I am a Mouse V1 Layer 4 PC")
+![alt text](Animations/Morph_movies/477127614_movie.gif "I am a Mouse V1 Layer 2/3 PC") ![alt text](Animations/Morph_movies/468193142_movie.gif "I am a Mouse V1 Layer 4 PC")  ![alt text](Animations/Morph_movies/471129934_movie.gif "I am a Mouse V1 Layer 5 PC")
 
 
 ### Comparison between the Experiment and Model trace
