@@ -19,3 +19,9 @@ Creating the code base for All-active Model generation written on top of Bluepyo
 <p align="center">
     <img src="Animations/Trace_Comparison/test_AIS.gif" width="600px">
 </p>
+
+### Evolution of the population during GA
+
+<p align="center">
+    <img src="Animations/GA_evolution_Animation/GA_Animation.gif" width="600px">
+</p>
