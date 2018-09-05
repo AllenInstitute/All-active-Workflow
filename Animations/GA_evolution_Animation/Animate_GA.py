@@ -29,7 +29,7 @@ def Main():
     experiment_time = data[:,0]
     experiment_voltage = data[:,1]
         
-    fig, (ax,ax2,ax3) = plt.subplots(1,3,figsize=(16,6),gridspec_kw = {'width_ratios':[9, 1, 8]})
+    fig, (ax,ax2,ax3) = plt.subplots(1,3,figsize=(20,8),gridspec_kw = {'width_ratios':[9, 1, 8]})
     fig.subplots_adjust(hspace=0.2)
     line1, = ax.plot([], [], lw=2, color='black', label= 'Experiment')
     line2, = ax.plot([], [], lw=2, color='blue', label = 'Fittest individual')
