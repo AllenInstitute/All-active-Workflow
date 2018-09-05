@@ -29,8 +29,8 @@ def Main():
     experiment_time = data[:,0]
     experiment_voltage = data[:,1]
         
-    fig, (ax,ax2,ax3) = plt.subplots(1,3,figsize=(20,8),gridspec_kw = {'width_ratios':[9, 1, 8]})
-    fig.subplots_adjust(hspace=0.2)
+    fig, (ax,ax2,ax3) = plt.subplots(1,3,figsize=(14,6),gridspec_kw = {'width_ratios':[9, 1, 8]})
+    fig.subplots_adjust(hspace=0.1)
     line1, = ax.plot([], [], lw=2, color='black', label= 'Experiment')
     line2, = ax.plot([], [], lw=2, color='blue', label = 'Fittest individual')
     line3, = ax3.plot([], [], lw=2, color='red', label = 'Error')
@@ -39,7 +39,7 @@ def Main():
     opacity = 0.5
     rects = ax2.bar([0], [0], bar_width, alpha=opacity,color='r')
     
-    dpi = 80    
+    dpi = 100    
     Writer = animation.writers['ffmpeg']
     metadata = dict(artist='Matplotlib')
     
@@ -52,24 +52,24 @@ def Main():
         return lines
     ax.set_ylim([-100, 50])
     ax.set_xlim([200, 1350])
-    
-    ax.set_xlabel('Time')
-    ax.set_ylabel('Membrane Potential (mV)')
+    font_size = 16
+    ax.set_xlabel('Time', fontsize = 14)
+    ax.set_ylabel('Membrane Potential (mV)', fontsize = font_size)
     ax2.get_xaxis().set_visible(False)
     ax2.yaxis.set_label_position("right")
-    ax2.set_ylabel('Error')
+    ax2.set_ylabel('Error', fontsize = font_size)
     ax2.grid('off')
     ax2.set_facecolor('white')
     ax2.set_ylim(0, 1000)
     ax2.set_yticks([])
-    ax3.set_xlabel('Generation #')
+    ax3.set_xlabel('Generation #', fontsize = font_size)
     ax3.set_xlim([0, 200])
     ax3.set_ylim([0,1000])
     #fig.legend(handles = (line1,line2,line3), loc = 'upper center', 
     #           ncol=3, fontsize = 16,bbox_to_anchor=(0.5, 1.05))
-    ax.legend(loc='upper right')
-    ax3.legend(loc='upper right')
-    plt.tight_layout()
+    ax.legend(loc='upper right', fontsize = font_size)
+    ax3.legend(loc='upper right', fontsize = font_size)
+    fig.tight_layout()
     
     def animate(i):
         response_GA = individual_responses[i]
