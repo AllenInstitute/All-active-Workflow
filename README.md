@@ -23,5 +23,5 @@ Creating the code base for All-active Model generation written on top of Bluepyo
 ### Evolution of the population during GA
 
 <p align="center">
-    <img src="Animations/GA_evolution_Animation/GA_Animation.gif" width="600px">
+    <img src="Animations/GA_evolution_Animation/GA_Animation.gif" width="1200px">
 </p>
