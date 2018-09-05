@@ -73,16 +73,22 @@ init_generation_inds = min_fitness_inds[:mid_index]
 min_fitness_pop1 =  min_fitness_pop[:mid_index]
 ind1_space = int(math.ceil(len(init_generation_inds)/frame_num1))
 selected_init_generation_inds = init_generation_inds[::ind1_space][:frame_num1]
+gen1 = range(len(min_fitness_pop1))[::ind1_space][:frame_num1]
 min_fitness1 = min_fitness_pop1[::ind1_space][:frame_num1]
+
 
 latter_generation_inds = min_fitness_inds[mid_index:]
 min_fitness_pop2 =  min_fitness_pop[mid_index:]
 ind2_space = int(math.ceil(len(latter_generation_inds)/frame_num2))
 selected_latter_generation_inds = latter_generation_inds[::ind2_space][:frame_num2]
+gen2 = range(len(min_fitness_pop1),len(min_fitness_pop1)+len(min_fitness_pop2))[::ind2_space][:frame_num2]
 min_fitness2 = min_fitness_pop2[::ind2_space][:frame_num2]
 
 selected_individuals = selected_init_generation_inds + selected_latter_generation_inds
 selected_min_fitness = min_fitness1 + min_fitness2
+gen_numbers = gen1 + gen2
+selected_fitness_gen = {'individual_fitness':selected_min_fitness,
+                        'selected_gens' : gen_numbers}
  
 selected_individuals_responses = []
    
@@ -103,5 +109,5 @@ with open('opt_resp_ind.pkl', 'wb') as handle:
     pickle.dump(selected_individuals_responses, handle)
     
 with open('selected_fitness.pkl', 'wb') as handle:
-    pickle.dump(selected_min_fitness, handle)    
+    pickle.dump(selected_fitness_gen, handle)    
     
