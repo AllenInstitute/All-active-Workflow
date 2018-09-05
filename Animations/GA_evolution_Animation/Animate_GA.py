@@ -53,7 +53,7 @@ def Main():
     ax.set_ylim([-100, 50])
     ax.set_xlim([200, 1350])
     font_size = 16
-    ax.set_xlabel('Time', fontsize = 14)
+    ax.set_xlabel('Time', fontsize = font_size)
     ax.set_ylabel('Membrane Potential (mV)', fontsize = font_size)
     ax2.get_xaxis().set_visible(False)
     ax2.yaxis.set_label_position("right")
