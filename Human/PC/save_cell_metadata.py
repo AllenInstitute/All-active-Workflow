@@ -14,7 +14,8 @@ metadata_path = 'cell_metadata.json'
 def save_cell_info(*args):
     """ Create and save a dictionary with all the metadata """
     
-    cell_keys = ['Cell_id', 'Model_id', 'Species', 'Cre_line', 'Area', 'Layer','Dendrite_type']
+    cell_keys = ['Cell_id', 'Model_id', 'Species', 'Cre_line', 'Area', 'Layer','Dendrite_type',
+                     'Feature_avg','Explained_variance']
     cell_info_dict = {}
     for i,arg in enumerate(args):
         cell_info_dict[cell_keys[i]] = arg
@@ -31,9 +32,11 @@ def main():
         area = raw_input('Enter the Area : ')
         layer = raw_input('Enter the layer number : ')
         dendrite_type = raw_input('Enter dendrite type : ')
+        feat_avg_released = raw_input('Enter the feature average of the released perisomatic model : ')
+        exp_var_released = raw_input('Enter the explained variance of the released perisomatic model : ')
         
         save_cell_info(cell_id, model_id, species, cre_line, area, 
-                                                   layer, dendrite_type)
+                         layer, dendrite_type,feat_avg_released,exp_var_released)
         
     
 # Run this file in the parent directory (cell_id) to save the metadata
