@@ -22,7 +22,7 @@ func_trap() {
 new_cp=checkpoints.${SLURM_JOBID}
 mv checkpoints $new_cp
 mv checkpoints_backup checkpoints 
-sbatch restart_haswell.sh
+sbatch restart_Stage2.slurm 
 } 
 
 #submit launch script upon signal USR1 
@@ -73,10 +73,11 @@ mv checkpoints_backup checkpoints
 # check if the job with 4th seed is finished
 
 if [[ $seed = 4 ]]; then
-    sh analyse.sh
+    sbatch analyze_Stage2.slurm
+else
 else
     seed_new=$(($seed+1))
     sed -i -e "s/seed in $seed/seed in $seed_new/g" start_haswell.sh 
     sed -i -e "s/seed in $seed/seed in $seed_new/g" restart_haswell.sh
-    sbatch start_haswell.sh 
+    sbatch start_Stage2.slurm  
 fi

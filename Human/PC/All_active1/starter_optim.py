@@ -71,7 +71,7 @@ with open(path_to_cell_metadata,'r') as metadata:
         cell_metadata = json.load(metadata)
 
         
-def calc_stimparams(time, stimulus_trace):
+def calc_stimparams(time, stimulus_trace,trace_name):
     """Calculate stimuls start, stop and amplitude from trace"""
 
     nonzero_indices = np.where(stimulus_trace != 0)[0]
@@ -90,8 +90,11 @@ def calc_stimparams(time, stimulus_trace):
         # if the stimulus is not zero
         stim_start = time[nonzero_indices[0]]
         stim_stop = time[nonzero_indices[-1]]
-        hold_curr = np.mean(stimulus_trace[nonzero_indices[-1]+1000:\
-                                   nonzero_indices[-1] + 20000])*1e12
+        if 'DC' in trace_name:
+            hold_curr = np.mean(stimulus_trace[nonzero_indices[-1]+1000:\
+                                               nonzero_indices[-1] + 20000])*1e12
+        else:
+            hold_curr = 0
         stim_amp_start = stimulus_trace[nonzero_indices[0]] * 1e12 - hold_curr
         stim_amp_end = stimulus_trace[nonzero_indices[-1]] * 1e12 - hold_curr
         
@@ -252,7 +255,7 @@ def get_cell_data(exten = '.nwb'):
             distinct_id_map[stim_type], sweep_number)
             
             stim_start, stim_stop, stim_amp_start, stim_amp_end, tot_duration,hold_curr = calc_stimparams(
-                time, stimulus_trace)
+                time, stimulus_trace,trace_name)
 
             response_trace_short_filename = '%s.%s' % (trace_name, 'txt')
 
@@ -308,7 +311,7 @@ def get_cell_data(exten = '.nwb'):
     write_specs(output_dir)
     v_initial_avg = reduce(lambda x, y: x + y, v_initial) / len(v_initial)
     
-    return output_dir, v_initial_avg
+    return output_dir, nwb_path, v_initial_avg
 
 topdir = '.'
 dir_list = list()
@@ -445,7 +448,7 @@ def write_mechanisms_json(model_params,cell_id):
 
 def Main(): 
     cell_id = cell_metadata['Cell_id']
-    preprocessed_dir,_ = get_cell_data()
+    preprocessed_dir,nwb_path,_ = get_cell_data()
     morph_path = get_cell_morphology()
     param_path = get_cell_model()
     cell_map = {}
@@ -474,6 +477,7 @@ def Main():
     
     path_dict =  dict()
     path_dict['morphology'] = morph_path
+    path_dict['ephys'] = nwb_path
     path_dict['parameters'] = param_write_path
     path_dict['mechanism'] = mechanism_write_path
     path_dict['features'] = features_write_path

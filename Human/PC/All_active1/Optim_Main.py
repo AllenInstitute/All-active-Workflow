@@ -79,7 +79,7 @@ def create_optimizer(args):
         map_function = None
                
     seed = os.getenv('BLUEPYOPT_SEED', args.seed)    
-    if args.analyse:
+    if args.analyse or args.short_analyse:
         
         evaluator = evaluator_helper.create(all_protocol_path, feature_path, morph_path, 
                                         param_path, mech_path)
@@ -122,6 +122,7 @@ The folling environment variables are considered:
     parser.add_argument('--responses', required=False, default=None,
                         help='Response pickle file to avoid recalculation')
     parser.add_argument('--analyse', action="store_true")
+    parser.add_argument('--short_analyse', action="store_true")
     parser.add_argument('--compile', action="store_true")
     parser.add_argument('--seed', type=int, default=1,
                         help='Seed to use for optimization')
@@ -159,32 +160,21 @@ def main():
                 continue_cp=args.continu,
                 cp_filename=args.checkpoint)
     
-    if args.analyse:
-        logger.debug('Doing analyse')
-        import optim_analysis
+    if args.short_analyse:
+        
+        logger.debug('Doing analyse to save the results')
+        from optim_analysis_short import plot_Response,plot_diversity,\
+                                            plot_GA_evolution, get_responses
         if '/' in args.checkpoint:
             cp_dir = args.checkpoint.split('/')[0]
         else:
-            cp_dir = '.'
+            cp_dir = '.'  # check in current directory
         args.checkpoint = checkpoint_decider.best_seed(cp_dir)
+        
+        
         if args.checkpoint is not None and os.path.isfile(args.checkpoint):
-#            logger.debug('Checking for Depolarization block for enhanced stimulus')
-#            DB_protocol_path = 'DB_protocols.json'
-#            DB_response_path = 'DB_response.pkl'
-#            hof_index = optim_analysis.DB_check(args.checkpoint,DB_protocol_path,DB_response_path)
-#            
-#            if hof_index is None:
-#                hof_index = 0
-#                logger.debug('None passed Depolarization block check')
-#            else:
-#                logger.debug('Best index = %s'%hof_index)
-           
             hof_index = 0
-            logger.debug('Plotting Response Comparisons')
-            optim_analysis.plot_Response(opt,args.checkpoint,
-                                         args.responses,hof_index)
-            logger.debug('Plotting Feature Comparisons')
-            optim_analysis.feature_comp(opt,args.checkpoint,args.responses)
+            plot_Response(opt,args.checkpoint,args.responses,hof_index)
             
         else:
             print('No checkpoint file available run optimization '
@@ -195,14 +185,29 @@ def main():
         if not os.path.exists(args.checkpoint):
             raise Exception('Need a pickle file to plot the parameter diversity')
 
-        optim_analysis.plot_diversity(opt, args.checkpoint,
+        plot_diversity(opt, args.checkpoint,
                                      opt.evaluator.param_names,hof_index)
+
+        plot_GA_evolution(args.checkpoint)
+        
+    elif args.analyse:
+        
+        from optim_analysis import plot_Response,feature_comp,plot_diversity,\
+                                                plot_GA_evolution,post_processing
+        logger.debug('Plotting Response Comparisons')
+        plot_Response(opt,args.checkpoint,args.responses)
+        
+        logger.debug('Plotting Feature Comparisons')
+        feature_comp(opt,args.checkpoint,args.responses)
+        
+        logger.debug('Plotting Parameters - Optimized and Released')
+        plot_diversity(opt, args.checkpoint,opt.evaluator.param_names)
         
         logger.debug('Plotting Evolution of the Objective')
-        optim_analysis.plot_GA_evolution(args.checkpoint)
+        plot_GA_evolution(args.checkpoint)
         
         logger.debug('Plotting Spike shapes and mean frequency comparison')
-        optim_analysis.post_processing(args.checkpoint,args.responses)
+        post_processing(args.checkpoint,args.responses)
         
 
 if __name__ == '__main__':

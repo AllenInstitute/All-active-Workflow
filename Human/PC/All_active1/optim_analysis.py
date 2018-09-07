@@ -11,19 +11,20 @@ import json
 import pickle
 import numpy as np
 import pandas as pd
+import matplotlib
+
+matplotlib.use('Agg')
+
+
 import matplotlib.pyplot as plt
 import errno
 import logging
 from matplotlib.backends.backend_pdf import PdfPages
 import math
-import bluepyopt as bpopt
-import copy
 from collections import defaultdict
 import efel
 from scipy import interpolate
 
-
-import evaluator_helper
 
 
 logger = logging.getLogger(__name__)
@@ -66,13 +67,14 @@ dendrite_type = cell_metadata['Dendrite_type']
 analysis_write_path = cell_id + '_analysis_Stage2.pdf'
 pdf_pages =  PdfPages(analysis_write_path)
 
-def plot_diversity(opt, checkpoint_file, param_names, hof_index):
+def plot_diversity(opt, checkpoint_file, param_names, hof_index = 0):
 
     plt.style.use('ggplot')
-    checkpoint = pickle.load(open(checkpoint_file, "r"))
+    plot_diversity_params_path = 'analysis_params/plot_diversity_params.pkl'
+    plot_diversity_params = pickle.load(open(plot_diversity_params_path, "r"))
     
     release_individual = list()
-    optimized_individual = [checkpoint['halloffame'][hof_index]]
+    optimized_individual = plot_diversity_params['optimized_individual']
 
 
     param_values = opt.evaluator.params
@@ -83,7 +85,7 @@ def plot_diversity(opt, checkpoint_file, param_names, hof_index):
     optimized_individual_arranged = [optimized_individual[0][k] for k in ix]
     
     
-    hof_list = checkpoint['halloffame'][1:]
+    hof_list = plot_diversity_params['hof_list']
     hof_list_arranged = []
     hof_df = pd.DataFrame([])
     for i in range(len(hof_list)):
@@ -282,14 +284,16 @@ def plot_diversity(opt, checkpoint_file, param_names, hof_index):
 # GA evolution
 
 def plot_GA_evolution(checkpoint_file):
-    checkpoint = pickle.load(open(checkpoint_file, "r"))
+    
     from matplotlib.ticker import MaxNLocator
     plt.style.use('ggplot')
-    log = checkpoint['logbook']
-    gen_numbers = log.select('gen')
-    mean = np.array(log.select('avg'))
-    std = np.array(log.select('std'))
-    minimum = np.array(log.select('min'))
+    
+    plot_GA_evolution_params_path = 'analysis_params/plot_GA_evolution_params.pkl'
+    plot_GA_evolution_params = pickle.load(open(plot_GA_evolution_params_path,'r'))
+    gen_numbers = plot_GA_evolution_params['gen_numbers']
+    mean = plot_GA_evolution_params['mean']
+    std = plot_GA_evolution_params['std']
+    minimum = plot_GA_evolution_params['minimum']
     stdminus = mean - std
     stdplus = mean + std
    
@@ -343,40 +347,14 @@ def plot_GA_evolution(checkpoint_file):
 #########################################################################
 
 
-def get_responses(cell_evaluator, individuals, filename):
-    responses = []
-    response_status = 'Optimized Responses'
-        
-    if filename and os.path.exists(filename):
-        logger.debug('Retrieving %s \n'%response_status)
-        with open(filename) as fd:
-            return pickle.load(fd)
-        
-    for i,individual in enumerate(individuals):
-        if i == 0:
-           logger.debug('Calculating %s \n'%response_status) 
-        individual_dict = cell_evaluator.param_dict(individual)
-        responses.append(
-            cell_evaluator.run_protocols(
-                cell_evaluator.fitness_protocols.values(),
-                param_values=individual_dict)) 
-        
-    if filename:
-        with open(filename, 'w') as fd:
-            pickle.dump(responses, fd)
-
-    return responses
-
-
 
 def feature_comp(opt, checkpoint_file,responses_filename):
-    checkpoint = pickle.load(open(checkpoint_file, "r"))
-    hof = checkpoint['halloffame']
-
+    
     # objectives
-    responses = get_responses(opt.evaluator, hof, responses_filename)
+    responses = pickle.load(open(responses_filename, "r"))
     responses = responses[0] #select the optimized response 
     
+    logger.debug('Calculating Objectives for Optimized and Released Responses')
     objectives = opt.evaluator.fitness_calculator.calculate_scores(responses)
     
     import collections
@@ -467,17 +445,15 @@ def feature_comp(opt, checkpoint_file,responses_filename):
 ## Plotting responses
 
 
-def plot_Response(opt,checkpoint_file, responses_filename,hof_index):
+def plot_Response(opt,checkpoint_file, responses_filename,hof_index = 0):
+    
     stim_file = 'preprocessed/StimMapReps.csv'
     stim_df = pd.read_csv(stim_file, sep='\s*,\s*',
                            header=0, encoding='ascii', engine='python')
     
-    with open(checkpoint_file,'r') as handle:
-        checkpoint = pickle.load(handle)
-    hof = checkpoint['halloffame']
-
-    responses = get_responses(opt.evaluator, [hof[hof_index]], responses_filename)
-    
+    responses = pickle.load(open(responses_filename, "r"))
+    response = responses[0]  # get the response with minimum trainin error
+    logger.debug('Retrieving Optimized Responses')
     
     plt.style.use('ggplot') 
     training_plots = 0
@@ -580,152 +556,40 @@ def plot_Response(opt,checkpoint_file, responses_filename,hof_index):
                     index = 0
                     fig_index += 1
                     
+    # Plotting the DB check response (10pA higher than the maximum current)
+    
+    amp_start_DB = train_protocols['DB_check_DC']['stimuli'][0]['delay']
+    amp_end_DB = train_protocols['DB_check_DC']['stimuli'][0]['stim_end']
+    DB_responses = {key:value for key,value in response.items() if 'DB' in key}
 
-def check_for_block(t_vec,v_vec,stim_params):
-
-    stim_delay = stim_params['delay']
-    stim_dur = stim_params['duration']
-    v = v_vec.as_matrix()
-    t = t_vec.as_matrix()
-    stim_start_idx = np.flatnonzero(t >= stim_delay)[0]
-    stim_end_idx = np.flatnonzero(t >= stim_delay + stim_dur)[0]
-    depol_block_threshold = -50.0 # mV
-    block_min_duration = 30.0 # ms
-    long_hyperpol_threshold = -75.0 # mV
-
-    bool_v = np.array(v > depol_block_threshold, dtype=int)
-    up_indexes = np.flatnonzero(np.diff(bool_v) == 1)
-    down_indexes = np.flatnonzero(np.diff(bool_v) == -1)
-    if len(up_indexes) > len(down_indexes):
-        down_indexes = np.append(down_indexes, [stim_end_idx])
-
-    if len(up_indexes) == 0:
-        # if it never gets high enough, that's not a good sign (meaning no spikes)
-        return True
-    else:
-        max_depol_duration = np.max([t[down_indexes[k]] - t[up_idx] for k, up_idx in enumerate(up_indexes)])
-        if max_depol_duration > block_min_duration:
-            return True
-    bool_v = np.array(v > long_hyperpol_threshold, dtype=int)
-    up_indexes = np.flatnonzero(np.diff(bool_v) == 1)
-    down_indexes = np.flatnonzero(np.diff(bool_v) == -1)
-    down_indexes = down_indexes[(down_indexes > stim_start_idx) & (down_indexes < stim_end_idx)]
-    if len(down_indexes) != 0:
-        up_indexes = up_indexes[(up_indexes > stim_start_idx) & (up_indexes < stim_end_idx) & (up_indexes > down_indexes[0])]
-        if len(up_indexes) < len(down_indexes):
-            up_indexes = np.append(up_indexes, [stim_end_idx])
-        max_hyperpol_duration = np.max([t[up_indexes[k]] - t[down_idx] for k, down_idx in enumerate(down_indexes)])
-        if max_hyperpol_duration > block_min_duration:
-            return True
-    return False
+    plt.style.use('ggplot')
+    
+    fig,axes = plt.subplots(len(DB_responses), figsize=(7,7), sharex = True)
+    
+    for i,key in enumerate(DB_responses.keys()):
+        
+        if 'soma' in key:
+            label = 'soma'
+            color = 'b'
+        else:
+            label = key.split('.')[1]
+            color = 'r'
+        axes[i].plot(DB_responses[key]['time'],
+             DB_responses[key]['voltage'],lw =1.5,color = color,label = label)
+        
+        
+    for ax in axes:
+        ax.set_xlim([amp_start_DB-200, amp_end_DB+200])
+        ax.legend(loc = 'upper right', prop={'size': 12})
+    axes[-1].set_xlabel('Time in ms')
+    fig.suptitle('DB checked Response for Parameter set %s'%hof_index)
+    
+    logger.debug('Plotting response comparisons for DB_check_DC')
+    pdf_pages.savefig(fig)
+    plt.close(fig)  
 
 
-def DB_check(checkpoint_file, DB_protocol_path, DB_response_path):
-    
-    checkpoint = pickle.load(open(checkpoint_file, "r"))
-    hof = checkpoint['halloffame'] 
-    
-    if os.path.exists(DB_response_path):
-        responses = pickle.load(open(DB_response_path, 'r'))
-       
-        with open(DB_protocol_path) as json_file:  
-            DB_protocols = json.load(json_file)
-        select_protocols = [key for key in DB_protocols.keys() if 'DB' in key]
-        
-    else:
-    
-        # find the max amplitude used in training
-        max_amp = 0
-        for key, val in train_protocols.items():
-            amp = val['stimuli'][0]['amp']
-            if amp >= max_amp:
-                max_key = key
-                max_amp = amp
-        
-
-        # Increment of 10 and 20% of the maximum stimulation 
-        # amplitude on which the model is trained        
-        DB_protocols = copy.deepcopy(train_protocols)
-        DB_protocol_increment = [.1*max_amp,.2*max_amp]
-        select_protocols = []
-        
-        for i,inc in enumerate(DB_protocol_increment):
-            DB_protocol_name = 'DB_'+str(i)
-            temp_copy = copy.deepcopy(train_protocols)
-            DB_protocols[DB_protocol_name] = temp_copy[max_key]
-            DB_protocols[DB_protocol_name]['stimuli'][0]['amp'] += inc
-            DB_protocols[DB_protocol_name]['stimuli'][0]['amp_end'] += inc
-            select_protocols.append(DB_protocol_name)
-        
-        with open(DB_protocol_path, 'w') as json_file:
-            json.dump(DB_protocols,json_file,indent=4)
-            
-        evaluator = evaluator_helper.create(DB_protocol_path, feature_path, morph_path, 
-                                            param_path, mech_path)
-            
-        opt = bpopt.optimisations.DEAPOptimisation(evaluator=evaluator)
-    
-        
-        
-        fitness_protocols = opt.evaluator.fitness_protocols
-        select_run_protocols = []
-        for protocol in fitness_protocols.values():
-            if protocol.name in select_protocols:
-                select_run_protocols.append(protocol)
-        
-        
-        responses = defaultdict(list)        
-        for i in range(len(hof)):
-            individual = hof[i]
-            individual_dict = evaluator.param_dict(individual)
-            responses[i].append(evaluator.run_protocols(
-                select_run_protocols,
-                param_values=individual_dict)) 
-    
-    DB_dict = defaultdict(dict)
-    
-    # stim params same for both DB protocols
-    stim_params = DB_protocols['DB_0']['stimuli'][0]
-    locations = ['soma.v']
-    
-    hof_indices_DB_checked  = []
-    
-    for i in range(len(hof)):
-
-        for proto in select_protocols:
-            for loc in locations:
-                name_loc = proto+'.'+loc
-                t_vec = responses[i][0][name_loc]['time']
-                v_vec = responses[i][0][name_loc]['voltage']
-    
-                depol_block = check_for_block(t_vec,v_vec,stim_params)
-                DB_dict[i][name_loc] = depol_block
-        
-        depol_block_list = DB_dict[i].values()
-        
-        # if both the increased stimulus passes DB check add it to the hof list
-        if not(depol_block_list[0]) and not(depol_block_list[0]):
-            hof_indices_DB_checked.append(i)
-            
-    
-    pickle.dump(responses, open(DB_response_path, 'w'))
-    
-    DB_check_path = 'DB_check.pkl'
-    pickle.dump(hof_indices_DB_checked, open(DB_check_path, 'w'))
-    
-
-    logger.debug('%s out of %s passed the DB check'%(len(hof_indices_DB_checked), 
-                          len(hof)))
-    
-    
-    try:
-       hof_index = hof_indices_DB_checked[0]            
-       logger.debug('The population index which passed DB check with minimum error is ' 
-                  'index = %s'%hof_index) 
-       return hof_indices_DB_checked[0]
-    except IndexError:
-       return None
-    
+#############################################################################
 
                     
 def post_processing(checkpoint_file, responses_filename):
