@@ -1,31 +1,8 @@
 {
-    "gbar_NaTs2_t": {
-        "section": [
-            "soma", 
-            "apic", 
-            "dend"
-        ], 
-        "bounds": {
-            "soma": [
-                0, 
-                5
-            ], 
-            "dend": [
-                0, 
-                0.1
-            ], 
-            "apic": [
-                0, 
-                0.1
-            ]
-        }, 
-        "mechanism": "NaTs2_t"
-    }, 
     "gbar_K_Tst": {
         "section": [
             "axon", 
-            "soma", 
-            "dend"
+            "soma"
         ], 
         "bounds": {
             "axon": [
@@ -35,10 +12,6 @@
             "soma": [
                 0, 
                 1
-            ], 
-            "dend": [
-                0, 
-                0.1
             ]
         }, 
         "mechanism": "K_Tst"
@@ -61,11 +34,11 @@
             ], 
             "dend": [
                 0, 
-                0.1
+                1
             ], 
             "apic": [
                 0, 
-                0.1
+                1
             ]
         }, 
         "mechanism": "Kv3_1"
@@ -112,23 +85,6 @@
                 10
             ]
         }
-    }, 
-    "gbar_KdShu2007": {
-        "section": [
-            "soma", 
-            "dend"
-        ], 
-        "bounds": {
-            "soma": [
-                0, 
-                0.1
-            ], 
-            "dend": [
-                0, 
-                0.1
-            ]
-        }, 
-        "mechanism": "KdShu2007"
     }, 
     "gamma_CaDynamics": {
         "section": [
@@ -181,6 +137,18 @@
         }, 
         "mechanism": "SK"
     }, 
+    "gbar_Kd": {
+        "section": [
+            "axon"
+        ], 
+        "bounds": {
+            "axon": [
+                1e-07, 
+                0.01
+            ]
+        }, 
+        "mechanism": "Kd"
+    }, 
     "gbar_Ca_HVA": {
         "section": [
             "soma", 
@@ -198,17 +166,17 @@
         }, 
         "mechanism": "Ca_HVA"
     }, 
-    "gbar_NaTa_t": {
+    "gbar_Kv2like": {
         "section": [
             "axon"
         ], 
         "bounds": {
             "axon": [
                 0, 
-                10
+                0.1
             ]
         }, 
-        "mechanism": "NaTa_t"
+        "mechanism": "Kv2like"
     }, 
     "decay_CaDynamics": {
         "section": [
@@ -249,44 +217,27 @@
             ]
         }
     }, 
-    "gbar_Nap_Et2": {
+    "gbar_NaV": {
         "section": [
-            "axon", 
             "soma", 
+            "axon", 
             "dend"
         ], 
         "bounds": {
-            "axon": [
-                0, 
+            "soma": [
+                1e-07, 
                 5
             ], 
-            "soma": [
-                0, 
-                1
+            "axon": [
+                1e-07, 
+                10
             ], 
             "dend": [
-                0, 
+                1e-07, 
                 0.1
             ]
         }, 
-        "mechanism": "Nap_Et2"
-    }, 
-    "gbar_Im": {
-        "section": [
-            "apic", 
-            "dend"
-        ], 
-        "bounds": {
-            "dend": [
-                1e-07, 
-                0.01
-            ], 
-            "apic": [
-                1e-07, 
-                0.01
-            ]
-        }, 
-        "mechanism": "Im"
+        "mechanism": "NaV"
     }, 
     "gbar_Ih": {
         "section": [
@@ -309,6 +260,23 @@
             ]
         }, 
         "mechanism": "Ih"
+    }, 
+    "gbar_Im_v2": {
+        "section": [
+            "apic", 
+            "dend"
+        ], 
+        "bounds": {
+            "dend": [
+                1e-07, 
+                0.01
+            ], 
+            "apic": [
+                1e-07, 
+                0.01
+            ]
+        }, 
+        "mechanism": "Im_v2"
     }, 
     "e_pas": {
         "section": [

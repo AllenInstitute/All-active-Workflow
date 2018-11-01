@@ -34,11 +34,11 @@ def define_protocols(protocols_write_path):
         sec_index=0,
         comp_x=0.5)
     
-    AIS_loc = ephys.locations.NrnSeclistCompLocation(
-        name='AIS',
-        seclist_name='axonal',
-        sec_index=0,
-        comp_x=0.5)
+#    AIS_loc = ephys.locations.NrnSeclistCompLocation(
+#        name='AIS',
+#        seclist_name='axonal',
+#        sec_index=0,
+#        comp_x=0.5)
 
     for protocol_name, protocol_definition in protocol_definitions.items():
         # By default include somatic recording
@@ -48,14 +48,15 @@ def define_protocols(protocols_write_path):
             location=soma_loc,
             variable='v')
         
-        AIS_recording = ephys.recordings.CompRecording(
-            name='%s.AIS.v' %
-            protocol_name,
-            location=AIS_loc,
-            variable='v')
+#        AIS_recording = ephys.recordings.CompRecording(
+#            name='%s.AIS.v' %
+#            protocol_name,
+#            location=AIS_loc,
+#            variable='v')
         
-        recordings = [somav_recording, AIS_recording]
-
+#        recordings = [somav_recording, AIS_recording]
+        recordings = [somav_recording]
+        
         if 'extra_recordings' in protocol_definition:
             for recording_definition in protocol_definition['extra_recordings']:
                 if recording_definition['type'] == 'somadistance':
@@ -115,8 +116,9 @@ def define_fitness_calculator(protocols, features_write_path, weight_dict):
 
             for efel_feature_name, meanstd in features.items():
                 feature_name = '%s.%s.%s' % (protocol_name, location, efel_feature_name)
-                recording_names = {'': '%s.%s.v' % (protocol_name, location), 
-                                   'location_AIS' : '%s.AIS.v' %protocol_name}
+                recording_names = {'': '%s.%s.v' % (protocol_name, location)}
+#                recording_names = {'': '%s.%s.v' % (protocol_name, location), 
+#                                   'location_AIS' : '%s.AIS.v' %protocol_name}
                 stimulus = protocols[protocol_name].stimuli[0]
                 if 'Ramp' in protocol_name:
                     stim_start = stimulus.ramp_delay 

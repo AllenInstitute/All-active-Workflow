@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#SBATCH -q premium
+#SBATCH -q regular
 #SBATCH -N 8
 #SBATCH -t 4:00:00
 #SBATCH -C haswell
@@ -8,7 +8,7 @@
 #SBATCH --mail-user=anirban.nandi@wustl.edu
 #SBATCH --mail-type=ALL
 #SBATCH -J Stage1
-#SBATCH --signal=B:USR1@300
+#SBATCH --signal=B:USR1@60
 
 run_dependent_script() { 
 func="$1" ; shift 
@@ -19,7 +19,7 @@ done
 
 # trap function to launch the passive+Ih optimization (Stage 2)
 func_trap() { 
-sh launch_stage2.sh
+sbatch launch_stage2.slurm
 } 
 
 #submit launch script upon signal USR1 
@@ -65,4 +65,4 @@ wait $pids
 
 
 # Launch the passive+Ih optimization (Stage 1) once the job finishes successfully
-sh launch_stage2.sh
+sbatch launch_stage2.slurm

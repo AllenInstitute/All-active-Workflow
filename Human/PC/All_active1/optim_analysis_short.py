@@ -153,8 +153,8 @@ def get_responses(cell_evaluator, individuals, filename):
 ## Calculating responses
 
 
-def plot_Response(opt,opt_release,checkpoint_file, responses_filename,
-                  response_release_filename,hof_index):
+def plot_Response(opt,checkpoint_file, responses_filename,
+                  hof_index):
     
     with open(checkpoint_file,'r') as handle:
         checkpoint = pickle.load(handle)

@@ -126,7 +126,7 @@ def Main(hof_index = 0):
             
             # Check if the response for a particular simulus sweep is already calculated
             
-            if os.path.exists('validation_response.pkl'):
+            if os.path.exists(validation_response_path):
                 validation_responses = pickle.load(open(validation_response_path, "r"))
                 peaktimes_model = pickle.load(open(spiketimes_model_path, "r"))
                 peaktimes_exp = pickle.load(open(spiketimes_exp_path, "r"))
@@ -136,6 +136,28 @@ def Main(hof_index = 0):
                     sim_run[stim_type_sweep] = 'Done'
                 
             
+            time *= 1000.0
+            response_trace *= 1000
+            stimulus_trace *= 1e9 
+            
+            time_end = time[-1]
+            response_end = response_trace[-1]
+            stimulus_end = stimulus_trace[-1]
+            
+            # downsampling
+            time = time[::5]
+            response_trace = response_trace[::5] + junction_potential
+            stimulus_trace =stimulus_trace[::5]
+            
+            if time_end != time[-1]:
+                time = np.append(time,time_end)
+                response_trace = np.append(response_trace,response_end)
+                stimulus_trace = np.append(stimulus_trace,stimulus_end)
+        
+            nonzero_stim_indices = np.where(stimulus_trace != 0)[0]
+            stim_start = time[nonzero_stim_indices[0]]
+            stim_stop = time[nonzero_stim_indices[-1]]
+            
             if trace_name not in peaktimes_exp.keys():
         
                 response_trace_short_filename = '%s.%s' % (trace_name, 'txt')
@@ -144,44 +166,23 @@ def Main(hof_index = 0):
                     output_dir, response_trace_short_filename)
                 
                 
-                time *= 1000.0
-                response_trace *= 1000
-                stimulus_trace *= 1e9 
-                
-                time_end = time[-1]
-                response_end = response_trace[-1]
-                stimulus_end = stimulus_trace[-1]
-                
-                # downsampling
-                time = time[::5]
-                response_trace = response_trace[::5] + junction_potential
-                stimulus_trace =stimulus_trace[::5]
-                
-                if time_end != time[-1]:
-                    time = np.append(time,time_end)
-                    response_trace = np.append(response_trace,response_end)
-                    stimulus_trace = np.append(stimulus_trace,stimulus_end)
-                
                 with open(response_trace_filename, 'w') as response_trace_file:
                     np.savetxt(response_trace_file,
                                   np.transpose([time, stimulus_trace, response_trace]))
+                 
                 
-                
-                nonzero_stim_indices = np.where(stimulus_trace != 0)[0]
-                stim_start = time[nonzero_stim_indices[0]]
-                stim_stop = time[nonzero_stim_indices[-1]]
                 trace = {}
                 trace['T'] = time
                 trace['V'] = response_trace
                 trace['stim_start'] = [stim_start]
                 trace['stim_end'] = [stim_stop]
-                if trace_name not in peaktimes_exp.keys():
-                    peaktimes_exp[trace_name] = efel.getFeatureValues(
-                        [trace],
-                        ['peak_time'])[0]['peak_time']
-                    
-                    pickle.dump(peaktimes_exp, open(spiketimes_exp_path, 'w'))
-                    logger.debug('Getting response features from %s'%trace_name)
+#                if trace_name not in peaktimes_exp.keys():
+                peaktimes_exp[trace_name] = efel.getFeatureValues(
+                    [trace],
+                    ['peak_time'])[0]['peak_time']
+                
+                pickle.dump(peaktimes_exp, open(spiketimes_exp_path, 'w'))
+                logger.debug('Getting response features from %s'%trace_name)
             
             else:
                 
@@ -202,7 +203,7 @@ def Main(hof_index = 0):
             name='validation.soma.v',
             location=soma_loc,
             variable='v')
-            
+                        
             validation_time = time
             validation_current = stimulus_trace
             

@@ -15,24 +15,23 @@ import numpy.linalg as la
 from allensdk.core.cell_types_cache import CellTypesCache
 import allensdk.core.swc as swc
 from pyquaternion import Quaternion
-import math
+import glob
 import re
+import math
 
 import animate3d
 
-topdir = '.'
-dir_list = list()
-def step(ext, dirname, names):
-    ext = ext.lower()
-    for name in names:
-        if name.lower().endswith(ext):
-            dir_list.append(os.path.join(dirname, name))
+#topdir = '.'
+#dir_list = list()
+#def step(ext, dirname, names):
+#    ext = ext.lower()
+#    for name in names:
+#        if name.lower().endswith(ext):
+#            dir_list.append(os.path.join(dirname, name))
             
 def get_morph_path(exten = '.swc'):
-    global dir_list
-    os.path.walk(topdir, step, exten)
-    morph_path = [str_path for str_path in dir_list][0]
-    return morph_path           
+    morph_path = glob.glob('./morphology/*'+exten)
+    return morph_path[0]           
 
 
 
@@ -59,7 +58,7 @@ def get_cell_morphXYZ(morph_path):
         y.append(y_coord)
         z.append(z_coord)
         
-        if n['type']==4 :
+        if n['type']==2 :
             x_apical.append(x_coord)
             y_apical.append(y_coord)
             z_apical.append(z_coord)
@@ -87,8 +86,8 @@ def rotate3D_point(point,theta,axis_of_rot):
     
     # use one of these two commands to rotate the morphology upside down
     
-#    point_rotated = Quaternion(axis=axis_of_rot,angle=-theta ).rotate(point)
-    point_rotated = Quaternion(axis=axis_of_rot,angle=-theta + math.pi).rotate(point)
+    point_rotated = Quaternion(axis=axis_of_rot,angle=-theta ).rotate(point)
+#    point_rotated = Quaternion(axis=axis_of_rot,angle=-theta + math.pi).rotate(point)
 
     return point_rotated
 
@@ -104,6 +103,7 @@ def Main():
     color_dict = {4:'darkred',3:'orange',2:'royalblue',1:'black'}   
     label_dict = {4:'apical dendrite',3:'basal dendrite',2:'axon',1:'soma'}
     
+    plt.style.use('classic')
     fig = plt.figure(figsize=(10, 8), dpi=100)
     ax = fig.add_subplot(111, projection='3d')
     
@@ -132,17 +132,19 @@ def Main():
     all_x_min, all_x_max = min(all_x), max(all_x)
     all_y_min, all_y_max = min(all_y), max(all_y)
     all_z_min, all_z_max = min(all_z), max(all_z)
-    
+
+
     ax.set_xlim([all_x_min-10, all_x_max+10])
     ax.set_ylim([all_y_min-10, all_y_max+10])
     ax.set_zlim([all_z_min-10, all_z_max+10])
-
+#    
+#
     ax.axis('off')
     plt.show()
     
     angles = np.linspace(0,360,21)[:-1] # Take 20 angles between 0 and 360
  
-    # create an animated gif (20ms between frames)
+#     create an animated gif (20ms between frames)
     cell_name = re.search('morphology/(.*).swc',morph_path).group(1)
     movie_name = cell_name+'_movie.gif'
     animate3d.rotanimate(ax, angles,movie_name,delay=20) 

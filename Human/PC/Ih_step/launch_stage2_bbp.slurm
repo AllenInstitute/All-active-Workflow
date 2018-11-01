@@ -1,12 +1,14 @@
 #!/bin/bash -l 
-#SBATCH -q debug
-#SBATCH -t 0:30:00 
-#SBATCH -L SCRATCH
+#SBATCH -p prod 
+#SBATCH -t 30:00 
+#SBATCH -n 1
+#SBATCH -C cpu|nvme
+#SBATCH -A proj36
 #SBATCH -J launch_Stage_2 
-#SBATCH -C haswell 
-#SBATCH -N 1 
+ 
+source activate CompNeuro
 
-export ALL_ACTIV_REPO="/project/projectdirs/m2043/AIBS/ani/Human/PC/All_Active1_Repo"
+export ALL_ACTIV_REPO="/gpfs/bbp.cscs.ch/home/anirban/Human/PC/All_Active1_Repo"
 
 JOBID_1=$(<Job_1.txt)
 PARENT_DIR=$(<pwd.txt)
@@ -43,11 +45,9 @@ nrnivmodl modfiles/
 STAGE="_STAGE2"
 CELL_ID=$(<cell_id.txt)
 JOBNAME=$CELL_ID$STAGE
-sed -i -e "s/Stage2/$JOBNAME/g" start_haswell.sh
-sed -i -e "s/Stage2/$JOBNAME/g" restart_haswell.sh
-sed -i -e "s/Stage2/$JOBNAME/g" start_batchjob_stage2.slurm
-sed -i -e "s/Stage2/$JOBNAME/g" restart_batchjob_stage2.slurm
-sed -i -e "s/Stage2/$JOBNAME/g" analyse_stage2.slurm
+sed -i -e "s/Stage2/$JOBNAME/g" start_bbp.sh
+sed -i -e "s/Stage2/$JOBNAME/g" restart_bbp.sh
+sed -i -e "s/Stage2/$JOBNAME/g" analyse_stage2_bbp.slurm
 echo "Launching Stage 2 Opimization"
 #RES_2=$(sbatch start_haswell.sh) && RES_3=$(sbatch --dependency=afternotok:${RES_2##* } restart_haswell.sh)  # sbatch command goes here
-sbatch start_haswell.sh
+sbatch start_bbp.sh

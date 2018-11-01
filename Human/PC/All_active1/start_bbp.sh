@@ -1,10 +1,11 @@
 #!/bin/bash
 
-#SBATCH -q regular
-#SBATCH -N 8
+#SBATCH -p prod 
 #SBATCH -t 36:00:00
-#SBATCH -C haswell
-#SBATCH -L SCRATCH
+#SBATCH -n 256
+#SBATCH -C cpu|nvme
+#SBATCH --qos=longjob
+#SBATCH -A proj36
 #SBATCH --mail-user=anirban.nandi@wustl.edu
 #SBATCH --mail-type=ALL
 #SBATCH -J Stage2
@@ -22,7 +23,7 @@ func_trap() {
 new_cp=checkpoints.${SLURM_JOBID}
 mv checkpoints $new_cp
 mv checkpoints_backup checkpoints 
-sbatch restart_batchjob_stage2.slurm
+sbatch restart_bbp.sh
 } 
 
 #submit launch script upon signal USR1 
@@ -43,7 +44,7 @@ export IPYTHON_PROFILE=benchmark.${SLURM_JOBID}
 
 ipcontroller --init --ip='*' --sqlitedb --ping=30000 --profile=${IPYTHON_PROFILE} &
 sleep 10
-srun -n 256 --output="${LOGS}/engine_%j_%2t.out" ipengine --timeout=3000 --profile=${IPYTHON_PROFILE} &
+srun --output="${LOGS}/engine_%j_%2t.out" ipengine --timeout=3000 --profile=${IPYTHON_PROFILE} &
 sleep 10
 
 CHECKPOINTS_DIR="checkpoints"
@@ -69,7 +70,6 @@ wait $pids
 # If job finishes in time analyze result
 
 mv ${CHECKPOINTS_DIR}/seed${seed}.pkl checkpoints_final/
-
 #new_cp=checkpoints.${SLURM_JOBID}
 #mv checkpoints $new_cp
 #mv checkpoints_backup checkpoints
@@ -77,10 +77,10 @@ mv ${CHECKPOINTS_DIR}/seed${seed}.pkl checkpoints_final/
 # check if the job with 4th seed is finished
 
 if [[ $seed = 4 ]]; then
-    sbatch analyse_stage2.slurm
+    sbatch analyse_stage2_bbp.slurm
 else
     seed_new=$(($seed+1))
-    sed -i -e "s/seed in $seed/seed in $seed_new/g" start_haswell.sh 
-    sed -i -e "s/seed in $seed/seed in $seed_new/g" restart_haswell.sh
-    sbatch start_batchjob_stage2.slurm
+    sed -i -e "s/seed in $seed/seed in $seed_new/g" start_bbp.sh 
+    sed -i -e "s/seed in $seed/seed in $seed_new/g" restart_bbp.sh
+    sbatch start_bbp.sh 
 fi

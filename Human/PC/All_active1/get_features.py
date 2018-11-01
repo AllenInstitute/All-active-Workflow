@@ -228,7 +228,7 @@ def run(cell_map, force_feature_extraction=False,dend_recording = None, record_l
             
             features_meanstd['DB_check_DC'] = {'soma': DB_feature_dict}
             training_stim_map['DB_check_DC'] = {'stimuli':[DB_proto_dict]}
-            
+            cell_stim_map['DB_check_DC'] = {'stimuli':[DB_proto_dict]}
             save_json(features_meanstd, features_json_filename)
             save_json(training_stim_map, protocols_json_filename)
             save_json(cell_stim_map, all_protocols_json_filename)

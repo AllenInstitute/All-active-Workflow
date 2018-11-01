@@ -1,4 +1,10 @@
-#!/bin/bash 
+#!/bin/bash -l 
+#SBATCH -q debug
+#SBATCH -t 0:30:00 
+#SBATCH -L SCRATCH
+#SBATCH -J launch_Stage_2 
+#SBATCH -C haswell 
+#SBATCH -N 1  
 
 export ALL_ACTIV_REPO="/project/projectdirs/m2043/AIBS/ani/Mouse/PC/All_Active1_Repo"
 
@@ -29,6 +35,7 @@ cp cell_id.txt $ALL_ACTIV_DIR/
 mv fit_opt.json $ALL_ACTIV_DIR/cell_types/
 cp -r $ALL_ACTIV_REPO/* $ALL_ACTIV_DIR/
 cd $ALL_ACTIV_DIR
+mkdir -p checkpoints_final
 python set_features_all_active.py
 python set_params_all_active.py
 python starter_optim.py
@@ -38,6 +45,9 @@ CELL_ID=$(<cell_id.txt)
 JOBNAME=$CELL_ID$STAGE
 sed -i -e "s/Stage2/$JOBNAME/g" start_haswell.sh
 sed -i -e "s/Stage2/$JOBNAME/g" restart_haswell.sh
+sed -i -e "s/Stage2/$JOBNAME/g" start_batchjob_stage2.slurm
+sed -i -e "s/Stage2/$JOBNAME/g" restart_batchjob_stage2.slurm
+sed -i -e "s/Stage2/$JOBNAME/g" analyse_stage2.slurm
 echo "Launching Stage 2 Opimization"
 #RES_2=$(sbatch start_haswell.sh) && RES_3=$(sbatch --dependency=afternotok:${RES_2##* } restart_haswell.sh)  # sbatch command goes here
 sbatch start_haswell.sh

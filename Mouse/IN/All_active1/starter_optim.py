@@ -349,7 +349,11 @@ def get_cell_model(exten = '.json'):
     dir_list = list()
     os.path.walk(topdir, step, exten)
     param_path = [str_path for str_path in dir_list if 'fit_opt' in str_path][0]
-    release_param_path = [str_path for str_path in dir_list if 'fit_parameters' in str_path][0]
+    release_param_path = [str_path for str_path in dir_list if 'fit_parameters' in str_path]
+    if release_param_path:
+        release_param_path = release_param_path[0]
+    else:
+        release_param_path = None
     return param_path,release_param_path  
 
 def get_params(param_path,release_param_path, no_apical = False, v_init = -80):
@@ -362,6 +366,10 @@ def get_params(param_path,release_param_path, no_apical = False, v_init = -80):
         if key == 'genome':
             for j in range(len(values)):
                 if data[key][j]['name'] in passive_params + Ih_params:
+                    
+                    if no_apical and data[key][j]['section'] == 'apic': # if no apical dendrite in morphology
+                        continue
+                    
                     iter_dict = {'param_name':data[key][j]['name']}
                     iter_dict['dist_type'] = 'uniform'   
                     iter_dict['sectionlist'] = section_map[ data[key][j]['section']]        
@@ -400,31 +408,34 @@ def get_params(param_path,release_param_path, no_apical = False, v_init = -80):
     model_params.append({"param_name": "celsius","type": "global","value": 34})     
     model_params.append({"param_name": "v_init","type": "global","value": v_init})
     
-    with open(release_param_path) as json_file:  
-        data_release = json.load(json_file)
-    for key, values in data_release.iteritems():            
-        if key == 'genome':
-            for j in range(len(values)):
-                     iter_dict_release = {'param_name':data_release[key][j]['name']}
-                     iter_dict_release['sectionlist'] = section_map[data_release[key][j]['section']]
-                     iter_dict_release['type'] = 'section'
-                     iter_dict_release['value'] = float(data_release[key][j]['value'])
-                     iter_dict_release['dist_type'] = 'uniform'
-                     if data_release[key][j]['mechanism'] != '':
-                            iter_dict_release['mech'] = data_release[key][j]['mechanism']
-                            iter_dict_release['type'] = 'range'
-                     model_params_release.append(iter_dict_release)
-    
-    for sect in list(set(section_map.values())-set(['all'])):
-        for rev in rev_potential:
-            iter_dict_release =  {'param_name':rev, 'sectionlist':sect, 'dist_type': 'uniform', 'type':'section'}
-            if rev == 'ena':
-                iter_dict_release['value'] = rev_potential[rev]
-            elif rev == 'ek':
-                iter_dict_release['value'] = rev_potential[rev]
-            model_params_release.append(iter_dict_release) 
-    model_params_release.append({"param_name": "celsius","type": "global","value": 34})     
-    model_params_release.append({"param_name": "v_init","type": "global","value": -90})
+    if release_param_path:
+        with open(release_param_path) as json_file:  
+            data_release = json.load(json_file)
+        for key, values in data_release.iteritems():            
+            if key == 'genome':
+                for j in range(len(values)):
+                         iter_dict_release = {'param_name':data_release[key][j]['name']}
+                         iter_dict_release['sectionlist'] = section_map[data_release[key][j]['section']]
+                         iter_dict_release['type'] = 'section'
+                         iter_dict_release['value'] = float(data_release[key][j]['value'])
+                         iter_dict_release['dist_type'] = 'uniform'
+                         if data_release[key][j]['mechanism'] != '':
+                                iter_dict_release['mech'] = data_release[key][j]['mechanism']
+                                iter_dict_release['type'] = 'range'
+                         model_params_release.append(iter_dict_release)
+        
+        for sect in list(set(section_map.values())-set(['all'])):
+            for rev in rev_potential:
+                iter_dict_release =  {'param_name':rev, 'sectionlist':sect, 'dist_type': 'uniform', 'type':'section'}
+                if rev == 'ena':
+                    iter_dict_release['value'] = rev_potential[rev]
+                elif rev == 'ek':
+                    iter_dict_release['value'] = rev_potential[rev]
+                model_params_release.append(iter_dict_release) 
+        model_params_release.append({"param_name": "celsius","type": "global","value": 34})     
+        model_params_release.append({"param_name": "v_init","type": "global","value": -90})
+    else:
+        model_params_release = None
 
     return model_params,model_params_release
 
@@ -451,12 +462,7 @@ def write_params_json(model_params,model_params_release,cell_id):
              bound = [lb, ub]
              param_dict['bounds'] =  bound
              del param_dict['value']
-             
-    for param_dict_release in model_params_release:
-        param_name = param_dict_release['param_name']
-        if param_name in passive_params + Ih_params:
-            release_params[param_name + '.' + param_dict_release['sectionlist']] = param_dict_release['value']
-
+    
     param_write_path = 'config/'+ cell_id + '/parameters.json'
     
     if not os.path.exists(os.path.dirname(param_write_path)):
@@ -467,11 +473,22 @@ def write_params_json(model_params,model_params_release,cell_id):
                 raise
                 
     with open(param_write_path, 'w') as outfile:
-        json.dump(model_params, outfile,indent=4)  
+        json.dump(model_params, outfile,indent=4) 
     
-    release_param_write_path = 'config/'+ cell_id + '/release_parameters.json'    
-    with open(release_param_write_path, 'w') as outfile:
-        json.dump(model_params_release, outfile,indent=4)   
+
+    if model_params_release:         
+        for param_dict_release in model_params_release:
+            param_name = param_dict_release['param_name']
+            if param_name not in ['ena','ek','v_init','celsius']:
+                release_params[param_name + '.' + param_dict_release['sectionlist']] = param_dict_release['value']
+    
+        
+        release_param_write_path = 'config/'+ cell_id + '/release_parameters.json'    
+        with open(release_param_write_path, 'w') as outfile:
+            json.dump(model_params_release, outfile,indent=4)
+            
+    else:
+        release_param_write_path = None
         
     return model_params, model_params_release, param_write_path, release_param_write_path, release_params
 
@@ -479,18 +496,12 @@ def write_mechanisms_json(model_params,model_params_release,cell_id):
     from collections import defaultdict
     model_mechs = defaultdict(list)
     model_mechs['all'].append('pas')
-    model_mechs_release = {'somatic' : ['pas'], 'axonal':['pas'], 'apical':['pas'],
-                           'basal': ['pas']}
+    
     for param_dict in model_params:
         if param_dict['param_name'] in active_params+Ih_params:
             if param_dict['mech'] not in model_mechs[param_dict['sectionlist']]:
                 model_mechs[param_dict['sectionlist']].append(param_dict['mech']) 
         
-    for param_dict_release in model_params_release:
-        if 'mech' in param_dict_release.keys():
-            if param_dict_release['mech'] not in model_mechs_release[param_dict_release['sectionlist']]:
-                model_mechs_release[param_dict_release['sectionlist']].append(param_dict_release['mech']) 
-    
     mechanism_write_path = 'config/'+ cell_id + '/mechanism.json'
     if not os.path.exists(os.path.dirname(mechanism_write_path)):
         try:
@@ -501,11 +512,21 @@ def write_mechanisms_json(model_params,model_params_release,cell_id):
     with open(mechanism_write_path, 'w') as outfile:
         json.dump(model_mechs, outfile,indent=4)
     
-
-    mechanism_release_write_path = 'config/'+ cell_id + '/mechanism_release.json'    
-    with open(mechanism_release_write_path, 'w') as outfile:
-        json.dump(model_mechs_release, outfile,indent=4)
-    
+    if model_params_release:
+        model_mechs_release = {'somatic' : ['pas'], 'axonal':['pas'], 'apical':['pas'],
+                               'basal': ['pas']}
+        for param_dict_release in model_params_release:
+            if 'mech' in param_dict_release.keys():
+                if param_dict_release['mech'] not in model_mechs_release[param_dict_release['sectionlist']]:
+                    model_mechs_release[param_dict_release['sectionlist']].append(param_dict_release['mech']) 
+        
+        
+        mechanism_release_write_path = 'config/'+ cell_id + '/mechanism_release.json'    
+        with open(mechanism_release_write_path, 'w') as outfile:
+            json.dump(model_mechs_release, outfile,indent=4)
+    else:
+        model_mechs_release = None
+        mechanism_release_write_path = None
     
     return mechanism_write_path, mechanism_release_write_path
 

@@ -15,7 +15,7 @@ import textwrap
 import json
 from datetime import datetime
 import shutil
-from shutil import copyfile
+#from shutil import copyfile
 
 import evaluator_helper
 import checkpoint_decider
@@ -23,12 +23,19 @@ import checkpoint_decider
 cp_backup = 'checkpoints_backup'
 cp_source = 'checkpoints'
 
-if os.path.exists('time_info_back_up.txt'):
-    copyfile('time_info_back_up.txt', 'time_info.txt')
+#if os.path.exists('time_info_back_up.txt'):
+#    copyfile('time_info_back_up.txt', 'time_info.txt')
 
 logging.basicConfig(level=logging.DEBUG) 
 logger = logging.getLogger()
 
+
+#with open('feature_set.json') as handle:
+#    efel_features = json.load(handle)
+#weight_dict = {efel_feature : 1 for efel_feature in efel_features['somatic_features'] \
+#               if efel_feature != 'mean_frequency'}
+#weight_dict['mean_frequency'] = 2
+#weight_dict['Spikecount'] = 1
 
 with open('config_file.json') as json_file:  
     path_data = json.load(json_file)
@@ -71,7 +78,7 @@ def create_optimizer(args):
             f.close()
             
             # Create a back-up of the timing information
-            copyfile('time_info.txt', 'time_info_back_up.txt')
+#            copyfile('time_info.txt', 'time_info_back_up.txt')
             
             return ret
 
@@ -84,8 +91,11 @@ def create_optimizer(args):
         
         evaluator = evaluator_helper.create(all_protocol_path, feature_path, morph_path, 
                                         param_path, mech_path)
-        evaluator_release =  evaluator_helper.create(all_protocol_path, feature_path, morph_path, 
-                                        original_release_param, mech_release_path)
+        if original_release_param:
+            evaluator_release =  evaluator_helper.create(all_protocol_path, feature_path, morph_path, 
+                                            original_release_param, mech_release_path)
+        else:
+            evaluator_release = None    
     else:
             
         evaluator = evaluator_helper.create(protocol_path, feature_path, morph_path, 
@@ -101,11 +111,13 @@ def create_optimizer(args):
         evaluator=evaluator,
         map_function=map_function,
         seed=seed)
-    opt_release = bpopt.optimisations.DEAPOptimisation(
-        evaluator=evaluator_release,
-        map_function=map_function,
-        seed=seed)
-
+    if original_release_param:
+        opt_release = bpopt.optimisations.DEAPOptimisation(
+            evaluator=evaluator_release,
+            map_function=map_function,
+            seed=seed)
+    else:
+         opt_release = None   
     return opt,opt_release
     
 

@@ -1,12 +1,14 @@
-#!/bin/bash -l 
-#SBATCH -q debug
-#SBATCH -t 0:30:00 
-#SBATCH -L SCRATCH
-#SBATCH -J launch_Stage_1 
-#SBATCH -C haswell 
-#SBATCH -N 1 
+#!/bin/bash
 
-export PASS_IH_REPO="/project/projectdirs/m2043/AIBS/ani/Human/PC/Passive_Ih_Repo"
+#SBATCH -p prod 
+#SBATCH -t 30:00 
+#SBATCH -n 1
+#SBATCH -C cpu|nvme
+#SBATCH -A proj36
+#SBATCH -J launch_Stage_1 
+
+source activate CompNeuro
+export PASS_IH_REPO="/gpfs/bbp.cscs.ch/home/anirban/Human/PC/Passive_Ih_Repo"
 
 JOBID_0=$(<Job_0.txt)
 PARENT_DIR=$(<pwd.txt)
@@ -44,8 +46,8 @@ STAGE_NEXT="_STAGE2"
 CELL_ID=$(<cell_id.txt)
 JOBNAME=$CELL_ID$STAGE
 LAUNCH_JOBNAME=$CELL_ID$STAGE_NEXT
-sed -i -e "s/Stage1/$JOBNAME/g" start_haswell.sh
-sed -i -e "s/Stage_2/$LAUNCH_JOBNAME/g" launch_stage2.slurm
+sed -i -e "s/Stage1/$JOBNAME/g" start_bbp.sh
+sed -i -e "s/Stage_2/$LAUNCH_JOBNAME/g" launch_stage2_bbp.slurm
 echo "Launching Stage 1 Opimization"
-RES_1=$(sbatch start_haswell.sh)  # sbatch command goes here
+RES_1=$(sbatch start_bbp.sh)  # sbatch command goes here
 echo ${RES_1##* } > Job_1.txt

@@ -40,7 +40,9 @@ def all_features_path(cell_map, train_protocols_path):
     
     for stim_name,stim_params in stim_map.items():
                 
-                
+        if 'Ramp' in stim_name: # ignore Ramp for validation metrics
+            continue
+        
         print "\n### Getting features from %s of cell %s ###\n" \
             % (stim_name, cell_name)
                 
