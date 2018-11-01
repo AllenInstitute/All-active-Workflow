@@ -313,18 +313,23 @@ def get_cell_model(exten = '.json'):
     global dir_list
     dir_list = list()
     os.path.walk(topdir, step, exten)
-    param_path = [str_path for str_path in dir_list if 'fit_parameters' in str_path][0]
+    param_path = [str_path for str_path in dir_list if 'fit_parameters' in str_path]
+    if param_path:
+        param_path = param_path[0]
+    else:
+       param_path = None 
     return param_path  
 
 def get_params(param_path, v_init = -80):
     model_params = list()
-    with open(param_path) as json_file:  
-        data = json.load(json_file)
+    if param_path:
+        with open(param_path) as json_file:  
+            data = json.load(json_file)
         for key, values in data.iteritems():            
             if key == 'genome':
                 for j in range(len(values)):
                     if data[key][j]['name'] in passive_params:
-#                        if data[key][j]['section'] == 'soma':
+    #                        if data[key][j]['section'] == 'soma':
                         if data[key][j]['section'] in passive_params_dict[data[key][j]['name']]['section']:
                             section = section_map[data[key][j]['section']]
                             iter_dict = {'param_name':data[key][j]['name']}
@@ -342,18 +347,26 @@ def get_params(param_path, v_init = -80):
                             iter_dict['value'] = float(data[key][j]['value'])
                             iter_dict['type'] = 'section'
                             model_params.append(iter_dict)
-                
-        model_params.append({"param_name": "celsius","type": "global","value": 34})     
-        model_params.append({"param_name": "v_init","type": "global","value": v_init})
+                            
+    else:
+        
+        for passive_param,passive_dict in passive_params_dict.items():
+            for sect in passive_dict['section']:
+                 iter_dict = {'param_name': passive_param}
+                 iter_dict['sectionlist'] = section_map[sect]
+                 iter_dict['type'] = 'section'
+                 iter_dict['dist_type'] = 'uniform'
+                 model_params.append(iter_dict)
+            
+    model_params.append({"param_name": "celsius","type": "global","value": 34})     
+    model_params.append({"param_name": "v_init","type": "global","value": v_init})
     
     return model_params
 
-def write_params_json(model_params,cell_id):
-#    model_params_orig = list()
+def write_params_json(model_params,param_path,cell_id):
     release_params = dict()
 
     for param_dict in model_params:
-#        model_params_orig.append(dict(param_dict))  # Creating a copy of the original parameters
         param_name = param_dict['param_name']
         if 'sectionlist' in param_dict.keys():
             param_sect = param_dict['sectionlist']
@@ -363,8 +376,9 @@ def write_params_json(model_params,cell_id):
             lb,ub = passive_params_dict[param_name]['bounds'][inverted_sect_key]
             bound = [lb, ub]
             param_dict['bounds'] =  bound
-            release_params[param_name + '.' + param_dict['sectionlist']] = param_dict['value']
-            del param_dict['value']
+            if param_path:
+                release_params[param_name + '.' + param_dict['sectionlist']] = param_dict['value']
+                del param_dict['value']
             
     param_write_path = 'config/'+ cell_id + '/parameters.json'
     
@@ -415,14 +429,10 @@ def Main():
     features_write_path,protocols_write_path,all_protocols_write_path = get_features.run(cell_map, 
             force_feature_extraction=True)
     
-#    model_dir = '.' 
-#    shell_cmd = 'nrnivmodl ' + model_dir + '/modfiles'
-#    
-#    os.system(shell_cmd)
     
     model_params= get_params(param_path)  
     model_params, param_write_path,\
-                    release_params = write_params_json(model_params,cell_id) 
+                    release_params = write_params_json(model_params,param_path,cell_id) 
     
     model_mechs, mechanism_write_path = write_mechanisms_json(param_path,cell_id)
     

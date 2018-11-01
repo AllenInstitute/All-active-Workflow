@@ -26,18 +26,22 @@ all_params = {
                         'mechanism': 'Ih',
                         'bounds' : {'soma':[1e-7,1e-4], 'apic':[1e-7, 1e-4], 'dend' : [1e-7,1e-4]}
                         },
-                'gbar_NaTs2_t': {'section' : ['soma', 'apic', 'dend'],
-                            'mechanism': 'NaTs2_t',
-                            'bounds':{'soma':[0,5], 'apic':[0, 1e-1], 'dend' : [0,1e-2]}
-                              }, 
-                'gbar_NaTa_t': {'section' : ['axon'],
-                            'mechanism': 'NaTa_t',
-                            'bounds':{'axon':[0,10]}
-                              },
-                'gbar_Nap_Et2': {'section' : ['axon','soma'],
-                            'mechanism': 'Nap_Et2',
-                            'bounds':{'axon':[0,5],'soma':[0,1]}
-                              },               
+                'gbar_NaV' : { 'section' : ['soma', 'axon', 'dend','apic'],
+                        'mechanism': 'NaV',
+                        'bounds':{'soma':[1e-7,5], 'axon' : [1e-7,10], 'apic':[1e-7, 1e-1],'dend' : [1e-7,1e-1]}
+                        },
+#                'gbar_NaTs2_t': {'section' : ['soma', 'apic', 'dend'],
+#                            'mechanism': 'NaTs2_t',
+#                            'bounds':{'soma':[0,5], 'apic':[0, 1e-1], 'dend' : [0,1e-2]}
+#                              }, 
+#                'gbar_NaTa_t': {'section' : ['axon'],
+#                            'mechanism': 'NaTa_t',
+#                            'bounds':{'axon':[0,10]}
+#                              },
+#                'gbar_Nap_Et2': {'section' : ['axon','soma'],
+#                            'mechanism': 'Nap_Et2',
+#                            'bounds':{'axon':[0,5],'soma':[0,1]}
+#                              },               
                 'gbar_K_Tst': {'section' : ['axon','soma'],
                               'mechanism' : 'K_Tst',
                               'bounds': {'axon':[0,1],'soma':[0,1]}

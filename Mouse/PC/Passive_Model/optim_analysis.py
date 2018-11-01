@@ -17,6 +17,8 @@ import errno
 import logging
 from matplotlib.backends.backend_pdf import PdfPages
 import math
+from shutil import copyfile
+
 
 matplotlib.use('Agg')
 
@@ -38,8 +40,9 @@ param_path = data['parameters']
 with open(fit_protocol_path) as json_file:  
     train_protocols = json.load(json_file)
     
-with open(fit_json_path) as json_file:  
-    model_data = json.load(json_file)
+if fit_json_path:
+    with open(fit_json_path) as json_file:  
+        model_data = json.load(json_file)
 
 with open('passive_param_bounds.json','r') as bound_file:
         passive_params_dict = json.load(bound_file)
@@ -109,15 +112,18 @@ def plot_diversity(opt, checkpoint_file, param_names):
         'dendrite_type' : cell_metadata['Dendrite_type']})
     
         hof_df=hof_df.append(temp_df) 
-        
-    for index, param_name in enumerate(param_names_arranged):
-        release_individual[index] = release_params[param_name]
+    
+    if release_params:    
+        for index, param_name in enumerate(param_names_arranged):
+            release_individual[index] = release_params[param_name]
+#        param_count = len(release_individual)
+        abs_release_individual = map(abs,release_individual)
+            
 
 #    param_history = checkpoint['history'].genealogy_history.values()
     fig, ax = plt.subplots(1,figsize=(6,6))
     
-    param_count = len(release_individual)
-    x = np.arange(param_count)
+    x = np.arange(len(optimized_individual_arranged))
     
     def add_line(ax, xpos, ypos):
         line = plt.Line2D([xpos, xpos], [ypos + .1, ypos],
@@ -141,10 +147,10 @@ def plot_diversity(opt, checkpoint_file, param_names):
     ax.scatter(x, abs_optimized_individual_arranged, marker = 'x', 
                alpha = 1, s=200, color= 'blue', edgecolor='black',
                label='optimized')
-    abs_release_individual = map(abs,release_individual)
-    ax.scatter(x, abs_release_individual, marker = 'x', 
-               alpha = 0.8, s=100, color= 'red', edgecolor='black'
-               , label = 'released')
+    if release_params:
+        ax.scatter(x, abs_release_individual, marker = 'x', 
+                   alpha = 0.8, s=100, color= 'red', edgecolor='black'
+                   , label = 'released')
     
     tick_labels = param_names_arranged
     
@@ -183,47 +189,19 @@ def plot_diversity(opt, checkpoint_file, param_names):
     optimized_param_dict = {key:optimized_individual_arranged[i] for i,key in \
                             enumerate(param_names_arranged)} 
     
-    param_dict_final = {key.split('.')[0]+'.'+
-                     section_map_inv[key.split('.')[1]] : optimized_param_dict[key] 
-                                            for key in optimized_param_dict.keys()} 
-    
-
-    for key in param_dict_final.keys():
-        opt_name,opt_sect = key.split('.')
-        data_key = 'genome'
-        repeat_list = list()
-        remove_indices = list()
-        for j in range(len(model_data[data_key])):
-
-            if model_data[data_key][j]['name'] == opt_name and \
-                       model_data[data_key][j]['section'] not in passive_params_dict[opt_name]['section']:
-               if opt_name not in repeat_list:                     
-                   model_data[data_key][j]['value'] = str(param_dict_final[key])
-                   model_data[data_key][j]['section'] = 'all'
-                   repeat_list.append(opt_name)
-               else:
-                   remove_indices.append(j)
-            elif model_data[data_key][j]['name'] == opt_name and model_data[data_key][j]['section'] == opt_sect:
-               model_data[data_key][j]['value'] = str(param_dict_final[key])
-               model_data[data_key][j]['section'] = opt_sect
-               
-        model_data[data_key] = [i for j, i in enumerate(model_data[data_key]) if j not in remove_indices]
-    
-    model_data['passive'] = [{'ra' : param_dict_final['Ra.all']}]
-    model_data['conditions'][0]['v_init'] = (item['value'] for item in params if \
-                                item["param_name"] == "v_init").next()   
     
     fit_json_write_path = 'fitted_params/optim_param_'+cell_id+ '.json'
+    fit_json_write_path_2 = './fit_opt.json'
+    
     if not os.path.exists(os.path.dirname(fit_json_write_path)):
         try:
             os.makedirs(os.path.dirname(fit_json_write_path))
         except OSError as exc: # Guard against race condition
             if exc.errno != errno.EEXIST:
                 raise
-    optim_param_write_path = 'optim_param_unformatted.json'
+    optim_param_write_path = 'fitted_params/optim_param_unformatted_' + cell_id +'.json'
    
-    with open(fit_json_write_path, 'w') as outfile:
-        json.dump(model_data, outfile,indent=4)
+    copyfile(fit_json_write_path_2, fit_json_write_path)
         
     with open(optim_param_write_path, 'w') as outfile:
         json.dump(optimized_param_dict, outfile,indent=4)
@@ -232,17 +210,7 @@ def plot_diversity(opt, checkpoint_file, param_names):
     
    # save parameters in a csv file to later plot in R
             
-    released_df = pd.DataFrame({ 'param_name' : param_names_arranged,
-        'section':sect_names_arranged,                        
-        'value' : release_individual,
-        'label' : 'Released',
-        'fitness': 5,
-        'cell_id' : cell_id,
-        'layer' : layer,
-        'area' : area,
-        'species' : species,
-        'cre_line' : cell_metadata['Cre_line'],
-        'dendrite_type' : cell_metadata['Dendrite_type']})
+    
 
     optimized_df = pd.DataFrame({'param_name' : param_names_arranged,
         'section':sect_names_arranged,                         
@@ -255,8 +223,24 @@ def plot_diversity(opt, checkpoint_file, param_names):
         'species' : species,
         'cre_line' : cell_metadata['Cre_line'],
         'dendrite_type' : cell_metadata['Dendrite_type']})
+    
+    if release_params:
+        released_df = pd.DataFrame({ 'param_name' : param_names_arranged,
+            'section':sect_names_arranged,                        
+            'value' : release_individual,
+            'label' : 'Released',
+            'fitness': 5,
+            'cell_id' : cell_id,
+            'layer' : layer,
+            'area' : area,
+            'species' : species,
+            'cre_line' : cell_metadata['Cre_line'],
+            'dendrite_type' : cell_metadata['Dendrite_type']})
+            
+        param_df = [optimized_df, released_df,hof_df] 
+    else:
+        param_df = [optimized_df,hof_df] 
         
-    param_df = [optimized_df, released_df,hof_df] 
     param_df = pd.concat(param_df)   
     param_df.to_csv('params.csv')
     

@@ -3,7 +3,11 @@
     "Layer": "2", 
     "Cell_id": "525133308", 
     "Area": "FroL", 
+    "Explained_variance": ".513", 
+    "Machine": "NERSC", 
+    "Dendrite_type": "spiny", 
+    "Perisomatic_id": "556384280", 
     "Cre_line": "", 
-    "Species": "Human",
-    "Dendrite_type": "Spiny"
+    "Feature_avg": ".937", 
+    "Species": "Human"
 }

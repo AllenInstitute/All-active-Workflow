@@ -18,6 +18,8 @@ import logging
 from matplotlib.backends.backend_pdf import PdfPages
 import math
 import bluepyopt.ephys as ephys
+from shutil import copyfile
+
 
 matplotlib.use('Agg')
 
@@ -35,7 +37,7 @@ release_params_original = {}
 fit_json_path = data['fit_json']
 fit_protocol_path = data['protocols']
 param_path = data['parameters']
-
+model_params_original = data['original_parameters']
 
 with open(fit_json_path) as json_file:  
         model_data = json.load(json_file)
@@ -58,16 +60,15 @@ species = cell_metadata['Species']
 cre_line = cell_metadata['Cre_line']
 dendrite_type = cell_metadata['Dendrite_type']
 
-analysis_write_path = str(cell_id) + '_analysis_Stage1.pdf'
+analysis_write_path = cell_id + '_analysis_Stage1.pdf'
 pdf_pages =  PdfPages(analysis_write_path)
 
 def plot_diversity(opt, checkpoint_file, param_names):
 
     plt.style.use('ggplot')
     checkpoint = pickle.load(open(checkpoint_file, "r"))
-    import copy
     
-    release_individual = copy.deepcopy(checkpoint['halloffame'][0])
+    release_individual = list()
     optimized_individual = [checkpoint['halloffame'][0]]
 #    optimized_fitness = optimized_individual[0].fitness.values
 
@@ -106,15 +107,16 @@ def plot_diversity(opt, checkpoint_file, param_names):
         'dendrite_type' : cell_metadata['Dendrite_type']})
     
         hof_df=hof_df.append(temp_df) 
-        
+    
+    
     for index, param_name in enumerate(param_names_arranged):
-        release_individual[index] = release_params[param_name]
-
-#    param_history = checkpoint['history'].genealogy_history.values()
+        if param_name in release_params.keys():
+            release_individual.append(release_params[param_name])
+    
     fig, ax = plt.subplots(1,figsize=(6,6))
     
-    param_count = len(release_individual)
-    x = np.arange(param_count)
+    x = np.arange(len(optimized_individual_arranged))
+    x_release = np.arange(len(release_individual))
     
     def add_line(ax, xpos, ypos):
         line = plt.Line2D([xpos, xpos], [ypos + .1, ypos],
@@ -139,7 +141,7 @@ def plot_diversity(opt, checkpoint_file, param_names):
                alpha = 1, s=200, color= 'blue', edgecolor='black',
                label='optimized')
     abs_release_individual = map(abs,release_individual)
-    ax.scatter(x, abs_release_individual, marker = 'x', 
+    ax.scatter(x_release, abs_release_individual, marker = 'x', 
                alpha = 0.8, s=100, color= 'red', edgecolor='black'
                , label = 'released')
     
@@ -174,33 +176,14 @@ def plot_diversity(opt, checkpoint_file, param_names):
     pdf_pages.savefig(fig)
     plt.close(fig)
 
-
-
     # save optimized parameters in fit.json format
     
     optimized_param_dict = {key:optimized_individual_arranged[i] for i,key in \
-                            enumerate(param_names_arranged)} 
+                            enumerate(param_names_arranged)}     
     
-    param_dict_final = {key.split('.')[0]+'.'+
-                     section_map_inv[key.split('.')[1]] : optimized_param_dict[key] 
-                                            for key in optimized_param_dict.keys()} 
-    for key in param_dict_final.keys():
-        opt_name,opt_sect = key.split('.')
-        data_key = 'genome'
-        
-        for j in range(len(model_data[data_key])):
-
-            if model_data[data_key][j]['name'] == opt_name and model_data[data_key][j]['section'] == opt_sect:
-               model_data[data_key][j]['value'] = str(param_dict_final[key])
-               
-        #model_data[data_key] = [i for j, i in enumerate(model_data[data_key]) if j not in remove_indices]
+    fit_json_write_path = 'fitted_params/optim_param_'+cell_id+ '.json'
+    fit_json_write_path_2 = './fit_opt.json'
     
-    
-    model_data['passive'] = [{'ra' : param_dict_final['Ra.all']}]
-    model_data['conditions'][0]['v_init'] = (item['value'] for item in params if \
-                                item["param_name"] == "v_init").next()
-    
-    fit_json_write_path = 'fitted_params/optim_param_'+str(cell_id)+ '.json'
     if not os.path.exists(os.path.dirname(fit_json_write_path)):
         try:
             os.makedirs(os.path.dirname(fit_json_write_path))
@@ -208,10 +191,10 @@ def plot_diversity(opt, checkpoint_file, param_names):
             if exc.errno != errno.EEXIST:
                 raise
     
-    with open(fit_json_write_path, 'w') as outfile:
-        json.dump(model_data, outfile,indent=4)
+    optim_param_write_path = 'fitted_params/optim_param_unformatted_' + cell_id +'.json'    
     
-    optim_param_write_path = 'optim_param_unformatted.json'    
+    copyfile(fit_json_write_path_2, fit_json_write_path)
+    
     with open(optim_param_write_path, 'w') as outfile:
         json.dump(optimized_param_dict, outfile,indent=4)
         
@@ -219,17 +202,7 @@ def plot_diversity(opt, checkpoint_file, param_names):
     
    # save parameters in a csv file to later plot in R
             
-    released_df = pd.DataFrame({ 'param_name' : param_names_arranged,
-        'section':sect_names_arranged,                        
-        'value' : release_individual,
-        'label' : 'Released',
-        'fitness': 5,
-        'cell_id' : cell_id,
-        'layer' : layer,
-        'area' : area,
-        'species' : species,
-        'cre_line' : cell_metadata['Cre_line'],
-        'dendrite_type' : cell_metadata['Dendrite_type']})
+   
     
     optimized_df = pd.DataFrame({'param_name' : param_names_arranged,
         'section':sect_names_arranged,                         
@@ -242,10 +215,24 @@ def plot_diversity(opt, checkpoint_file, param_names):
         'species' : species,
         'cre_line' : cell_metadata['Cre_line'],
         'dendrite_type' : cell_metadata['Dendrite_type']})
-        
-    param_df = [optimized_df, released_df,hof_df] 
+    
+    if model_params_original:    
+        released_df = pd.DataFrame({ 'param_name' : param_names_arranged,
+            'section':sect_names_arranged,                        
+            'value' : release_individual,
+            'label' : 'Released',
+            'fitness': 5,
+            'cell_id' : cell_id,
+            'layer' : layer,
+            'area' : area,
+            'species' : species,
+            'cre_line' : cell_metadata['Cre_line'],
+            'dendrite_type' : cell_metadata['Dendrite_type']})    
+        param_df = [optimized_df, released_df,hof_df] 
+    else:
+        param_df = [optimized_df,hof_df] 
     param_df = pd.concat(param_df)  
-    csv_filename = 'params_'+str(cell_id)+ '.csv'
+    csv_filename = 'params_'+cell_id+ '.csv'
     param_df.to_csv(csv_filename)
     
     logger.debug('Saving the parameters in .csv for plotting in R')    
@@ -347,26 +334,30 @@ def feature_comp(opt, opt_release, checkpoint_file,responses_filename,response_r
     hof = checkpoint['halloffame']
 
     # objectives
-    if response_release_filename and os.path.exists(response_release_filename):
-        responses_release = pickle.load(open(response_release_filename, "r"))
-        logger.debug('Retrieving Released Responses')
-    else:
-        logger.debug('Calculating Released Responses')
-        fitness_protocols = opt.evaluator.fitness_protocols
-        responses_release = {}
-        
-        nrn = ephys.simulators.NrnSimulator()
-        
-        for protocol in fitness_protocols.values():
-            response_release = protocol.run(
-                    cell_model=opt_release.evaluator.cell_model,
-                    param_values=release_params_original,
-                    sim=nrn)
-            responses_release.update(response_release)
+    if model_params_original:
+        if response_release_filename and os.path.exists(response_release_filename):
+            responses_release = pickle.load(open(response_release_filename, "r"))
+            logger.debug('Retrieving Released Responses')
+        else:
+            logger.debug('Calculating Released Responses')
+            fitness_protocols = opt.evaluator.fitness_protocols
+            responses_release = {}
             
-        if response_release_filename:    
-            with open(response_release_filename, 'w') as fd:
-                pickle.dump(responses_release, fd)
+            nrn = ephys.simulators.NrnSimulator()
+            
+            for protocol in fitness_protocols.values():
+                response_release = protocol.run(
+                        cell_model=opt_release.evaluator.cell_model,
+                        param_values=release_params_original,
+                        sim=nrn)
+                responses_release.update(response_release)
+                
+            if response_release_filename:    
+                with open(response_release_filename, 'w') as fd:
+                    pickle.dump(responses_release, fd)
+                    
+    else:
+        responses_release = {}
             
     
     responses = get_responses(opt.evaluator, hof, responses_filename)
@@ -374,6 +365,7 @@ def feature_comp(opt, opt_release, checkpoint_file,responses_filename,response_r
     
     objectives = opt.evaluator.fitness_calculator.calculate_scores(responses)
     objectives_release = opt.evaluator.fitness_calculator.calculate_scores(responses_release)
+    
     
     import collections
     objectives = collections.OrderedDict(sorted(objectives.iteritems()))
@@ -411,14 +403,15 @@ def feature_comp(opt, opt_release, checkpoint_file,responses_filename,response_r
               color='b',
               alpha=opacity,
               label='Optimized')
-              
-        ax.bar(index,
-              iter_dict_release.values(),
-              bar_width,
-              align='center',
-              color='r',
-              alpha=opacity,
-              label='Released')  
+        
+        if model_params_original:
+            ax.bar(index,
+                  iter_dict_release.values(),
+                  bar_width,
+                  align='center',
+                  color='r',
+                  alpha=opacity,
+                  label='Released')  
         ax.set_xticks(xtick_pos)
         ax.set_xticklabels(tick_label, fontsize= 8)
         for tick in ax.yaxis.get_major_ticks():
@@ -480,27 +473,28 @@ def plot_Response(opt,opt_release,checkpoint_file, responses_filename,response_r
     
     responses = get_responses(opt.evaluator, hof, responses_filename)
     response = responses[0]
-
-    if response_release_filename and os.path.exists(response_release_filename):
-        responses_release = pickle.load(open(response_release_filename, "r"))
-        logger.debug('Retrieving Released Responses')
-    else:
-        logger.debug('Calculating Released Responses')
-        fitness_protocols = opt.evaluator.fitness_protocols
-        responses_release = {}
-        
-        nrn = ephys.simulators.NrnSimulator()
-        
-        for protocol in fitness_protocols.values():
-            response_release = protocol.run(
-                    cell_model=opt_release.evaluator.cell_model,
-                    param_values=release_params_original,
-                    sim=nrn)
-            responses_release.update(response_release)
+    
+    if model_params_original:
+        if response_release_filename and os.path.exists(response_release_filename):
+            responses_release = pickle.load(open(response_release_filename, "r"))
+            logger.debug('Retrieving Released Responses')
+        else:
+            logger.debug('Calculating Released Responses')
+            fitness_protocols = opt.evaluator.fitness_protocols
+            responses_release = {}
             
-        if response_release_filename:    
-            with open(response_release_filename, 'w') as fd:
-                pickle.dump(responses_release, fd)
+            nrn = ephys.simulators.NrnSimulator()
+            
+            for protocol in fitness_protocols.values():
+                response_release = protocol.run(
+                        cell_model=opt_release.evaluator.cell_model,
+                        param_values=release_params_original,
+                        sim=nrn)
+                responses_release.update(response_release)
+                
+            if response_release_filename:    
+                with open(response_release_filename, 'w') as fd:
+                    pickle.dump(responses_release, fd)
     
     plt.style.use('ggplot') 
     training_plots = 0

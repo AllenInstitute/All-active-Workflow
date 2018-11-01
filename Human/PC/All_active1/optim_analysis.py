@@ -190,7 +190,7 @@ def plot_diversity(opt, checkpoint_file, param_names, hof_index = 0):
 
     # save optimized parameters in fit.json format
     
-    fit_json_write_path = 'fitted_params/optim_param_'+str(cell_id)+ '.json'
+    fit_json_write_path = 'fitted_params/optim_param_'+cell_id+ '.json'
     if not os.path.exists(os.path.dirname(fit_json_write_path)):
         try:
             os.makedirs(os.path.dirname(fit_json_write_path))
@@ -214,10 +214,14 @@ def plot_diversity(opt, checkpoint_file, param_names, hof_index = 0):
     for key in param_dict_final.keys():
         opt_name,opt_sect = key.split('.')
         mech_list = opt_name.split('_',1)
+        if len(mech_list) > 1:
+            mech = mech_list[1]
+        else:
+            mech = ''
         
-        if len(mech_list) > 1 and 'pas' not in mech_list:
+        if (len(mech_list) > 1 and 'pas' not in mech_list) or opt_name == 'cm':
             model_data[data_key].append({'name' : opt_name,
-                                         'mechanism' : mech_list[1],
+                                         'mechanism' : mech,
                                          'section' : opt_sect,
                                          'value' : str(param_dict_final[key])})
               
@@ -239,7 +243,7 @@ def plot_diversity(opt, checkpoint_file, param_names, hof_index = 0):
     with open(fit_json_write_path, 'w') as outfile:
         json.dump(model_data, outfile,indent=4)
     
-    optim_param_write_path = 'optim_param_unformatted.json'    
+    optim_param_write_path = 'fitted_params/optim_param_unformatted_' + cell_id +'.json' 
     with open(optim_param_write_path, 'w') as outfile:
         json.dump(optimized_param_dict, outfile,indent=4)
         
@@ -274,7 +278,7 @@ def plot_diversity(opt, checkpoint_file, param_names, hof_index = 0):
         
     param_df = [optimized_df, released_df,hof_df] 
     param_df = pd.concat(param_df)  
-    csv_filename = 'params_'+str(cell_id)+ '.csv'
+    csv_filename = 'fitted_params/params_'+cell_id+ '.csv'
     param_df.to_csv(csv_filename)
     
     logger.debug('Saving the parameters in .csv format')    
@@ -549,7 +553,9 @@ def plot_Response(opt,checkpoint_file, responses_filename,hof_index = 0):
                 index_plot +=1
                 if index%fig_per_page == 0 or index_plot == training_plots:
                     fig_comp.suptitle('Response Comparisons',fontsize=16)
-                    fig_comp.legend(handles = (l1,l3),  loc = 'lower center', ncol=2)
+                    handles = [l1, l3]
+                    labels = [h.get_label() for h in handles]
+                    fig_comp.legend(handles = handles, labels=labels, loc = 'lower center', ncol=2)
                     fig_comp.tight_layout(rect=[0, 0.03, 1, 0.95])
                     pdf_pages.savefig(fig_comp)
                     plt.close(fig_comp)

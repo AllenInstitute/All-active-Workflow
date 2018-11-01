@@ -22,8 +22,9 @@ feature_set = {
                               'adaptation_index2',
                               'AHP_depth',
 #                              'AHP_depth_abs_slow',
-                              'depol_block',
-                              'check_AISInitiation']
+                              'depol_block'
+#                              'check_AISInitiation'
+                              ]
 #       'dendritic_features' :['AP_amplitude_from_voltagebase',
 #                              'AP_width']
             }

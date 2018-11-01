@@ -60,6 +60,9 @@ def save_optimized_params(checkpoint_file,param_names):
     param_dict_final = {key.split('.')[0]+'.'+
                      section_map_inv[key.split('.')[1]] : optimized_param_dict[key] 
                                             for key in optimized_param_dict.keys()} 
+    
+    added_list = list()
+    
     for key in param_dict_final.keys():
         opt_name,opt_sect = key.split('.')
         data_key = 'genome'
@@ -68,8 +71,21 @@ def save_optimized_params(checkpoint_file,param_names):
 
             if model_data[data_key][j]['name'] == opt_name and model_data[data_key][j]['section'] == opt_sect:
                model_data[data_key][j]['value'] = str(param_dict_final[key])
+               added_list.append(key)
                
-     
+    if not data['original_parameters']:
+        for key in param_dict_final.keys():
+            if key not in added_list:
+                param_name,sect = key.split('.') 
+                model_data['genome'].append(
+                        {
+                          'section' : sect,
+                          'name'    : param_name,
+                          'value'   : str(param_dict_final[key]),
+                          'mechanism': 'Ih'      
+                        })              
+    
+        
     model_data['passive'] = [{'ra' : param_dict_final['Ra.all']}]
     model_data['conditions'][0]['v_init'] = (item['value'] for item in params if \
                                 item["param_name"] == "v_init").next()

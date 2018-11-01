@@ -27,7 +27,8 @@ def all_features_path(cell_map, train_protocols_path):
     ephys_location = cell_map[cell_name]['ephys']
     stim_map = get_stim_map(os.path.join(ephys_location, 'StimMapReps.csv'))
     feature_set_map = get_feature_set_map(cell_map[cell_name]['feature_set_map'])
-    stim_features = [feat for feat in feature_set_map['somatic_features'] if feat != 'depol_block']
+    stim_features = [feat for feat in feature_set_map['somatic_features'] \
+                     if feat not in ['depol_block','check_AISInitiation']]
     features_meanstd = collections.defaultdict(
             lambda: collections.defaultdict(
                 lambda: collections.defaultdict(dict)))
@@ -39,7 +40,9 @@ def all_features_path(cell_map, train_protocols_path):
     
     for stim_name,stim_params in stim_map.items():
                 
-                
+        if 'Ramp' in stim_name: # ignore Ramp for validation metrics
+            continue
+        
         print "\n### Getting features from %s of cell %s ###\n" \
             % (stim_name, cell_name)
                 

@@ -30,7 +30,7 @@ STAGE_NEXT="_STAGE1"
 JOBNAME=$CELL_ID$STAGE
 LAUNCH_JOBNAME=$CELL_ID$STAGE_NEXT
 sed -i -e "s/Stage0/$JOBNAME/g" start_haswell.sh
-sed -i -e "s/Stage1/$LAUNCH_JOBNAME/g" launch_stage1.slurm
+sed -i -e "s/Stage_1/$LAUNCH_JOBNAME/g" launch_stage1.slurm
 echo "Launching Stage 0 Opimization"
 RES_0=$(sbatch start_haswell.sh)  # sbatch command goes here
 echo ${RES_0##* } > Job_0.txt

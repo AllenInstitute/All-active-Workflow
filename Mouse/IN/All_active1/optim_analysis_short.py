@@ -44,6 +44,8 @@ mech_path = data['mechanism']
 feature_path = data['features']
 param_path = data['parameters']
 all_protocol_path = data['all_protocols']
+original_release_param = data['original_parameters']
+
 
 with open(protocol_path) as json_file:  
     train_protocols = json.load(json_file)
@@ -170,15 +172,15 @@ def plot_Response(opt,opt_release,checkpoint_file, responses_filename,
         logger.debug('Calculating Released Responses')
         fitness_protocols = opt.evaluator.fitness_protocols
         responses_release = {}
-        
-        nrn = ephys.simulators.NrnSimulator()
-        
-        for protocol in fitness_protocols.values():
-            response_release = protocol.run(
-                    cell_model=opt_release.evaluator.cell_model,
-                    param_values=release_params_original,
-                    sim=nrn)
-            responses_release.update(response_release)
+        if original_release_param:
+            nrn = ephys.simulators.NrnSimulator()
+            
+            for protocol in fitness_protocols.values():
+                response_release = protocol.run(
+                        cell_model=opt_release.evaluator.cell_model,
+                        param_values=release_params_original,
+                        sim=nrn)
+                responses_release.update(response_release)
             
         if response_release_filename:    
             with open(response_release_filename, 'w') as fd:

@@ -1,9 +1,10 @@
 #!/bin/bash -l 
-#SBATCH -q shared 
+#SBATCH -q debug
 #SBATCH -t 0:30:00 
-#SBATCH -J launch_Stage1 
+#SBATCH -L SCRATCH
+#SBATCH -J launch_Stage_1 
 #SBATCH -C haswell 
-#SBATCH -n 1 
+#SBATCH -N 1 
 
 export PASS_IH_REPO="/project/projectdirs/m2043/AIBS/ani/Human/PC/Passive_Ih_Repo"
 
@@ -44,7 +45,7 @@ CELL_ID=$(<cell_id.txt)
 JOBNAME=$CELL_ID$STAGE
 LAUNCH_JOBNAME=$CELL_ID$STAGE_NEXT
 sed -i -e "s/Stage1/$JOBNAME/g" start_haswell.sh
-sed -i -e "s/Stage2/$LAUNCH_JOBNAME/g" launch_stage2.slurm
+sed -i -e "s/Stage_2/$LAUNCH_JOBNAME/g" launch_stage2.slurm
 echo "Launching Stage 1 Opimization"
 RES_1=$(sbatch start_haswell.sh)  # sbatch command goes here
 echo ${RES_1##* } > Job_1.txt

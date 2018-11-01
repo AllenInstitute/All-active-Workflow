@@ -44,6 +44,8 @@ mech_path = data['mechanism']
 feature_path = data['features']
 param_path = data['parameters']
 all_protocol_path = data['all_protocols']
+original_release_param = data['original_parameters']
+
 
 with open(protocol_path) as json_file:  
     train_protocols = json.load(json_file)
@@ -212,15 +214,20 @@ def plot_diversity(opt, checkpoint_file, param_names,hof_index = 0):
         model_param_name = model_data[data_key][j]['name']
         model_param_sect = model_data[data_key][j]['section']
         
-        if model_param_name not in all_param_bounds.keys():
-            remove_indices.append(j)
+#        if model_param_name not in all_param_bounds.keys():
+#            remove_indices.append(j)
         
         for key in param_dict_final.keys():
             opt_name,opt_sect = key.split('.')
 
             if model_param_name == opt_name and model_param_sect == opt_sect:
+                if model_param_sect == 'all':
+                    remove_indices.append(j)
+                    continue
                 model_data[data_key][j]['value'] = str(param_dict_final[key])
                 added_list.append(key)
+        if model_param_name+'.'+model_param_sect not in param_dict_final.keys():
+            remove_indices.append(j)
     
     model_data[data_key] = [i for j, i in enumerate(model_data[data_key]) if j not in remove_indices]
 
@@ -228,11 +235,20 @@ def plot_diversity(opt, checkpoint_file, param_names,hof_index = 0):
     for key,val in param_dict_final.items():
         if key not in added_list:
             opt_name,opt_sect = key.split('.')
-            model_data[data_key].append({'name' : opt_name,
+            if opt_sect == 'all':
+                sect_list = [sect for sect in section_map_inv.values() if sect not in ['all', 'apic']]
+                for sect in sect_list:
+                    model_data[data_key].append({'name' : opt_name,
+                                         'section': sect,
+                                         'value' : str(val),
+                                         'mechanism': ''})
+                    
+            else:
+                model_data[data_key].append({'name' : opt_name,
                                          'section': opt_sect,
                                          'value' : str(val),
                                          'mechanism': all_param_bounds[opt_name]['mechanism']})
-    
+            
     fit_json_write_path = 'fitted_params/optim_param_'+cell_id+ '.json'
     if not os.path.exists(os.path.dirname(fit_json_write_path)):
         try:
@@ -244,7 +260,7 @@ def plot_diversity(opt, checkpoint_file, param_names,hof_index = 0):
     with open(fit_json_write_path, 'w') as outfile:
         json.dump(model_data, outfile,indent=4)
     
-    optim_param_write_path = 'optim_param_unformatted_' + cell_id +'.json'    
+    optim_param_write_path = 'fitted_params/optim_param_unformatted_' + cell_id +'.json'    
     with open(optim_param_write_path, 'w') as outfile:
         json.dump(optimized_param_dict, outfile,indent=4)
         
@@ -278,7 +294,7 @@ def plot_diversity(opt, checkpoint_file, param_names,hof_index = 0):
         
     param_df = [optimized_df, released_df,hof_df] 
     param_df = pd.concat(param_df)  
-    csv_filename = 'params_'+str(cell_id)+ '.csv'
+    csv_filename = 'fitted_params/params_'+cell_id+ '.csv'
     param_df.to_csv(csv_filename)
     
     logger.debug('Saving the parameters in .csv for plotting in R')    
@@ -401,14 +417,14 @@ def feature_comp(opt, opt_release, checkpoint_file,responses_filename,response_r
               color='b',
               alpha=opacity,
               label='Optimized')
-              
-        ax.bar(index,
-              iter_dict_release.values(),
-              bar_width,
-              align='center',
-              color='r',
-              alpha=opacity,
-              label='Released')  
+        if original_release_param:      
+            ax.bar(index,
+                  iter_dict_release.values(),
+                  bar_width,
+                  align='center',
+                  color='r',
+                  alpha=opacity,
+                  label='Released')  
         ax.set_xticks(xtick_pos)
         ax.set_xticklabels(tick_label, fontsize= 8)
         plt.xticks(rotation=90)
@@ -542,8 +558,7 @@ def plot_Response(opt,opt_release,checkpoint_file, responses_filename,
                 fig_comp = fig_mat[fig_index]
                 response_time = response[name_loc]['time']
                 response_voltage = response[name_loc]['voltage']
-                responses_release_time = responses_release[name_loc]['time']
-                responses_release_voltage = responses_release[name_loc]['voltage']
+
                 color = 'blue'
                 l1, = ax_comp[index/n_col,index%n_col].plot(response_time,
                         response_voltage,
@@ -560,12 +575,15 @@ def plot_Response(opt,opt_release,checkpoint_file, responses_filename,
                             linewidth=1,
                             label = 'Cell Response',
                             alpha = 0.8)  
-                l4,=ax_comp[index/n_col,index%n_col].plot(responses_release_time,
-                        responses_release_voltage,
-                        color='r',
-                        linewidth=.1,
-                        label = 'Released',
-                        alpha = 0.4)  
+                if original_release_param:
+                    responses_release_time = responses_release[name_loc]['time']
+                    responses_release_voltage = responses_release[name_loc]['voltage']
+                    l4,=ax_comp[index/n_col,index%n_col].plot(responses_release_time,
+                            responses_release_voltage,
+                            color='r',
+                            linewidth=.1,
+                            label = 'Released',
+                            alpha = 0.4)  
         
 
                     
@@ -584,7 +602,12 @@ def plot_Response(opt,opt_release,checkpoint_file, responses_filename,
                 index_plot +=1
                 if index%fig_per_page == 0 or index_plot == all_plots:
                     fig_comp.suptitle('Response Comparisons',fontsize=16)
-                    fig_comp.legend(handles = (l1,l3,l4),  loc = 'lower center', ncol=3)
+                    if original_release_param:
+                        handles = [l1, l3, l4]
+                    else:
+                         handles = [l1, l3]
+                    labels = [h.get_label() for h in handles] 
+                    fig_comp.legend(handles = handles, labels=labels, loc = 'lower center', ncol=3)
                     fig_comp.tight_layout(rect=[0, 0.03, 1, 0.95])
                     pdf_pages.savefig(fig_comp)
                     plt.close(fig_comp)
@@ -601,24 +624,34 @@ def plot_Response(opt,opt_release,checkpoint_file, responses_filename,
     
     fig,axes = plt.subplots(len(DB_responses), figsize=(7,7), sharex = True)
     
-    for i,key in enumerate(DB_responses.keys()):
+    if len(DB_responses) > 1: 
+        for i,key in enumerate(DB_responses.keys()):
+            
+            if 'soma' in key:
+                label = 'soma'
+                color = 'b'
+            else:
+                label = key.split('.')[1]
+                color = 'r'
+            axes[i].plot(DB_responses[key]['time'],
+                 DB_responses[key]['voltage'],lw =1.5,color = color,label = label)
+            
+           
+            for ax in axes:
+                ax.set_xlim([amp_start_DB-200, amp_end_DB+200])
+                ax.legend(loc = 'upper right', prop={'size': 12})
+            axes[-1].set_xlabel('Time in ms')
         
-        if 'soma' in key:
-            label = 'soma'
-            color = 'b'
-        else:
-            label = key.split('.')[1]
-            color = 'r'
-        axes[i].plot(DB_responses[key]['time'],
-             DB_responses[key]['voltage'],lw =1.5,color = color,label = label)
+    else:
+        DB_response_time = DB_responses.values()[0]['time']
+        DB_response_voltage = DB_responses.values()[0]['voltage']
+        axes.plot(DB_response_time,DB_response_voltage,
+                lw =1.5,color = 'b',label = 'soma')
+        axes.set_xlim([amp_start_DB-200, amp_end_DB+200])
+        axes.legend(loc = 'upper right', prop={'size': 12})
+        axes.set_xlabel('Time in ms')
         
-        
-    for ax in axes:
-        ax.set_xlim([amp_start_DB-200, amp_end_DB+200])
-        ax.legend(loc = 'upper right', prop={'size': 12})
-    axes[-1].set_xlabel('Time in ms')
     fig.suptitle('DB checked Response for Parameter set %s'%hof_index)
-    
     logger.debug('Plotting response comparisons for DB_check_DC')
     pdf_pages.savefig(fig)
     plt.close(fig)

@@ -12,6 +12,7 @@ import json
 import pickle
 import errno
 import numpy as np
+from collections import defaultdict
 
 
 with open('config_file.json') as json_file:  
@@ -23,14 +24,60 @@ fit_json_path = data['fit_json']
 section_map_inv = {'somatic':'soma', 'axonal':'axon', 'apical':'apic',
                'basal':'dend', 'all':'all'}
 
-with open(fit_json_path) as json_file:  
-        model_data = json.load(json_file)
-
+   
 with open('passive_param_bounds.json','r') as bound_file:
         passive_params_dict = json.load(bound_file)
 
 with open(param_path) as json_file:  
     params = json.load(json_file)
+
+def fit_json_writer(param_dict):
+    fit_json_dict = defaultdict(list)
+    with open(param_path) as json_file:  
+        params = json.load(json_file)
+    fit_json_dict['passive'].append({'ra' : param_dict['Ra.all']})
+    fit_json_dict['fitting'].append({
+            'junction_potential' : -14.0,
+             'sweeps' : []    
+             })
+    fit_json_dict['conditions'].append({'celsius' : 34,
+                 "erev": [
+                        {
+                          "ena": 53.0, 
+                          "section": "soma", 
+                          "ek": -107.0
+                        }, 
+                        {
+                          "ena": 53.0, 
+                          "section": "axon", 
+                          "ek": -107.0
+                        }, 
+                        {
+                          "ena": 53.0, 
+                          "section": "apic", 
+                          "ek": -107.0
+                        }, 
+                        {
+                          "ena": 53.0, 
+                          "section": "dend", 
+                          "ek": -107.0
+                        }
+                      ], 
+                     "v_init": (item['value'] for item in params if \
+                                item["param_name"] == "v_init").next()
+                 })
+    for param,val in param_dict.items():
+        param_name,sect = param.split('.') 
+        fit_json_dict['genome'].append(
+                {
+                  'section' : sect,
+                  'name'    : param_name,
+                  'value'   : str(val),
+                  'mechanism': ''      
+                })
+        
+    return fit_json_dict
+
         
 def save_optimized_params(checkpoint_file,param_names):
     
@@ -63,30 +110,41 @@ def save_optimized_params(checkpoint_file,param_names):
     param_dict_final = {key.split('.')[0]+'.'+
                      section_map_inv[key.split('.')[1]] : optimized_param_dict[key] 
                                             for key in optimized_param_dict.keys()} 
-    for key in param_dict_final.keys():
-        opt_name,opt_sect = key.split('.')
-        data_key = 'genome'
-        repeat_list = list()
-        remove_indices = list()
-        for j in range(len(model_data[data_key])):
-
-            if model_data[data_key][j]['name'] == opt_name and \
-                       model_data[data_key][j]['section'] not in passive_params_dict[opt_name]['section']:
-               if opt_name not in repeat_list:                     
-                   model_data[data_key][j]['value'] = str(param_dict_final[key])
-                   model_data[data_key][j]['section'] = 'all'
-                   repeat_list.append(opt_name)
-               else:
-                   remove_indices.append(j)
-            elif model_data[data_key][j]['name'] == opt_name and model_data[data_key][j]['section'] == opt_sect:
-               model_data[data_key][j]['value'] = str(param_dict_final[key])
-               model_data[data_key][j]['section'] = opt_sect
-               
-        model_data[data_key] = [i for j, i in enumerate(model_data[data_key]) if j not in remove_indices]
-     
-    model_data['passive'] = [{'ra' : param_dict_final['Ra.all']}]
-    model_data['conditions'][0]['v_init'] = (item['value'] for item in params if \
-                                item["param_name"] == "v_init").next()   
     
+    if fit_json_path:
+        with open(fit_json_path) as json_file:  
+            model_data = json.load(json_file)
+
+        for key in param_dict_final.keys():
+            opt_name,opt_sect = key.split('.')
+            data_key = 'genome'
+            repeat_list = list()
+            remove_indices = list()
+            for j in range(len(model_data[data_key])):
+    
+                if model_data[data_key][j]['name'] == opt_name and \
+                           model_data[data_key][j]['section'] not in passive_params_dict[opt_name]['section']:
+                   if opt_name not in repeat_list:                     
+                       model_data[data_key][j]['value'] = str(param_dict_final[key])
+                       model_data[data_key][j]['section'] = 'all'
+                       repeat_list.append(opt_name)
+                   else:
+                       remove_indices.append(j)
+                elif model_data[data_key][j]['name'] == opt_name and model_data[data_key][j]['section'] == opt_sect:
+                   model_data[data_key][j]['value'] = str(param_dict_final[key])
+                   model_data[data_key][j]['section'] = opt_sect
+            
+            model_data[data_key] = [i for j, i in enumerate(model_data[data_key]) if j not in remove_indices]
+         
+        model_data['passive'] = [{'ra' : param_dict_final['Ra.all']}]
+        model_data['conditions'][0]['v_init'] = (item['value'] for item in params if \
+                                item["param_name"] == "v_init").next()          
+         
+       
+    else:
+        model_data = fit_json_writer(param_dict_final) 
+        
+        
+        
     with open(fit_json_write_path, 'w') as outfile:
         json.dump(model_data, outfile,indent=4)

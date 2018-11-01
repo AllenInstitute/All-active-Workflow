@@ -15,7 +15,7 @@ import textwrap
 import json
 from datetime import datetime
 import shutil
-from shutil import copyfile
+#from shutil import copyfile
 
 
 import evaluator_helper
@@ -24,8 +24,8 @@ import checkpoint_decider
 cp_backup = 'checkpoints_backup'
 cp_source = 'checkpoints'
 
-if os.path.exists('time_info_back_up.txt'):
-    copyfile('time_info_back_up.txt', 'time_info.txt')
+#if os.path.exists('time_info_back_up.txt'):
+#    copyfile('time_info_back_up.txt', 'time_info.txt')
     
 
 logging.basicConfig(level=logging.DEBUG) 
@@ -71,7 +71,7 @@ def create_optimizer(args):
             f.close()
             
             # Create a back-up of the timing information
-            copyfile('time_info.txt', 'time_info_back_up.txt')
+#            copyfile('time_info.txt', 'time_info_back_up.txt')
             return ret
 
         map_function = mapper

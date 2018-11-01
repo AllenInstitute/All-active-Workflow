@@ -71,8 +71,11 @@ def create_optimizer(args):
         
         evaluator = evaluator_helper.create(all_protocol_path, feature_path, morph_path, 
                                         param_path, mech_path)
-        evaluator_release =  evaluator_helper.create(all_protocol_path, feature_path, morph_path, 
+        if original_release_param:
+            evaluator_release =  evaluator_helper.create(all_protocol_path, feature_path, morph_path, 
                                         original_release_param, mech_release_path)
+        else:
+            evaluator_release = None
     else:
             
         evaluator = evaluator_helper.create(protocol_path, feature_path, morph_path, 
@@ -88,11 +91,13 @@ def create_optimizer(args):
             evaluator=evaluator,
             map_function=map_function,
             seed=seed)
-    
-    opt_release = bpopt.optimisations.DEAPOptimisation(
-        evaluator=evaluator_release,
-        map_function=map_function,
-        seed=seed)
+    if original_release_param:
+        opt_release = bpopt.optimisations.DEAPOptimisation(
+            evaluator=evaluator_release,
+            map_function=map_function,
+            seed=seed)
+    else:
+        opt_release = None    
 
     return opt,opt_release
     

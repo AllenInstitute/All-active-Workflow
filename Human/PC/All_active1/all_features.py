@@ -34,9 +34,12 @@ def all_features_path(cell_map, train_protocols_path):
     all_features_json_filename = 'config/'+ cell_name +'/all_features.json'
     trained_features_json_filename = 'config/'+ cell_name +'/trained_features.json'
     untrained_features_json_filename = 'config/'+ cell_name +'/untrained_features.json'
+    
     for stim_name,stim_params in stim_map.items():
                 
-                
+        if 'Ramp' in stim_name: # ignore Ramp for validation metrics
+            continue
+        
         print "\n### Getting features from %s of cell %s ###\n" \
             % (stim_name, cell_name)
                 
