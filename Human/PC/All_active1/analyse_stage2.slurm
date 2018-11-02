@@ -12,6 +12,9 @@ sh short_analyse.sh
 python calculate_validation_resp.py
 python save_time.py
 sh analyse.sh
+<<<<<<< HEAD
 python perisomatic_sim.py
+=======
+>>>>>>> b673469fd583adba569777e00d7e8f6f81d54529
 python get_validation_metrics.py
 
