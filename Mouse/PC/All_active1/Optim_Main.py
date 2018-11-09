@@ -87,7 +87,8 @@ def create_optimizer(args):
         
         if original_release_param:
             evaluator_release =  evaluator_helper.create(all_protocol_path, feature_path, morph_path, 
-                                            original_release_param, mech_release_path)
+             original_release_param, mech_release_path,
+                do_replace_axon = False,do_replace_axon_swc = True)
         else:
             evaluator_release = None    
     else:

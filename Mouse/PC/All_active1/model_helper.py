@@ -102,19 +102,19 @@ def define_parameters(param_path):
     return parameters
 
 
-def define_morphology(morph_path):
+def define_morphology(morph_path,do_replace_axon,do_replace_axon_swc):
     """Define morphology"""
 
     return ephys.morphologies.NrnFileMorphology(morph_path,
-                                                do_replace_axon=True)
+        do_replace_axon=do_replace_axon, do_replace_axon_swc = do_replace_axon_swc)
 
 
-def create(morph_path, param_path,mech_path):
+def create(morph_path, param_path,mech_path,do_replace_axon,do_replace_axon_swc):
     """Create cell model"""
 
     cell = ephys.models.CellModel(
         'cell',
-        morph=define_morphology(morph_path),
+        morph=define_morphology(morph_path,do_replace_axon,do_replace_axon_swc),
         mechs=define_mechanisms(mech_path),
         params=define_parameters(param_path))
 
