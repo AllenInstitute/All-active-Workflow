@@ -161,10 +161,12 @@ def define_fitness_calculator(protocols, features_write_path, weight_dict):
     return fitcalc
 
 
-def create(protocol_path,feature_path, morph_path, param_path, mech_path, weight_dict = None):
+def create(protocol_path,feature_path, morph_path, param_path, mech_path,
+           do_replace_axon = True,do_replace_axon_swc = False, weight_dict = None):
     """Setup"""
 
-    cell = model_helper.create(morph_path, param_path,mech_path)
+    cell = model_helper.create(morph_path, param_path,mech_path,
+                               do_replace_axon,do_replace_axon_swc)
 
     fitness_protocols = define_protocols(protocol_path)
     fitness_calculator = define_fitness_calculator(fitness_protocols,feature_path, weight_dict)

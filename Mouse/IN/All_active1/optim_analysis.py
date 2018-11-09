@@ -761,8 +761,8 @@ def post_processing(checkpoint_file, responses_filename):
                 stim_name = key.split('.')[0]
                 if 'DB' in stim_name:
                     continue
-                resp_time = val['time'].as_matrix()
-                resp_voltage = val['voltage'].as_matrix()
+                resp_time = val['time'].values
+                resp_voltage = val['voltage'].values
                 stim_amp = stim_map[stim_name]['stimuli'][0]['amp']
                 trace1 = {}
                 trace1['T'] = resp_time
@@ -850,8 +850,8 @@ def post_processing(checkpoint_file, responses_filename):
         model_sweeps = []    
         model_sweep = {}
         name_loc = stim_name+'.soma.v'
-        resp_time = opt_responses[name_loc]['time'].as_matrix()
-        resp_voltage = opt_responses[name_loc]['voltage'].as_matrix()
+        resp_time = opt_responses[name_loc]['time'].values
+        resp_voltage = opt_responses[name_loc]['voltage'].values
         model_sweep['T'] = resp_time
         model_sweep['V'] = resp_voltage
         model_sweep['stim_start'] = [stim_map[stim_name]['stimuli'][0]['delay']]
