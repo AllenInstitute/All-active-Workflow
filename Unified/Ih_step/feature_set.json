@@ -1,0 +1,10 @@
+{
+    "subthreshold_features": [
+        "voltage_base", 
+        "steady_state_voltage", 
+        "voltage_deflection_vb_ssse", 
+        "decay_time_constant_after_stim", 
+        "sag_amplitude", 
+        "Spikecount"
+    ]
+}
