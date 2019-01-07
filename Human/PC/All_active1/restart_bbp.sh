@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #SBATCH -p prod 
-#SBATCH -t 36:00:00
+#SBATCH -t 12:00:00
 #SBATCH -n 256
 #SBATCH -C cpu|nvme
 #SBATCH --qos=longjob

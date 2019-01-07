@@ -664,7 +664,7 @@ def post_processing(checkpoint_file, responses_filename):
         if line is not '':
             stim_name, stim_type, holding_current, amplitude_start, amplitude_end, \
                 stim_start, stim_end, duration, sweeps = line.split(',')
-            if not any(stim_type in stim_name for stim_type in reject_stimtype_list):
+            if not any(stim_type_iter in stim_name for stim_type_iter in reject_stimtype_list):
                 iter_dict= dict()
                 iter_dict['type'] = stim_type.strip()
                 iter_dict['hypamp'] = 1e9 * float(holding_current)
@@ -718,7 +718,7 @@ def post_processing(checkpoint_file, responses_filename):
                               if trace_dict[feature_name] is not None]
             
         if feature_values:
-            feature_mean = feature_values[0]
+            feature_mean = np.mean(feature_values)
             
         else:
             feature_mean = 0
@@ -745,7 +745,7 @@ def post_processing(checkpoint_file, responses_filename):
     
     for key,val in opt_responses.items():
         if 'soma' in key:
-            if not any(stim_type in key for stim_type in reject_stimtype_list):
+            if not any(stim_type_iter in key for stim_type_iter in reject_stimtype_list):
                 stim_name = key.split('.')[0]
                 if 'DB' in stim_name:
                     continue
