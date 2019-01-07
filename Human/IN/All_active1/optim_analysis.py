@@ -619,7 +619,7 @@ def post_processing(checkpoint_file, responses_filename):
     # Calculating Spikerate only for LongDC (1s step currents) 
     
     stim_map_filename = 'preprocessed/StimMapReps.csv'
-    accept_stimtype_list = ['LongDC']
+    reject_stimtype_list = ['LongDCSupra','Ramp', 'ShortDC']
     stim_map = defaultdict(dict)
     with open(stim_map_filename, 'r') as stim_map_file:
         stim_map_content = stim_map_file.read()
@@ -628,7 +628,7 @@ def post_processing(checkpoint_file, responses_filename):
         if line is not '':
             stim_name, stim_type, holding_current, amplitude_start, amplitude_end, \
                 stim_start, stim_end, duration, sweeps = line.split(',')
-            if any(stim_type in stim_name for stim_type in accept_stimtype_list):
+            if not any(stim_type_iter in stim_name for stim_type_iter in reject_stimtype_list):
                 iter_dict= dict()
                 iter_dict['type'] = stim_type.strip()
                 iter_dict['hypamp'] = 1e9 * float(holding_current)
@@ -682,7 +682,7 @@ def post_processing(checkpoint_file, responses_filename):
                               if trace_dict[feature_name] is not None]
             
         if feature_values:
-            feature_mean = feature_values[0]
+            feature_mean = np.mean(feature_values)
             
         else:
             feature_mean = 0
@@ -709,8 +709,10 @@ def post_processing(checkpoint_file, responses_filename):
     
     for key,val in opt_responses.items():
         if 'soma' in key:
-            if any(stim_type in key for stim_type in accept_stimtype_list):
+            if not any(stim_type_iter in key for stim_type_iter in reject_stimtype_list):
                 stim_name = key.split('.')[0]
+                if 'DB' in stim_name:
+                    continue
                 resp_time = val['time'].as_matrix()
                 resp_voltage = val['voltage'].as_matrix()
                 stim_amp = stim_map[stim_name]['stimuli'][0]['amp']
