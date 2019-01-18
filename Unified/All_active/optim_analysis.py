@@ -72,6 +72,94 @@ dendrite_type = cell_metadata['Dendrite_type']
 analysis_write_path = cell_id + '_analysis_Stage2.pdf'
 pdf_pages =  PdfPages(analysis_write_path)
 
+
+
+def save_params(optimized_ind, param_names, hof_param = False, index = None):
+    
+    # save optimized parameters in fit.json format
+    
+    optimized_param_dict = {key:optimized_ind[i] for i,key in \
+                            enumerate(param_names)} 
+    
+    param_dict_final = {key.split('.')[0]+'.'+
+                     section_map_inv[key.split('.')[1]] : optimized_param_dict[key] 
+                                            for key in optimized_param_dict.keys()} 
+    
+    with open(fit_json_path) as json_file:  
+        model_data = json.load(json_file)
+    
+    model_data['conditions'][0]['v_init'] = [parameter_optim['value'] for parameter_optim in \
+                            parameters_optim if parameter_optim['param_name'] == 'v_init'][0]
+    
+    model_data['passive'][0]['ra'] = param_dict_final['Ra.all']
+    data_key = 'genome'
+    
+    remove_indices =list()
+    added_list = list()
+    
+    for j in range(len(model_data[data_key])):
+        model_param_name = model_data[data_key][j]['name']
+        model_param_sect = model_data[data_key][j]['section']
+        
+        if model_param_name not in all_param_bounds.keys():
+            remove_indices.append(j)
+        
+        for key in param_dict_final.keys():
+            opt_name,opt_sect = key.split('.')
+
+            if model_param_name == opt_name and model_param_sect == opt_sect:
+                if model_param_sect == 'all':
+                    remove_indices.append(j)
+                    continue
+                model_data[data_key][j]['value'] = str(param_dict_final[key])
+                added_list.append(key)
+    
+    model_data[data_key] = [i for j, i in enumerate(model_data[data_key]) if j not in remove_indices]
+
+    sect_reject_list = ['all']
+    if dendrite_type == 'aspiny':
+        sect_reject_list.append('apic')                  
+    for key,val in param_dict_final.items():
+        if key not in added_list:
+            opt_name,opt_sect = key.split('.')
+            if opt_sect == 'all':
+                sect_list = [sect for sect in section_map_inv.values() if sect not in sect_reject_list]
+                for sect in sect_list:
+                    model_data[data_key].append({'name' : opt_name,
+                                         'section': sect,
+                                         'value' : str(val),
+                                         'mechanism': ''})
+                    
+            else:
+                model_data[data_key].append({'name' : opt_name,
+                                         'section': opt_sect,
+                                         'value' : str(val),
+                                         'mechanism': all_param_bounds[opt_name]['mechanism']})
+    
+        
+    if hof_param:              
+        fit_json_write_path = 'fitted_params/hof_param_%s_%s.json'%(cell_id,index) 
+        optim_param_write_path = None
+    else:    
+        fit_json_write_path = 'fitted_params/optim_param_'+cell_id+ '.json'
+        optim_param_write_path = 'fitted_params/optim_param_unformatted_' + cell_id +'.json'    
+   
+    if not os.path.exists(os.path.dirname(fit_json_write_path)):
+        try:
+            os.makedirs(os.path.dirname(fit_json_write_path))
+        except OSError as exc: # Guard against race condition
+            if exc.errno != errno.EEXIST:
+                raise
+    
+    with open(fit_json_write_path, 'w') as outfile:
+        json.dump(model_data, outfile,indent=4)
+    
+    if optim_param_write_path:
+        with open(optim_param_write_path, 'w') as outfile:
+            json.dump(optimized_param_dict, outfile,indent=4)
+        
+        logger.debug('Saving the parameters in AIBS format')
+
 def plot_diversity(opt, checkpoint_file, param_names,hof_index = 0):
 
     plt.style.use('ggplot')
@@ -80,16 +168,16 @@ def plot_diversity(opt, checkpoint_file, param_names,hof_index = 0):
     
     release_individual = list()
     optimized_individual = plot_diversity_params['optimized_individual']
-
+    hof_list = plot_diversity_params['hof_list']
+    
     param_values = opt.evaluator.params   
     param_names_arranged = sorted(param_names)
     sect_names_arranged = [sect.split('.')[1] for sect in param_names_arranged]
     ix = sorted(range(len(param_names)), key=lambda k: param_names[k])
     param_values_arranged = [param_values[k] for k in ix]
     optimized_individual_arranged = [optimized_individual[0][k] for k in ix]
+        
     
-    
-    hof_list = plot_diversity_params['hof_list']
     hof_list_arranged = []
     hof_df = pd.DataFrame([])
     for i in range(len(hof_list)):
@@ -187,86 +275,16 @@ def plot_diversity(opt, checkpoint_file, param_names,hof_index = 0):
     plt.tight_layout()
     pdf_pages.savefig(fig)
     plt.close(fig)
-
-
-    # save optimized parameters in fit.json format
-    
-    optimized_param_dict = {key:optimized_individual_arranged[i] for i,key in \
-                            enumerate(param_names_arranged)} 
-    
-    param_dict_final = {key.split('.')[0]+'.'+
-                     section_map_inv[key.split('.')[1]] : optimized_param_dict[key] 
-                                            for key in optimized_param_dict.keys()} 
-    
-    with open(fit_json_path) as json_file:  
-        model_data = json.load(json_file)
-    
-    model_data['conditions'][0]['v_init'] = [parameter_optim['value'] for parameter_optim in \
-                            parameters_optim if parameter_optim['param_name'] == 'v_init'][0]
-    
-    model_data['passive'][0]['ra'] = param_dict_final['Ra.all']
-    data_key = 'genome'
-    
-    remove_indices =list()
-    added_list = list()
-    
-    for j in range(len(model_data[data_key])):
-        model_param_name = model_data[data_key][j]['name']
-        model_param_sect = model_data[data_key][j]['section']
         
-        if model_param_name not in all_param_bounds.keys():
-            remove_indices.append(j)
+    # save parameters in AIBS format
+    save_params(optimized_individual_arranged, param_names_arranged) # Parameters with minimum training error
+    
+    for i,hof_param in enumerate(hof_list):
+        optimized_ind = [hof_param[k] for k in ix]
+        save_params(optimized_ind, param_names_arranged, hof_param = True, index = i)
         
-        for key in param_dict_final.keys():
-            opt_name,opt_sect = key.split('.')
-
-            if model_param_name == opt_name and model_param_sect == opt_sect:
-                if model_param_sect == 'all':
-                    remove_indices.append(j)
-                    continue
-                model_data[data_key][j]['value'] = str(param_dict_final[key])
-                added_list.append(key)
     
-    model_data[data_key] = [i for j, i in enumerate(model_data[data_key]) if j not in remove_indices]
-
-    sect_reject_list = ['all']
-    if dendrite_type == 'aspiny':
-        sect_reject_list.append('apic')                  
-    for key,val in param_dict_final.items():
-        if key not in added_list:
-            opt_name,opt_sect = key.split('.')
-            if opt_sect == 'all':
-                sect_list = [sect for sect in section_map_inv.values() if sect not in sect_reject_list]
-                for sect in sect_list:
-                    model_data[data_key].append({'name' : opt_name,
-                                         'section': sect,
-                                         'value' : str(val),
-                                         'mechanism': ''})
-                    
-            else:
-                model_data[data_key].append({'name' : opt_name,
-                                         'section': opt_sect,
-                                         'value' : str(val),
-                                         'mechanism': all_param_bounds[opt_name]['mechanism']})
-    
-    fit_json_write_path = 'fitted_params/optim_param_'+cell_id+ '.json'
-    if not os.path.exists(os.path.dirname(fit_json_write_path)):
-        try:
-            os.makedirs(os.path.dirname(fit_json_write_path))
-        except OSError as exc: # Guard against race condition
-            if exc.errno != errno.EEXIST:
-                raise
-    
-    with open(fit_json_write_path, 'w') as outfile:
-        json.dump(model_data, outfile,indent=4)
-    
-    optim_param_write_path = 'fitted_params/optim_param_unformatted_' + cell_id +'.json'    
-    with open(optim_param_write_path, 'w') as outfile:
-        json.dump(optimized_param_dict, outfile,indent=4)
-        
-    logger.debug('Saving the parameters in fit.json format')
-    
-   # save parameters in a csv file to later plot in R
+    # save parameters in a csv file to later plot in R
             
     released_df = pd.DataFrame({ 'param_name' : release_params_arranged,
         'section':sect_release_names_arranged,                        
@@ -297,8 +315,9 @@ def plot_diversity(opt, checkpoint_file, param_names,hof_index = 0):
     csv_filename = 'fitted_params/params_'+cell_id+ '.csv'
     param_df.to_csv(csv_filename)
     
-    logger.debug('Saving the parameters in .csv for plotting in R')    
-    
+    logger.debug('Saving the parameters in .csv for plotting in R')  
+        
+        
 #####################################################################
 
 # GA evolution

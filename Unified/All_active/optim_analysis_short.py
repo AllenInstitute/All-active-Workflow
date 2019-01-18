@@ -18,7 +18,7 @@ import os
 import json
 import pickle
 import numpy as np
-
+import glob
 import errno
 import logging
 import bluepyopt.ephys as ephys
@@ -62,18 +62,30 @@ with open(path_to_cell_metadata,'r') as metadata:
 
 # Extracting the parameters
         
-def plot_diversity(opt, checkpoint_file, param_names,hof_index):
+def plot_diversity(opt, checkpoint_file, cp_dir, hof_index):
 
     checkpoint = pickle.load(open(checkpoint_file, "r"))
     
     optimized_individual = [checkpoint['halloffame'][hof_index]]
-    hof_list = checkpoint['halloffame'][1:]
-    hof = checkpoint['halloffame']
+    
+    
+    checkpoint = None
+    
+    logger.debug('Saving the hall of fame parameters')  
+    
+    
+    ## Save hall-of-fame parameters for all seeds
+
+    checkpoint_dir  = cp_dir + '/*.pkl'
+    cp_list = glob.glob(checkpoint_dir)
+    hof_params  = []
+    for cp_file in cp_list:
+        hof_params.extend(pickle.load(open(cp_file, "r"))['halloffame'])
     
     plot_diversity_params = {'optimized_individual': optimized_individual,
-                             'hof_list' : hof_list,
-                             'hof' : hof}
-    checkpoint = None
+                             'hof_list' : hof_params}
+    
+
     plot_diversity_params_path = 'analysis_params/plot_diversity_params.pkl'
     
     if not os.path.exists(os.path.dirname(plot_diversity_params_path)):
@@ -86,7 +98,12 @@ def plot_diversity(opt, checkpoint_file, param_names,hof_index):
     with open(plot_diversity_params_path,'wb') as handle:
         pickle.dump(plot_diversity_params,handle)
     
-    logger.debug('Saving the plot diversity parameters')    
+    # Calculate responses for the hall-of-fame parameters
+    
+    response_list = opt.toolbox.map(opt.toolbox.save_sim_response,hof_params)
+    for i,response_hof in enumerate(response_list):
+        with open('analysis_params/hof_response_%s.pkl'%i, 'wb') as handler:
+            pickle.dump(response_hof[0], handler)
     
 #####################################################################
 
@@ -186,4 +203,3 @@ def plot_Response(opt,opt_release,checkpoint_file, responses_filename,
                 pickle.dump(responses_release, fd)
     
     
-                    

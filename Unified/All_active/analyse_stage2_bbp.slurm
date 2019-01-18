@@ -2,7 +2,7 @@
 
 #SBATCH -p prod 
 #SBATCH -t 5:00:00 
-#SBATCH -n 1
+#SBATCH -n 10
 #SBATCH -C cpu|nvme
 #SBATCH -A proj36
 #SBATCH --mail-user=anirban.nandi@wustl.edu
