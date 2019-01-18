@@ -175,7 +175,9 @@ def define_fitness_calculator(protocols, features_write_path, weight_dict):
 
 
 def create(protocol_path,feature_path, morph_path, param_path, mech_path,
-           do_replace_axon = True,do_replace_axon_swc = False, weight_dict = None):
+           do_replace_axon = True,do_replace_axon_swc = False,
+           timed_evaluation = True, 
+           weight_dict = None):
     """Setup"""
 
     cell = model_helper.create(morph_path, param_path,mech_path,
@@ -189,10 +191,18 @@ def create(protocol_path,feature_path, morph_path, param_path, mech_path,
                    if not param.frozen]
     
     sim = ephys.simulators.NrnSimulator()
-
-    return ephys.evaluators.CellEvaluator(
-        cell_model=cell,
-        param_names=param_names,
-        fitness_protocols=fitness_protocols,
-        fitness_calculator=fitness_calculator,
-        sim=sim)
+    
+    if timed_evaluation:
+        return ephys.evaluators.CellEvaluatorTimed(
+            cell_model=cell,
+            param_names=param_names,
+            fitness_protocols=fitness_protocols,
+            fitness_calculator=fitness_calculator,
+            sim=sim)
+    else:
+        return ephys.evaluators.CellEvaluator(
+            cell_model=cell,
+            param_names=param_names,
+            fitness_protocols=fitness_protocols,
+            fitness_calculator=fitness_calculator,
+            sim=sim)

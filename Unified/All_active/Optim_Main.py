@@ -20,7 +20,6 @@ import evaluator_helper
 import checkpoint_decider
 
 cp_backup = 'checkpoints_backup'
-cp_source = 'checkpoints'
 
 
 
@@ -44,6 +43,11 @@ original_release_param = path_data['original_parameters']
 def create_optimizer(args):
     '''returns configured bluepyopt.optimisations.DEAPOptimisation'''
     
+    if '/' in args.checkpoint:
+        cp_source = args.checkpoint.split('/')[0]
+    else:
+        cp_source = None
+
     if args.ipyparallel or os.getenv('CELLBENCHMARK_USEIPYP'):
         from ipyparallel import Client
         rc = Client(profile=os.getenv('IPYTHON_PROFILE'))
@@ -54,14 +58,17 @@ def create_optimizer(args):
         def mapper(func, it):
             start_time = datetime.now()
             ret = lview.map_sync(func, it)
-            logger.debug('Generation took %s', datetime.now() - start_time)
+            if args.start or args.continu:
+                logger.debug('Generation took %s', datetime.now() - start_time)
             
             # Create a back-up checkpoint directory 
             # (to save optimization results in case checkpoint file is corrupted)
             
             if os.path.exists(cp_backup):
                 shutil.rmtree(cp_backup)
-            shutil.copytree(cp_source, cp_backup)
+            
+            if cp_source:
+                shutil.copytree(cp_source, cp_backup)
             
             # Save timing information for each generation
             f =  open('time_info.txt','a')
@@ -78,7 +85,7 @@ def create_optimizer(args):
     if args.analyse or args.short_analyse:
         
         evaluator = evaluator_helper.create(all_protocol_path, feature_path, morph_path, 
-                                        param_path, mech_path)
+                                        param_path, mech_path,timed_evaluation = False)
         
         if original_release_param:
             evaluator_release =  evaluator_helper.create(all_protocol_path, feature_path, morph_path, 
@@ -182,16 +189,19 @@ def main():
         
         logger.debug('Doing analyse to save the results')
         from optim_analysis_short import plot_Response,plot_diversity,\
-                                            plot_GA_evolution, get_responses
+                    plot_GA_evolution, get_responses
         if '/' in args.checkpoint:
             cp_dir = args.checkpoint.split('/')[0]
         else:
             cp_dir = '.'  # check in current directory
+        
+        
+        hof_index = 0
         args.checkpoint = checkpoint_decider.best_seed(cp_dir)
         
         
         if args.checkpoint is not None and os.path.isfile(args.checkpoint):
-            hof_index = 0
+            
             plot_Response(opt,opt_release,args.checkpoint,
                          args.responses,args.response_release,hof_index)
             
@@ -204,8 +214,7 @@ def main():
         if not os.path.exists(args.checkpoint):
             raise Exception('Need a pickle file to plot the parameter diversity')
 
-        plot_diversity(opt, args.checkpoint,
-                                     opt.evaluator.param_names,hof_index)
+        plot_diversity(opt, args.checkpoint, cp_dir,hof_index)
         
         plot_GA_evolution(args.checkpoint)
         
