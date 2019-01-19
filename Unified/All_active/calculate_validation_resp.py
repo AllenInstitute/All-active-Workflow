@@ -71,7 +71,7 @@ feature_path = path_data['features']
 param_path = path_data['parameters']
     
 evaluator = evaluator_helper.create(protocol_path, feature_path, morph_path, 
-                                    param_path, mech_path)
+                                    param_path, mech_path,timed_evaluation = False)
 
 opt = bpopt.optimisations.DEAPOptimisation(evaluator=evaluator)
 

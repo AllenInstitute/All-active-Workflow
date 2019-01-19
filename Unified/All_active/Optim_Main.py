@@ -205,18 +205,17 @@ def main():
             plot_Response(opt,opt_release,args.checkpoint,
                          args.responses,args.response_release,hof_index)
             
+            plot_diversity(opt, args.checkpoint, cp_dir,hof_index)
+        
+            plot_GA_evolution(args.checkpoint)
+            
         else:
             logger.debug('No checkpoint file available run optimization '
                   'first with --start')
-
-        
-
-        if not os.path.exists(args.checkpoint):
+            
             raise Exception('Need a pickle file to plot the parameter diversity')
-
-        plot_diversity(opt, args.checkpoint, cp_dir,hof_index)
         
-        plot_GA_evolution(args.checkpoint)
+        
         
     elif args.analyse:
         
