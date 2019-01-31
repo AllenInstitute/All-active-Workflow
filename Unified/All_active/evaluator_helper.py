@@ -9,6 +9,7 @@ Created on Thu Jan 18 13:48:46 2018
 import json
 import os
 import model_helper  # NOQA
+import numpy as np
 
 import bluepyopt.ephys as ephys
 import logging
@@ -104,8 +105,16 @@ def define_protocols(protocols_write_path):
                     ramp_duration=stimulus_definition['duration'],
                     location=soma_loc,
                     total_duration=stimulus_definition['totduration']))
-                    
-
+                recordings = [somav_recording]
+            else:
+                sweep_file = 'preprocessed/'+stimulus_definition['sweep_filenames'][0]
+                stim_play_time = np.loadtxt(sweep_file)[:,0]
+                stim_play_current = np.loadtxt(sweep_file)[:,2]
+                stimuli.append(ephys.stimuli.NrnCurrentPlayStimulus(
+                    current_points=stim_play_current,
+                    time_points=stim_play_time,
+                    location=soma_loc))        
+                recordings = [somav_recording]    
         protocols[protocol_name] = ephys.protocols.SweepProtocol(
             protocol_name,
             stimuli,

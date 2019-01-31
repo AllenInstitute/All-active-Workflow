@@ -15,6 +15,7 @@ import errno
 import json
 import collections
 import re
+import glob
 
 import get_features
 import all_features
@@ -25,7 +26,10 @@ temperature = 34
 acceptable_stimtypes = [
     'Long Square',
     'Ramp',
-    'Square - 2s Suprathreshold'
+    'Square - 2s Suprathreshold',
+    'Short Square - Triple'
+    'Noise 1',
+    'Noise 2'
     ]
 
 
@@ -33,14 +37,20 @@ distinct_id_map = {
     'Long Square': 'LongDC',
     'Ramp': 'Ramp',
     'Square - 2s Suprathreshold': 'LongDCSupra',
-    'Ramp to Rheobase': 'RampRheo'
+    'Short Square - Triple' : 'Short_Square_Triple',
+    'Ramp to Rheobase': 'RampRheo',
+    'Noise 1': 'Noise_1',
+    'Noise 2': 'Noise_2',
 }
 
 optframework_stimtype_map = {
     'Long Square': 'SquarePulse',
     'Ramp': 'RampPulse',
     'Square - 2s Suprathreshold': 'SquarePulse',
-    'Ramp to Rheobase': 'RampPulse'
+    'Ramp to Rheobase': 'RampPulse',
+    'Short Square - Triple' : 'TriBlip',
+    'Noise 1': 'Noise',
+    'Noise 2': 'Noise'
 }
 
 
@@ -82,8 +92,8 @@ for param_name,param_item in all_params.items():
         active_params.append(param_name)
         active_params_dict[param_name] = param_item
 
-
-path_to_cell_metadata = os.path.abspath(os.path.join('.', os.pardir)) + '/cell_metadata.json'        
+parent_dir = os.path.abspath(os.path.join('.', os.pardir))
+path_to_cell_metadata = glob.glob(parent_dir+'/*.json')[0]        
 with open(path_to_cell_metadata,'r') as metadata:
         cell_metadata = json.load(metadata)
 
@@ -277,22 +287,35 @@ def get_cell_data(exten = '.nwb'):
                 output_dir, response_trace_short_filename)
             
             
-            time = time * 1000.0
+            time *= 1000.0
             response_trace = response_trace * 1000 + junction_potential
+            stimulus_trace *= 1e9 
+            
             v_initial.append(response_trace[0])
+            
             time_end = time[-1]
             response_end = response_trace[-1]
+            stimulus_end = stimulus_trace[-1]
             
             # downsampling
             time = time[::5]
             response_trace = response_trace[::5]
+            stimulus_trace = stimulus_trace[::5]
+            
+            
             if time_end != time[-1]:
                 time = np.append(time,time_end)
                 response_trace = np.append(response_trace,response_end)
-                
-            with open(response_trace_filename, 'w') as response_trace_file:
-                np.savetxt(response_trace_file,
-                              np.transpose([time, response_trace]))
+                stimulus_trace = np.append(stimulus_trace,stimulus_end)
+            
+            if 'Noise' in stim_type:
+                with open(response_trace_filename, 'w') as response_trace_file:
+                    np.savetxt(response_trace_file,
+                                  np.transpose([time, response_trace, stimulus_trace]))
+            else:
+                with open(response_trace_filename, 'w') as response_trace_file:
+                    np.savetxt(response_trace_file,
+                                  np.transpose([time, response_trace]))        
 
             # Ignore holding current
             holding_current = hold_curr  # sweep['bias_current']

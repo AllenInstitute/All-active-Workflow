@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #SBATCH -p prod 
-#SBATCH -t 5:00:00 
+#SBATCH -t 4:00:00 
 #SBATCH -n 32
 #SBATCH -C cpu|nvme
 #SBATCH -A proj36
@@ -27,8 +27,7 @@ sleep 10
 
 source activate CompNeuro
 python Optim_Main.py -vv --checkpoint  checkpoints_final/seed1.pkl   --responses resp_opt.txt   --response_release resp_release.txt  --short_analyse  --ipyparallel
-python calculate_validation_resp.py
-python Optim_Main.py -vv --checkpoint  checkpoints_final/seed1.pkl   --responses resp_opt.txt   --response_release resp_release.txt --analyse
+python Optim_Main.py -vv --responses resp_opt.txt   --response_release resp_release.txt --analyse
 python save_time.py
 python perisomatic_sim.py 
-python get_validation_metrics.py
+#python get_validation_metrics.py

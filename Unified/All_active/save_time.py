@@ -9,6 +9,7 @@ Created on Fri Jun 29 11:54:39 2018
 import os
 import json
 import pandas as pd
+import glob
 
 
 def get_sec(time_str):
@@ -17,7 +18,8 @@ def get_sec(time_str):
 
 def Main():
     
-    path_to_cell_metadata = os.path.abspath(os.path.join('.', os.pardir)) + '/cell_metadata.json'        
+    parent_dir = os.path.abspath(os.path.join('.', os.pardir))
+    path_to_cell_metadata = glob.glob(parent_dir+'/*.json')[0]        
     with open(path_to_cell_metadata,'r') as metadata:
             cell_metadata = json.load(metadata) 
             

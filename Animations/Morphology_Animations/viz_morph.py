@@ -58,7 +58,7 @@ def get_cell_morphXYZ(morph_path):
         y.append(y_coord)
         z.append(z_coord)
         
-        if n['type']==2 :
+        if n['type']==4 :
             x_apical.append(x_coord)
             y_apical.append(y_coord)
             z_apical.append(z_coord)
@@ -86,8 +86,8 @@ def rotate3D_point(point,theta,axis_of_rot):
     
     # use one of these two commands to rotate the morphology upside down
     
-    point_rotated = Quaternion(axis=axis_of_rot,angle=-theta ).rotate(point)
-#    point_rotated = Quaternion(axis=axis_of_rot,angle=-theta + math.pi).rotate(point)
+#    point_rotated = Quaternion(axis=axis_of_rot,angle=-theta ).rotate(point)
+    point_rotated = Quaternion(axis=axis_of_rot,angle=-theta + math.pi).rotate(point)
 
     return point_rotated
 

@@ -15,8 +15,9 @@ import json
 import numpy as np
 import math
 import collections
-#import errno
+import errno
 import efel
+import pickle
 
 
 
@@ -35,13 +36,26 @@ def all_features_path(cell_map, train_protocols_path):
     all_features_json_filename = 'config/'+ cell_name +'/all_features.json'
     trained_features_json_filename = 'config/'+ cell_name +'/trained_features.json'
     untrained_features_json_filename = 'config/'+ cell_name +'/untrained_features.json'
+    spiketimes_exp_path = 'Validation_Responses/spiketimes_exp_noise.pkl'
+    
+    if not os.path.exists(os.path.dirname(spiketimes_exp_path)):
+        try:
+            os.makedirs(os.path.dirname(spiketimes_exp_path))
+        except OSError as exc: # Guard against race condition
+            if exc.errno != errno.EEXIST:
+                raise
+    
+    peaktimes_exp = collections.defaultdict(list)
+    
     
     efel.api.reset()
     
     for stim_name,stim_params in stim_map.items():
-                
-        if 'Ramp' in stim_name: # ignore Ramp for validation metrics
+        
+        if any(reject_feat_stim in stim_name for reject_feat_stim in \
+                                       ['Ramp','Short_Square_Triple']): # ignore Ramp for validation metrics
             continue
+                
         
         print "\n### Getting features from %s of cell %s ###\n" \
             % (stim_name, cell_name)
@@ -64,14 +78,17 @@ def all_features_path(cell_map, train_protocols_path):
             sweep['V'] = voltage
             sweep['stim_start'] = [stim_map[stim_name]['stimuli'][0]['delay']]
             sweep['stim_end'] = [stim_map[stim_name]['stimuli'][0]['stim_end']]
-            sweep['T;location_AIS'] = time
-            sweep['V;location_AIS'] = voltage
-            sweep['stim_start;location_AIS'] = [stim_map[stim_name]['stimuli'][0]['delay']]
-            sweep['stim_end;location_AIS'] = [stim_map[stim_name]['stimuli'][0]['stim_end']]
-
+            
             sweeps.append(sweep)
     
         # Do the actual feature extraction
+        if 'Noise' in stim_name:
+            feature_results = efel.getFeatureValues(sweeps, ['peak_time'])
+            for feature_result in feature_results:
+                peaktimes_exp[stim_name].append(feature_result['peak_time'])
+            
+            continue
+            
         feature_results = efel.getFeatureValues(sweeps, stim_features)
         
         temp_spike_count = 0
@@ -106,8 +123,9 @@ def all_features_path(cell_map, train_protocols_path):
 
             features_meanstd[stim_name]['soma'][
                 feature_name] = [mean , std]
+    
 
-
+    pickle.dump(peaktimes_exp, open(spiketimes_exp_path, 'w'))
     save_json(features_meanstd, all_features_json_filename)
     train_protocols = load_json(train_protocols_path).keys()
     trained_features = dict()

@@ -186,7 +186,7 @@ def fI_curve_generator(responses_filename,response_peri_filename,perisomatic_mod
     # Calculating Spikerate only for LongDC (1s step currents) 
     
     stim_map_filename = 'preprocessed/StimMapReps.csv'
-    reject_stimtype_list = ['LongDCSupra','Ramp', 'ShortDC']
+    reject_stimtype_list = ['LongDCSupra','Ramp', 'ShortDC', 'Noise','Short_Square_Triple']
     stim_map = defaultdict(dict)
     
     fI_curve_data = {}
@@ -488,7 +488,8 @@ def get_spike_shape(select_stim_keys,stim_map,response_dict,perisomatic_model_id
 
 
 def Main():
-    path_to_cell_metadata = os.path.abspath(os.path.join('.', os.pardir)) + '/cell_metadata.json'        
+    parent_dir = os.path.abspath(os.path.join('.', os.pardir))
+    path_to_cell_metadata = glob.glob(parent_dir+'/*.json')[0]        
     with open(path_to_cell_metadata,'r') as metadata:
         cell_metadata = json.load(metadata)
     cell_id = cell_metadata['Cell_id']

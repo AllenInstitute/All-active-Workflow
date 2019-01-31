@@ -14,6 +14,7 @@ import numpy as np
 import errno
 import json
 import collections
+import glob
 
 
 import get_features
@@ -52,7 +53,8 @@ section_map = {'soma':'somatic',
                  'all' : 'all'}
 
 
-path_to_cell_metadata = os.path.abspath(os.path.join('.', os.pardir)) + '/cell_metadata.json'        
+parent_dir = os.path.abspath(os.path.join('.', os.pardir))
+path_to_cell_metadata = glob.glob(parent_dir+'/*.json')[0] 
 with open(path_to_cell_metadata,'r') as metadata:
         cell_metadata = json.load(metadata)   
 

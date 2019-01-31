@@ -7,8 +7,7 @@ export PASSIVE_REPO="/project/projectdirs/m2043/AIBS/ani/Unified/Passive_Repo"
 
 if [ ! -d "$PASS_DIR" ]; then
 	
-	python get_ephys_morphology_model.py && mkdir $PASS_DIR && mv cell_types $PASS_DIR/
-	echo "Downloading ephys data, morphology and (possibly) model"
+	mkdir $PASS_DIR && mv cell_types $PASS_DIR/
 	model_filename=$(find . -maxdepth 2 -name "*fit.json")
 	if [ ! -z "$model_filename" ]; then
 		mv $model_filename $PASS_DIR/cell_types/fit_parameters.json && rm -rf neuronal_model

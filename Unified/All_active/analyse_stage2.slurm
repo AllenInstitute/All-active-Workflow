@@ -1,6 +1,6 @@
 #!/bin/bash -l 
 #SBATCH -q regular 
-#SBATCH -t 5:00:00 
+#SBATCH -t 4:00:00 
 #SBATCH -L SCRATCH
 #SBATCH --mail-user=anirban.nandi@wustl.edu
 #SBATCH --mail-type=ALL
@@ -25,8 +25,7 @@ srun --output="${LOGS}/engine_%j_%2t.out" ipengine --timeout=3000 --profile=${IP
 sleep 10
 
 python Optim_Main.py -vv --checkpoint  checkpoints_final/seed1.pkl   --responses resp_opt.txt   --response_release resp_release.txt  --short_analyse  --ipyparallel
-python calculate_validation_resp.py
-python Optim_Main.py -vv --checkpoint  checkpoints_final/seed1.pkl   --responses resp_opt.txt   --response_release resp_release.txt --analyse
+python Optim_Main.py -vv --responses resp_opt.txt   --response_release resp_release.txt --analyse
 python save_time.py
 python perisomatic_sim.py 
-python get_validation_metrics.py
+#python get_validation_metrics.py

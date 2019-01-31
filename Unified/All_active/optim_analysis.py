@@ -12,6 +12,8 @@ import pickle
 import numpy as np
 import pandas as pd
 import matplotlib
+from matplotlib.ticker import MaxNLocator
+
 
 matplotlib.use('Agg')
 
@@ -20,9 +22,11 @@ import errno
 import logging
 from matplotlib.backends.backend_pdf import PdfPages
 import math
-from collections import defaultdict
+from collections import defaultdict,OrderedDict
 import efel
 from scipy import interpolate
+import seaborn as sns
+import glob
 
 
 logger = logging.getLogger(__name__)
@@ -58,7 +62,8 @@ all_param_bounds_path = 'all_param_bounds.json'
 with open(all_param_bounds_path, 'r') as boundfile:
     all_param_bounds = json.load(boundfile)
 
-path_to_cell_metadata = os.path.abspath(os.path.join('.', os.pardir)) + '/cell_metadata.json'        
+parent_dir = os.path.abspath(os.path.join('.', os.pardir))
+path_to_cell_metadata = glob.glob(parent_dir+'/*.json')[0]
 with open(path_to_cell_metadata,'r') as metadata:
     cell_metadata = json.load(metadata)
     
@@ -68,6 +73,11 @@ area = cell_metadata['Area']
 species = cell_metadata['Species']
 cre_line = cell_metadata['Cre_line']
 dendrite_type = cell_metadata['Dendrite_type']
+feature_avg_released_allactive = cell_metadata['Feature_avg_Released_AllActive']
+explained_variance_released_allactive = cell_metadata['Explained_variance_Released_AllActive']
+feature_avg_peri = cell_metadata['Feature_avg_Peri']
+explained_variance_peri = cell_metadata['Explained_variance_Peri']
+
 
 analysis_write_path = cell_id + '_analysis_Stage2.pdf'
 pdf_pages =  PdfPages(analysis_write_path)
@@ -160,7 +170,7 @@ def save_params(optimized_ind, param_names, hof_param = False, index = None):
         
         logger.debug('Saving the parameters in AIBS format')
 
-def plot_diversity(opt, checkpoint_file, param_names,hof_index = 0):
+def plot_diversity(opt, param_names,hof_index = 0):
 
     plt.style.use('ggplot')
     plot_diversity_params_path = 'analysis_params/plot_diversity_params.pkl'
@@ -322,9 +332,8 @@ def plot_diversity(opt, checkpoint_file, param_names,hof_index = 0):
 
 # GA evolution
 
-def plot_GA_evolution(checkpoint_file):
+def plot_GA_evolution():
    
-    from matplotlib.ticker import MaxNLocator
     plt.style.use('ggplot')
     
     plot_GA_evolution_params_path = 'analysis_params/plot_GA_evolution_params.pkl'
@@ -387,7 +396,7 @@ def plot_GA_evolution(checkpoint_file):
 
 # Feature Comparison
 
-def feature_comp(opt, opt_release, checkpoint_file,responses_filename,response_release_filename):
+def feature_comp(opt, opt_release,responses_filename,response_release_filename):
     
     # objectives
     
@@ -399,9 +408,8 @@ def feature_comp(opt, opt_release, checkpoint_file,responses_filename,response_r
     objectives = opt.evaluator.fitness_calculator.calculate_scores(responses)
     objectives_release = opt.evaluator.fitness_calculator.calculate_scores(responses_release)
     
-    import collections
-    objectives = collections.OrderedDict(sorted(objectives.iteritems()))
-    objectives_release = collections.OrderedDict(sorted(objectives_release.iteritems()))
+    objectives = OrderedDict(sorted(objectives.iteritems()))
+    objectives_release = OrderedDict(sorted(objectives_release.iteritems()))
     
     feature_split_names = [name.split('.',1)[-1] for name in objectives.keys()]
     features = np.unique(np.asarray(feature_split_names))
@@ -412,8 +420,8 @@ def feature_comp(opt, opt_release, checkpoint_file,responses_filename,response_r
     plt.style.use('ggplot') 
     for i, feature in enumerate(features):
         fig, ax = plt.subplots(1, figsize=(8,8))    
-        iter_dict = collections.defaultdict(list)
-        iter_dict_release = collections.defaultdict(list)
+        iter_dict = defaultdict(list)
+        iter_dict_release = defaultdict(list)
         for key in objectives.keys():
             if key.split('.',1)[-1] == feature:
                 
@@ -426,8 +434,8 @@ def feature_comp(opt, opt_release, checkpoint_file,responses_filename,response_r
         xtick_pos = index + bar_width / 2
         iter_dict ={key:np.mean(val) for key,val in iter_dict.items()}
         iter_dict_release ={key:np.mean(val) for key,val in iter_dict_release.items()}
-        iter_dict = collections.OrderedDict(sorted(iter_dict.iteritems()))
-        iter_dict_release = collections.OrderedDict(sorted(iter_dict_release.iteritems()))
+        iter_dict = OrderedDict(sorted(iter_dict.iteritems()))
+        iter_dict_release = OrderedDict(sorted(iter_dict_release.iteritems()))
         tick_label = iter_dict.keys()
         ax.bar(index+ bar_width,
               iter_dict.values(),
@@ -509,14 +517,14 @@ def feature_comp(opt, opt_release, checkpoint_file,responses_filename,response_r
 ## Plotting responses
 
 
-def plot_Response(opt,opt_release,checkpoint_file, responses_filename,
+def plot_Response(opt,opt_release,responses_filename,
                   response_release_filename,hof_index = 0):
     stim_file = 'preprocessed/StimMapReps.csv'
     stim_df = pd.read_csv(stim_file, sep='\s*,\s*',
                            header=0, encoding='ascii', engine='python')
 
     responses = pickle.load(open(responses_filename, "r"))
-    response = responses[0]  # get the response with minimum trainin error
+    response = responses[0]  # get the response with minimum training error
     responses_release = pickle.load(open(response_release_filename, "r"))
     logger.debug('Retrieving Optimized and Released Responses')
     
@@ -583,7 +591,7 @@ def plot_Response(opt,opt_release,checkpoint_file, responses_filename,
                         response_voltage,
                         color=color,
                         linewidth=1,
-                        label= 'Optimized',
+                        label= 'Model',
                         alpha = 0.8)                    
 
                 FileName = 'preprocessed/' + name
@@ -592,7 +600,7 @@ def plot_Response(opt,opt_release,checkpoint_file, responses_filename,
                             data[:,1],
                             color='black',
                             linewidth=1,
-                            label = 'Cell Response',
+                            label = 'Experiment',
                             alpha = 0.8)
                 if original_release_param:
                     responses_release_time = responses_release[name_loc]['time']
@@ -623,10 +631,12 @@ def plot_Response(opt,opt_release,checkpoint_file, responses_filename,
                     fig_comp.suptitle('Response Comparisons',fontsize=16)
                     if original_release_param:
                         handles = [l1, l3, l4]
+                        ncol = 3
                     else:
                          handles = [l1, l3]
-                    labels = [h.get_label() for h in handles] 
-                    fig_comp.legend(handles = handles, labels=labels, loc = 'lower center', ncol=3)
+                         ncol = 2
+                    labels = [h.get_label() for h in handles]
+                    fig_comp.legend(handles = handles, labels=labels, loc = 'lower center', ncol=ncol)
                     fig_comp.tight_layout(rect=[0, 0.03, 1, 0.95])
                     pdf_pages.savefig(fig_comp)
                     plt.close(fig_comp)
@@ -658,7 +668,8 @@ def plot_Response(opt,opt_release,checkpoint_file, responses_filename,
        
             for ax in axes:
                 ax.set_xlim([amp_start_DB-200, amp_end_DB+200])
-                ax.legend(loc = 'upper right', prop={'size': 12})
+                handles, labels = ax.get_legend_handles_labels()
+                ax.legend(handles,labels,loc = 'upper right', prop={'size': 12})
             axes[-1].set_xlabel('Time in ms')
     
     else:
@@ -675,19 +686,195 @@ def plot_Response(opt,opt_release,checkpoint_file, responses_filename,
     logger.debug('Plotting response comparisons for DB_check_DC')
     pdf_pages.savefig(fig)
     plt.close(fig)
-                     
-                    
+
+
+#############################################################################
+
+def hof_statistics(opt, hof_response_dir = 'analysis_params'):
+    
+    
+    hof_score_path = hof_response_dir + '/hof_obj.pkl'
+    hof_score_list = pickle.load(open(hof_score_path,'r'))
+    feature_list = list(set(list(map(lambda x:x.split('.')[-1], hof_score_list[0].keys()))))
+    
+    hof_df_list = []
+    for i, hof_score in enumerate(hof_score_list):
+        obj_dict = {'index':i}
+        for feature in feature_list:
+            temp_list = list(map(lambda x:hof_score[x] if x.split('.')[-1] == feature else None, 
+                                                         hof_score.keys()))
+            
+            temp_list_filtered = list(filter(lambda x: x is not None, temp_list))
+            obj_dict[feature] = np.mean(temp_list_filtered)
+        hof_df_list.append(obj_dict)  
+        
+    hof_df = pd.DataFrame(hof_df_list)
+    hof_df_wo_index = hof_df.loc[:, hof_df.columns != 'index']
+
+    
+    cmap = sns.cubehelix_palette(light=1, as_cmap=True)
+
+    fig,ax = plt.subplots(figsize = (8,6),dpi = 80)
+    sns.set(style="darkgrid", font_scale=.95)
+    
+    sns.heatmap(hof_df_wo_index, cmap = cmap, ax = ax)
+    plt.xticks(rotation = 45,ha="right")
+#    start, end = ax.get_ylim()
+#    ax.yaxis.set_ticks(np.linspace(end,start-1, 5))
+#    ax.yaxis.set_major_formatter(ticker.FormatStrFormatter('%d'))
+    ax.set_ylabel('Hall of Fame')
+    fig.tight_layout()
+    pdf_pages.savefig(fig)
+    plt.close(fig)
+    
+    
+    hof_response_path = hof_response_dir+'/hof_response_all.pkl'
+    hof_response_list = pickle.load(open(hof_response_path,'r'))
+    spiketimes_exp_path = 'Validation_Responses/spiketimes_exp_noise.pkl'
+    if os.path.exists(spiketimes_exp_path):
+        spike_times_exp_pkl = pickle.load(open(spiketimes_exp_path,'r'))
+        noise_bool = True
+    else:
+        noise_bool = False
+    obj_train_path = hof_response_dir + '/hof_obj_train.pkl'
+    obj_untrain_path = hof_response_dir + '/hof_obj_untrain.pkl'
+    obj_train_list = pickle.load(open(obj_train_path,'r'))
+    obj_untrain_list = pickle.load(open(obj_untrain_path,'r'))
+    seed_list = pickle.load(open(hof_response_dir + '/seed_indices.pkl','r'))
+    
+    
+    stim_file = 'preprocessed/StimMapReps.csv'
+    stim_df = pd.read_csv(stim_file, sep='\s*,\s*',
+                           header=0, encoding='ascii', engine='python')
+    
+    import exp_var_metric
+    import copy
+    
+    dt = 1/200.0 # ms
+    sigma = [10] # ms
+    
+    exp_variance_hof = []
+    spiketimes_hof = []
+    
+    for ii,hof_response_all_proto in enumerate(hof_response_list):
+        
+        exp_variance_dict = {}
+        peaktimes_model = {}
+        
+        if noise_bool:
+            spike_times_exp_copy = copy.deepcopy(spike_times_exp_pkl)
+            
+            hof_response = {key:val for key,val in hof_response_all_proto[0].items() if 'Noise' in key}
+            
+            for noise_stim,noise_resp in hof_response.items():
+                
+                noise_stim_name = noise_stim.split('.')[0]
+                noise_stim_type = noise_stim.rsplit('_',1)[0]
+                
+                expt_trains = spike_times_exp_copy[noise_stim_name]
+                
+                for i,exp_train in enumerate(expt_trains):
+                    exp_train = [int(math.ceil(sp_time/dt)) for sp_time in exp_train]
+                    expt_trains[i] = np.asarray(exp_train)
+                
+                
+                trace = {}
+                trace['T'] = noise_resp['time']
+                trace['V'] = noise_resp['voltage']
+                stim_start = stim_df.loc[stim_df.DistinctID == noise_stim_name,'Stim_Start'].values
+                stim_stop = stim_df.loc[stim_df.DistinctID == noise_stim_name,'Stim_End'].values
+                trace['stim_start'] = [stim_start[0]]
+                trace['stim_end'] = [stim_stop[0]]
+                model_train = efel.getFeatureValues(
+                    [trace],
+                    ['peak_time'])[0]['peak_time']
+                peaktimes_model[noise_stim_name] = copy.deepcopy(model_train)
+                for i,sp_time in enumerate(model_train):
+                    model_train[i] = int(math.ceil(sp_time/dt))
+            
+                model_train = model_train.astype(int)
+                sweep_filename = 'preprocessed/'+noise_stim_name+'.txt'
+                exp_data = np.loadtxt(sweep_filename)
+                exp_data_time = exp_data[:,0]
+                total_length = int(math.ceil(exp_data_time[-1]/dt))
+                exp_variance_dict[noise_stim_type] = exp_var_metric.calculate_spike_time_metrics(expt_trains,
+                            model_train, total_length, dt, sigma)[0]   
+            
+        objectives_train = obj_train_list[ii]   
+        feature_avg_train = np.mean(objectives_train.values())
+        feature_avg_untrain = np.mean(obj_untrain_list[ii].values())
+        avg_explained_variance = np.mean(exp_variance_dict.values())
+        exp_variance_dict['Feature_Average'] = feature_avg_train
+        exp_variance_dict['Explained_Variance'] = avg_explained_variance
+        exp_variance_dict['Feature_Average_Generalization'] = feature_avg_untrain
+        exp_variance_dict['Seed'] = seed_list[ii]
+        
+        exp_variance_hof.append(copy.deepcopy(exp_variance_dict))
+        spiketimes_hof.append(copy.deepcopy(peaktimes_model))
+        
+    spiketimes_hof_path = 'Validation_Responses/spiketimes_model_noise.pkl'
+    pickle.dump(peaktimes_model,open(spiketimes_hof_path, 'wb'))    
+    exp_variance_hof_path = 'Validation_Responses/exp_variance_hof.pkl'
+    pickle.dump(exp_variance_hof,open(exp_variance_hof_path, 'wb'))
+    
+    validation_df = pd.DataFrame(exp_variance_hof)
+    validation_df_shortened = validation_df.loc[:,['Explained_Variance',
+                                                   'Feature_Average',
+                                                   'Feature_Average_Generalization']]
+
+    
+    
+    seed_index = validation_df.pop('Seed')
+    lut = dict(zip(seed_index.unique(), "rbgy"))
+    row_colors = seed_index.map(lut)
+    validation_arr = validation_df_shortened.values
+    sns.set(style="darkgrid", font_scale=.95)
+    g=sns.clustermap(validation_df_shortened,col_cluster = False,
+                   standard_scale=1) 
+    g=sns.clustermap(validation_df_shortened, annot = validation_arr[np.array(g.dendrogram_row.reordered_ind)],
+                col_cluster = False, row_colors=row_colors, standard_scale=1) 
+
+    g.fig.suptitle('Model Selection',fontsize = 14) 
+
+    
+    pdf_pages.savefig(g.fig)
+    plt.close(g.fig)
+    
+    
+    if noise_bool:
+        g = sns.lmplot(x="Feature_Average", y="Explained_Variance", data=validation_df)
+        pdf_pages.savefig(g.fig)
+        plt.close(g.fig)
+    
+    fitness_metrics = pd.DataFrame({'species' : [species],
+                        'cell_id' : [cell_id],
+                        'layer' : [layer],
+                        'area' : [area],
+                        'cre_line' : [cre_line],
+                        'dendrite_type' : [dendrite_type],
+                        'feature_avg_train' : [exp_variance_hof[0]['Feature_Average']],
+                        'feature_avg_generalization' : [exp_variance_hof[0]['Feature_Average_Generalization']],
+                        'feature_avg_released_allactive' : [feature_avg_released_allactive],
+                        'feature_avg_peri' : [feature_avg_peri],
+                        'explained_variance' : [exp_variance_hof[0]['Explained_Variance']],
+                        'explained_variance_released_allactive' : [explained_variance_released_allactive],
+                        'explained_variance_peri' : [explained_variance_peri],
+                        })
+    
+    fitness_filename = 'Validation_Responses/fitness_metrics_'+cell_id+'.csv' 
+    fitness_metrics.to_csv(fitness_filename)
+             
 #############################################################################
 
 
                     
-def post_processing(checkpoint_file, responses_filename):
+def post_processing(responses_filename):
     
     # Reading the stimulus set from the data
     # Calculating Spikerate only for LongDC (1s step currents) 
     
     stim_map_filename = 'preprocessed/StimMapReps.csv'
-    reject_stimtype_list = ['LongDCSupra','Ramp', 'ShortDC']
+    reject_stimtype_list = ['LongDCSupra','Ramp', 'ShortDC', 'Noise','Short_Square_Triple']
     stim_map = defaultdict(dict)
     with open(stim_map_filename, 'r') as stim_map_file:
         stim_map_content = stim_map_file.read()
