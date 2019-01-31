@@ -72,8 +72,12 @@ def run(cell_map, force_feature_extraction=False,dend_recording = None, record_l
             
             for stim_name,stim_params in stim_map.items():
                 
-                if 'Ramp' in stim_name or 'LongDCSupra' in stim_name:
+                # Don't calculate features from the following stim_types
+                
+                if any(reject_feat_stim in stim_name for reject_feat_stim in \
+                                       ['Ramp','LongDCSupra','Noise','Short_Square_Triple']):
                     continue
+                
                 
                 print "\n### Getting features from %s of cell %s ###\n" \
                     % (stim_name, cell_name)
@@ -279,8 +283,8 @@ def get_stim_map(stim_map_filename, dend_recording = None, locations = None):
             if 'Ramp' in stim_name:
                 holding_current = 0
             iter_dict2['type'] = 'SquarePulse'
-            iter_dict2['amp'] = 1e9 * float(holding_current)
-            iter_dict2['amp_end'] = 1e9 * float(holding_current)
+            iter_dict2['amp'] = 1e9 * float(holding_current)      # convert to nA
+            iter_dict2['amp_end'] = 1e9 * float(holding_current)  # convert to nA
             iter_dict2['delay'] = 0
             iter_dict2['duration'] = float(duration)
             iter_dict2['stim_end'] = float(duration)

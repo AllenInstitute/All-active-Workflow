@@ -52,7 +52,8 @@ with open(protocol_path) as json_file:
 with open(param_path) as json_file:  
     parameters_optim = json.load(json_file)
     
-path_to_cell_metadata = os.path.abspath(os.path.join('.', os.pardir)) + '/cell_metadata.json'        
+parent_dir = os.path.abspath(os.path.join('.', os.pardir))
+path_to_cell_metadata = glob.glob(parent_dir+'/*.json')[0]
 with open(path_to_cell_metadata,'r') as metadata:
         cell_metadata = json.load(metadata)
     
@@ -62,13 +63,13 @@ with open(path_to_cell_metadata,'r') as metadata:
 
 # Extracting the parameters
         
-def plot_diversity(opt, checkpoint_file, cp_dir, hof_index):
+def get_hof_params_responses(opt_gen,opt_train_feat,opt_untrain_feat,
+                             checkpoint_file, cp_dir, hof_index, responses_filename):
 
     checkpoint = pickle.load(open(checkpoint_file, "r"))
     
-    optimized_individual = [checkpoint['halloffame'][hof_index]]
-    
-    
+    best_individual = [checkpoint['halloffame'][hof_index]]
+        
     checkpoint = None
     
     logger.debug('Saving the hall of fame parameters')  
@@ -78,38 +79,83 @@ def plot_diversity(opt, checkpoint_file, cp_dir, hof_index):
 
     checkpoint_dir  = cp_dir + '/*.pkl'
     cp_list = glob.glob(checkpoint_dir)
-    hof_params  = []
-    for cp_file in cp_list:
-        hof_params.extend(pickle.load(open(cp_file, "r"))['halloffame'])
     
-    plot_diversity_params = {'optimized_individual': optimized_individual,
-                             'hof_list' : hof_params}
+    hof_params = []    
+    seed_indices = []
     
+    for i,cp_file in enumerate(cp_list):
+        hof_i = pickle.load(open(cp_file, "r"))['halloffame']
+        hof_params.extend(hof_i)
+        seed = [cp_file.split('/')[1].split('.')[0]]*len(hof_i)
+        seed_indices.extend(seed)
 
-    plot_diversity_params_path = 'analysis_params/plot_diversity_params.pkl'
     
-    if not os.path.exists(os.path.dirname(plot_diversity_params_path)):
+    
+    plot_diversity_params_path = 'analysis_params/plot_diversity_params.pkl'
+    hof_responses_filename = 'analysis_params/hof_response_all.pkl'    
+    obj_list_gen_path = 'analysis_params/hof_obj.pkl'    
+    obj_list_train_path = 'analysis_params/hof_obj_train.pkl'
+    obj_list_untrain_path = 'analysis_params/hof_obj_untrain.pkl'
+    seed_indices_path = 'analysis_params/seed_indices.pkl'
+    
+    if not os.path.exists(os.path.dirname(hof_responses_filename)):
         try:
-            os.makedirs(os.path.dirname(plot_diversity_params_path))
+            os.makedirs(os.path.dirname(hof_responses_filename))
         except OSError as exc: # Guard against race condition
             if exc.errno != errno.EEXIST:
                 raise
-    
-    with open(plot_diversity_params_path,'wb') as handle:
-        pickle.dump(plot_diversity_params,handle)
-    
+                
+                
     # Calculate responses for the hall-of-fame parameters
     
-    response_list = opt.toolbox.map(opt.toolbox.save_sim_response,hof_params)
-    for i,response_hof in enumerate(response_list):
-        with open('analysis_params/hof_response_%s.pkl'%i, 'wb') as handler:
-            pickle.dump(response_hof[0], handler)
+    if not os.path.exists(hof_responses_filename):
+        
+        logger.debug('Calculating Hall of Fame Responses')
+        
+        response_list = opt_gen.toolbox.map(opt_gen.toolbox.save_sim_response,hof_params)
+        pickle.dump(response_list,open(hof_responses_filename,'wb'))
+        
+    else:
+        
+        logger.debug('Retrieving Hall of Fame Responses')
+        response_list = pickle.load(open(hof_responses_filename,'r'))
+         
+    logger.debug('Calculating scores for Optimized Responses')
+    
+    obj_list_gen = opt_gen.toolbox.map(opt_gen.toolbox.evaluate_response,response_list)
+    obj_list_train = opt_train_feat.toolbox.map(opt_train_feat.toolbox.evaluate_response,response_list)
+    obj_list_train_total = [np.sum(obj_dict_train.values()) for obj_dict_train in obj_list_train]
+    obj_list_untrain = opt_untrain_feat.toolbox.map(opt_untrain_feat.toolbox.evaluate_response,response_list)
+    
+    
+    arrange_lists = [hof_params, response_list, obj_list_gen, obj_list_train,
+                                         obj_list_untrain,seed_indices]
+    f_name_lists = [plot_diversity_params_path,hof_responses_filename,obj_list_gen_path,
+                    obj_list_train_path,obj_list_untrain_path,seed_indices_path]
+    
+    
+    for kk,arrange_list in enumerate(arrange_lists):
+        arrange_list = [x for _,x in sorted(zip(obj_list_train_total,arrange_list))]
+        arrange_lists[kk] = arrange_list
+            
+    arrange_lists[0] = {'optimized_individual': best_individual,
+                     'hof_list' : arrange_lists[0]}
+    
+    for f_name,data in zip(f_name_lists,arrange_lists):
+        with open(f_name,'wb') as handle:
+            pickle.dump(data,handle)            
+            
+    with open(responses_filename, 'w') as fd:
+        pickle.dump(response_list[0], fd)
+    
+    
+        
     
 #####################################################################
 
 # GA evolution
 
-def plot_GA_evolution(checkpoint_file):
+def get_GA_evolution_params(checkpoint_file):
     checkpoint = pickle.load(open(checkpoint_file, "r"))
     
     log = checkpoint['logbook']
@@ -138,48 +184,16 @@ def plot_GA_evolution(checkpoint_file):
     logger.debug('Saving the plot_GA_evolution parameters')    
     
     
-#########################################################################
-
-
-def get_responses(cell_evaluator, individuals, filename):
-    responses = []
-    response_status = 'Optimized Responses'
-        
-    if filename and os.path.exists(filename):
-        logger.debug('Retrieving %s \n'%response_status)
-        with open(filename) as fd:
-            return pickle.load(fd)
-        
-    for i,individual in enumerate(individuals):
-        if i == 0:
-           logger.debug('Calculating %s \n'%response_status) 
-        individual_dict = cell_evaluator.param_dict(individual)
-        responses.append(
-            cell_evaluator.run_protocols(
-                cell_evaluator.fitness_protocols.values(),
-                param_values=individual_dict)) 
-        
-    if filename:
-        with open(filename, 'w') as fd:
-            pickle.dump(responses, fd)
-
-    return responses
-
 
 
 #############################################################################
 
-## Calculating responses
+## Calculating released responses
 
 
-def plot_Response(opt,opt_release,checkpoint_file, responses_filename,
-                  response_release_filename,hof_index):
+def get_release_responses(opt,opt_release,response_release_filename):
     
-    with open(checkpoint_file,'r') as handle:
-        checkpoint = pickle.load(handle)
-    hof = checkpoint['halloffame']
-    checkpoint = None
-    get_responses(opt.evaluator, [hof[hof_index]], responses_filename)
+
     
     if response_release_filename and os.path.exists(response_release_filename):
         responses_release = pickle.load(open(response_release_filename, "r"))

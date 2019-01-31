@@ -36,6 +36,8 @@ all_protocol_path = path_data['all_protocols']
 mech_path = path_data['mechanism']
 mech_release_path = path_data['mechanism_release']
 feature_path = path_data['features']
+all_feature_path = path_data['all_spiking_features']
+untrained_feature_path = path_data['untrained_spiking_features'] 
 param_path = path_data['parameters']
 original_release_param = path_data['original_parameters']
 
@@ -43,10 +45,11 @@ original_release_param = path_data['original_parameters']
 def create_optimizer(args):
     '''returns configured bluepyopt.optimisations.DEAPOptimisation'''
     
-    if '/' in args.checkpoint:
-        cp_source = args.checkpoint.split('/')[0]
-    else:
-        cp_source = None
+    if args.checkpoint:
+        if '/' in args.checkpoint:
+            cp_source = args.checkpoint.split('/')[0]
+        else:
+            cp_source = None
 
     if args.ipyparallel or os.getenv('CELLBENCHMARK_USEIPYP'):
         from ipyparallel import Client
@@ -84,9 +87,14 @@ def create_optimizer(args):
     seed = os.getenv('BLUEPYOPT_SEED', args.seed)    
     if args.analyse or args.short_analyse:
         
-        evaluator = evaluator_helper.create(all_protocol_path, feature_path, morph_path, 
+        evaluator_generalization = evaluator_helper.create(all_protocol_path, all_feature_path, morph_path, 
                                         param_path, mech_path,timed_evaluation = False)
         
+        evaluator_train_feat = evaluator_helper.create(all_protocol_path, feature_path, morph_path, 
+                                        param_path, mech_path,timed_evaluation = False)
+        
+        evaluator_untrained_feat = evaluator_helper.create(all_protocol_path, untrained_feature_path, morph_path, 
+                                        param_path, mech_path,timed_evaluation = False)
         if original_release_param:
             evaluator_release =  evaluator_helper.create(all_protocol_path, feature_path, morph_path, 
              original_release_param, mech_release_path,
@@ -104,10 +112,21 @@ def create_optimizer(args):
                 seed=seed)
         return opt
     
-    opt = bpopt.optimisations.DEAPOptimisation(
-        evaluator=evaluator,
+    opt_gen = bpopt.optimisations.DEAPOptimisation(
+        evaluator=evaluator_generalization,
         map_function=map_function,
         seed=seed)
+    
+    opt_train_feat = bpopt.optimisations.DEAPOptimisation(
+        evaluator=evaluator_train_feat,
+        map_function=map_function,
+        seed=seed)
+    
+    opt_untrain_feat = bpopt.optimisations.DEAPOptimisation(
+        evaluator=evaluator_untrained_feat,
+        map_function=map_function,
+        seed=seed)
+    
     if original_release_param:
         opt_release = bpopt.optimisations.DEAPOptimisation(
             evaluator=evaluator_release,
@@ -116,7 +135,7 @@ def create_optimizer(args):
     else:
          opt_release = None   
 
-    return opt,opt_release
+    return opt_gen,opt_train_feat,opt_untrain_feat,opt_release
     
 
 
@@ -168,7 +187,7 @@ def main():
                         stream=sys.stdout)
     
     if args.analyse or args.short_analyse:
-        opt,opt_release = create_optimizer(args)
+        opt_gen,opt_train_feat,opt_untrain_feat,opt_release = create_optimizer(args)
     else:
         opt = create_optimizer(args)
 
@@ -188,26 +207,27 @@ def main():
     if args.short_analyse:
         
         logger.debug('Doing analyse to save the results')
-        from optim_analysis_short import plot_Response,plot_diversity,\
-                    plot_GA_evolution, get_responses
+        from optim_analysis_short import get_release_responses,get_hof_params_responses,\
+                    get_GA_evolution_params
         if '/' in args.checkpoint:
             cp_dir = args.checkpoint.split('/')[0]
         else:
             cp_dir = '.'  # check in current directory
         
         
-        hof_index = 0
+        hof_index = 0 # index 0 has the min training error
+        
         args.checkpoint = checkpoint_decider.best_seed(cp_dir)
         
         
         if args.checkpoint is not None and os.path.isfile(args.checkpoint):
             
-            plot_Response(opt,opt_release,args.checkpoint,
-                         args.responses,args.response_release,hof_index)
+            get_hof_params_responses(opt_gen,opt_train_feat,opt_untrain_feat,args.checkpoint, 
+                                     cp_dir,hof_index, args.responses)
             
-            plot_diversity(opt, args.checkpoint, cp_dir,hof_index)
+            get_release_responses(opt_gen,opt_release,args.response_release)
         
-            plot_GA_evolution(args.checkpoint)
+            get_GA_evolution_params(args.checkpoint)
             
         else:
             logger.debug('No checkpoint file available run optimization '
@@ -220,23 +240,24 @@ def main():
     elif args.analyse:
         
         from optim_analysis import plot_Response,feature_comp,plot_diversity,\
-                                                plot_GA_evolution,post_processing
+                                    hof_statistics,plot_GA_evolution,post_processing
         logger.debug('Plotting Response Comparisons')
-        plot_Response(opt,opt_release,args.checkpoint,
+        plot_Response(opt_train_feat,opt_release,
                          args.responses,args.response_release)
         
         logger.debug('Plotting Feature Comparisons')
-        feature_comp(opt,opt_release,args.checkpoint,args.responses,
+        feature_comp(opt_train_feat,opt_release,args.responses,
                                             args.response_release)
         
+        hof_statistics(opt_train_feat,hof_response_dir = 'analysis_params')
+        
         logger.debug('Plotting Parameters - Optimized and Released')
-        plot_diversity(opt, args.checkpoint,
-                                     opt.evaluator.param_names)
+        plot_diversity(opt_train_feat, opt_train_feat.evaluator.param_names)
         logger.debug('Plotting Evolution of the Objective')
-        plot_GA_evolution(args.checkpoint)
+        plot_GA_evolution()
         
         logger.debug('Plotting Spike shapes and mean frequency comparison')
-        post_processing(args.checkpoint,args.responses)
+        post_processing(args.responses)
         
         
         

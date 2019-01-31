@@ -18,6 +18,7 @@ import logging
 from matplotlib.backends.backend_pdf import PdfPages
 import math
 from shutil import copyfile
+import glob
 
 
 matplotlib.use('Agg')
@@ -50,7 +51,8 @@ with open('passive_param_bounds.json','r') as bound_file:
 with open(param_path) as json_file:  
     params = json.load(json_file)
     
-path_to_cell_metadata = os.path.abspath(os.path.join('.', os.pardir)) + '/cell_metadata.json'        
+parent_dir = os.path.abspath(os.path.join('.', os.pardir))
+path_to_cell_metadata = glob.glob(parent_dir+'/*.json')[0] 
 with open(path_to_cell_metadata,'r') as metadata:
         cell_metadata = json.load(metadata)
     
