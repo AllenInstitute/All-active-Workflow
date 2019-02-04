@@ -26,15 +26,14 @@ feature_set = {
                               'AP_width',
                               'adaptation_index2',
                               'AHP_depth',
-                              'depol_block',
-                              'check_AISInitiation']
+                              'depol_block']
         
 #       'dendritic_features' :['AP_amplitude_from_voltagebase',
 #                              'AP_width']
             }
 
-if cell_metadata['Dendrite_type'] == 'aspiny':
-  feature_set['somatic_features'].remove('check_AISInitiation')
+if cell_metadata['Dendrite_type'] == 'spiny' and cell_metadata['Area'] != 'DG':
+  feature_set['somatic_features'].append('check_AISInitiation')
 
 
 def main():

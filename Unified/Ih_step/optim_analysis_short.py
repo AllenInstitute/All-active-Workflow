@@ -19,6 +19,10 @@ with open('config_file.json') as json_file:
 
 param_path = data['parameters']
 fit_json_path = data['fit_json']
+param_bounds_path = 'passive_and_Ih_bounds.json'
+
+with open(param_bounds_path, 'r') as boundfile:
+    param_bounds = json.load(boundfile)
 
 section_map_inv = {'somatic':'soma', 'axonal':'axon', 'apical':'apic',
                'basal':'dend', 'all':'all'}
@@ -82,7 +86,7 @@ def save_optimized_params(checkpoint_file,param_names):
                           'section' : sect,
                           'name'    : param_name,
                           'value'   : str(param_dict_final[key]),
-                          'mechanism': 'Ih'      
+                          'mechanism': param_bounds[param_name]['mechanism']      
                         })              
     
         

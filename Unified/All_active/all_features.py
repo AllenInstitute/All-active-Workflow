@@ -37,14 +37,7 @@ def all_features_path(cell_map, train_protocols_path):
     trained_features_json_filename = 'config/'+ cell_name +'/trained_features.json'
     untrained_features_json_filename = 'config/'+ cell_name +'/untrained_features.json'
     spiketimes_exp_path = 'Validation_Responses/spiketimes_exp_noise.pkl'
-    
-    if not os.path.exists(os.path.dirname(spiketimes_exp_path)):
-        try:
-            os.makedirs(os.path.dirname(spiketimes_exp_path))
-        except OSError as exc: # Guard against race condition
-            if exc.errno != errno.EEXIST:
-                raise
-    
+     
     peaktimes_exp = collections.defaultdict(list)
     
     
@@ -124,8 +117,14 @@ def all_features_path(cell_map, train_protocols_path):
             features_meanstd[stim_name]['soma'][
                 feature_name] = [mean , std]
     
-
-    pickle.dump(peaktimes_exp, open(spiketimes_exp_path, 'w'))
+    if len(peaktimes_exp.keys()) > 0:
+        if not os.path.exists(os.path.dirname(spiketimes_exp_path)):
+            try:
+                os.makedirs(os.path.dirname(spiketimes_exp_path))
+            except OSError as exc: # Guard against race condition
+                if exc.errno != errno.EEXIST:
+                    raise
+        pickle.dump(peaktimes_exp, open(spiketimes_exp_path, 'w'))
     save_json(features_meanstd, all_features_json_filename)
     train_protocols = load_json(train_protocols_path).keys()
     trained_features = dict()

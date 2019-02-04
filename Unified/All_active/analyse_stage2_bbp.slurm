@@ -2,10 +2,10 @@
 
 #SBATCH -p prod 
 #SBATCH -t 4:00:00 
-#SBATCH -n 32
+#SBATCH -n 40
 #SBATCH -C cpu|nvme
 #SBATCH -A proj36
-#SBATCH --mail-user=anirban.nandi@wustl.edu
+#SBATCH --mail-user=anin@alleninstitute.org
 #SBATCH --mail-type=ALL
 #SBATCH -J analyze_Stage2 
 
@@ -30,4 +30,3 @@ python Optim_Main.py -vv --checkpoint  checkpoints_final/seed1.pkl   --responses
 python Optim_Main.py -vv --responses resp_opt.txt   --response_release resp_release.txt --analyse
 python save_time.py
 python perisomatic_sim.py 
-#python get_validation_metrics.py

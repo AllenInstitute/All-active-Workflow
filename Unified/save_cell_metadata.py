@@ -13,6 +13,7 @@ from allensdk.core.cell_types_cache import CellTypesCache
 from allensdk.api.queries.biophysical_api import BiophysicalApi
 import allensdk.api.queries.rma_api
 import shutil
+import subprocess
 
 template_model_dict = {'all_active' :491455321,
              'perisomatic' : 329230710}
@@ -20,7 +21,7 @@ template_model_dict = {'all_active' :491455321,
 opt_metric_dict = {'all_active' : ['Feature_avg_Released_AllActive', 
                                       'Explained_variance_Released_AllActive'],
                     'perisomatic' : ['Feature_avg_Peri','Explained_variance_Peri']}
-
+model_dir = {'all_active' :'neuronal_model', 'perisomatic' : 'peri_model'}
 
 def save_cell_info(cell_metadata,metadata_path):
     """ Create and save a dictionary with all the metadata """
@@ -43,6 +44,8 @@ def main():
                         help='Set dendrite type of the cell in metadata')
     parser.add_argument('--Layer', required=False, default=None,
                         help='Set Layer of the cell in metadata')
+    parser.add_argument('--launch_job', action="store_true", default=False,
+                        help='launch the Optimization')
     
     args = parser.parse_args()
     
@@ -53,8 +56,8 @@ def main():
                      'Feature_avg_Released_AllActive', 'Explained_variance_Released_AllActive',
                      'Feature_avg_Peri','Explained_variance_Peri','Machine']
     
-    cell_id_str = raw_input('Enter the cell_id : ')
-    
+    #cell_id_str = raw_input('Enter the cell_id : ')
+    cell_id_str = os.path.basename(os.getcwd())
     metadata_path = 'cell_metadata_' + cell_id_str +'.json'
     
     if not os.path.exists(metadata_path):
@@ -103,16 +106,13 @@ def main():
             cell_info_dict['Area'] = metadata_cell['structure_area_abbrev']
             cell_info_dict['Cre_line'] = metadata_cell['transgenic_line']
             cell_info_dict['Layer'] = metadata_cell['structure_layer_name']
-        
-        if cell_info_dict['Released_AllActive_id'] != '':
-            model_id = int(float(cell_info_dict['Released_AllActive_id']))
-            
-            bp.cache_data(model_id,working_directory='neuronal_model')
+
         
         api = allensdk.api.queries.rma_api.RmaApi() # Get the model metadata
         
         for model_type, model_id in model_dict.items():
             if model_id != '':
+                bp.cache_data(model_id,working_directory = model_dir[model_type])
                 model_metadata = api.model_query("NeuronalModelRun", 
                                                  criteria="[neuronal_model_id$eq%s]"%model_id) 
                 model_metadata_select = [model_metadata[0]['rheobase_feature_average'],
@@ -130,10 +130,14 @@ def main():
                 if arg in cell_info_dict.keys() and getattr(args, arg):
                     cell_info_dict[arg] = getattr(args, arg)
         
-        
-        
 
         save_cell_info(cell_info_dict,metadata_path)
+    
+    if args.launch_job:    
+        try:
+            subprocess.call(['./start_job.sh'])
+        except:
+            subprocess.call(['./start_job_bbp.sh'])
 
 # Run this file in the parent directory (cell_id) to save the metadata
     

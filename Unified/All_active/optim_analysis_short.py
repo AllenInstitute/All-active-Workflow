@@ -144,6 +144,8 @@ def get_hof_params_responses(opt_gen,opt_train_feat,opt_untrain_feat,
     for f_name,data in zip(f_name_lists,arrange_lists):
         with open(f_name,'wb') as handle:
             pickle.dump(data,handle)            
+    
+    response_list = arrange_lists[1]
             
     with open(responses_filename, 'w') as fd:
         pickle.dump(response_list[0], fd)

@@ -106,7 +106,7 @@ def define_protocols(protocols_write_path):
                     location=soma_loc,
                     total_duration=stimulus_definition['totduration']))
                 recordings = [somav_recording]
-            else:
+            elif stimulus_definition['type'] in ['TriBlip','Noise']:
                 sweep_file = 'preprocessed/'+stimulus_definition['sweep_filenames'][0]
                 stim_play_time = np.loadtxt(sweep_file)[:,0]
                 stim_play_current = np.loadtxt(sweep_file)[:,2]

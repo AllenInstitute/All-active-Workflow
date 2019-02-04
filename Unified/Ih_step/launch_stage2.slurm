@@ -6,6 +6,8 @@
 #SBATCH -C haswell 
 #SBATCH -N 1  
 
+source activate ateam
+
 export ALL_ACTIV_REPO="/project/projectdirs/m2043/AIBS/ani/Unified/All_Active_Repo"
 
 JOBID_1=$(<Job_1.txt)
@@ -23,6 +25,8 @@ else
 fi
 
 python Optim_Main.py --checkpoint checkpoints_backup/seed1.pkl --short_analyse
+python Optim_Main.py -vv --checkpoint  checkpoints_backup/seed1.pkl   --responses resp_opt.txt   --response_release resp_release.txt --analyse
+
 echo "Saving the Optimized parameters for the next stage"
 #rm -rf preprocessed/ 
 
@@ -31,7 +35,7 @@ echo "Saving the Optimized parameters for the next stage"
 
 cp -r cell_types/ $ALL_ACTIV_DIR/
 cp cell_id.txt $ALL_ACTIV_DIR/
-#rm -rf cell_types
+mv peri_model/ $ALL_ACTIV_DIR/
 mv fit_opt.json $ALL_ACTIV_DIR/cell_types/
 cp -r $ALL_ACTIV_REPO/* $ALL_ACTIV_DIR/
 cd $ALL_ACTIV_DIR

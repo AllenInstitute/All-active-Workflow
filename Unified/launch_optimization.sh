@@ -8,13 +8,17 @@ export PASSIVE_REPO="/project/projectdirs/m2043/AIBS/ani/Unified/Passive_Repo"
 if [ ! -d "$PASS_DIR" ]; then
 	
 	mkdir $PASS_DIR && mv cell_types $PASS_DIR/
-	model_filename=$(find . -maxdepth 2 -name "*fit.json")
-	if [ ! -z "$model_filename" ]; then
-		mv $model_filename $PASS_DIR/cell_types/fit_parameters.json && rm -rf neuronal_model
+	all_active_model_file=$(find neuronal_model -maxdepth 1 -name "*fit.json")
+	peri_model_file=$(find peri_model -maxdepth 1 -name "*fit.json")
+	if [ ! -z "$all_active_model_file" ]; then
+		mv $all_active_model_file $PASS_DIR/cell_types/fit_parameters.json && rm -rf neuronal_model
+	fi
+	if [ ! -z "$peri_model_file" ]; then
+		mkdir -p $PASS_DIR/peri_model && mv $peri_model_file $PASS_DIR/peri_model/ && rm -rf peri_model
 	fi
 	
 else
-	echo "All data already downloaded" 
+	echo "All data already moved for Stage 0" 
 fi
 
 # Launch the passive optimization (Stage 0)

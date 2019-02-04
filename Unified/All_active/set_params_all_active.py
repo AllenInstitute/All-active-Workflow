@@ -18,16 +18,21 @@ with open(path_to_cell_metadata,'r') as metadata:
 
 species = cell_metadata['Species']
 dendrite_type = cell_metadata['Dendrite_type']
+area = cell_metadata['Area']
 
 if species == 'Mus musculus' and dendrite_type == 'spiny':
     all_params = json.load(open('param_set1.json','r'))
 elif species == 'Mus musculus' and dendrite_type == 'aspiny':
-    all_params = json.load(open('param_set2.json','r'))
+    all_params = json.load(open('param_set2.json','r'))    
+elif species == 'Homo Sapiens' and dendrite_type == 'spiny' and area == 'DG':
+    all_params = json.load(open('param_set5.json','r'))
 elif species == 'Homo Sapiens' and dendrite_type == 'spiny':
     all_params = json.load(open('param_set3.json','r'))
 elif species == 'Homo Sapiens' and dendrite_type == 'aspiny':
     all_params = json.load(open('param_set4.json','r'))
-    
+else:
+#    raise Exception('No parameter bounds specified for the cell type')
+    all_params = json.load(open('param_set4.json','r'))
     
 def main():
     with open('all_param_bounds.json','w') as bound_file:
