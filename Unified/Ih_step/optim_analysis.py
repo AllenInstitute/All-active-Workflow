@@ -12,6 +12,8 @@ import pickle
 import numpy as np
 import pandas as pd
 import matplotlib
+matplotlib.use('Agg')
+
 import matplotlib.pyplot as plt
 import errno
 import logging
@@ -20,8 +22,9 @@ import math
 import bluepyopt.ephys as ephys
 from shutil import copyfile
 import glob
+from collections import OrderedDict,defaultdict
 
-matplotlib.use('Agg')
+
 
 logger = logging.getLogger(__name__)
 
@@ -37,7 +40,7 @@ release_params_original = {}
 fit_json_path = data['fit_json']
 fit_protocol_path = data['protocols']
 param_path = data['parameters']
-model_params_original = data['original_parameters']
+original_release_param = data['original_parameters']
 
 with open(fit_json_path) as json_file:  
         model_data = json.load(json_file)
@@ -71,7 +74,6 @@ def plot_diversity(opt, checkpoint_file, param_names):
     
     release_individual = list()
     optimized_individual = [checkpoint['halloffame'][0]]
-#    optimized_fitness = optimized_individual[0].fitness.values
 
 
     param_values = opt.evaluator.params
@@ -217,7 +219,7 @@ def plot_diversity(opt, checkpoint_file, param_names):
         'cre_line' : cell_metadata['Cre_line'],
         'dendrite_type' : cell_metadata['Dendrite_type']})
     
-    if model_params_original:    
+    if original_release_param:    
         released_df = pd.DataFrame({ 'param_name' : param_names_arranged,
             'section':sect_names_arranged,                        
             'value' : release_individual,
@@ -335,7 +337,7 @@ def feature_comp(opt, opt_release, checkpoint_file,responses_filename,response_r
     hof = checkpoint['halloffame']
 
     # objectives
-    if model_params_original:
+    if original_release_param:
         if response_release_filename and os.path.exists(response_release_filename):
             responses_release = pickle.load(open(response_release_filename, "r"))
             logger.debug('Retrieving Released Responses')
@@ -368,9 +370,8 @@ def feature_comp(opt, opt_release, checkpoint_file,responses_filename,response_r
     objectives_release = opt.evaluator.fitness_calculator.calculate_scores(responses_release)
     
     
-    import collections
-    objectives = collections.OrderedDict(sorted(objectives.iteritems()))
-    objectives_release = collections.OrderedDict(sorted(objectives_release.iteritems()))
+    objectives = OrderedDict(sorted(objectives.iteritems()))
+    objectives_release = OrderedDict(sorted(objectives_release.iteritems()))
     
     feature_split_names = [name.split('.')[-1] for name in objectives.keys()]
     features = np.unique(np.asarray(feature_split_names))
@@ -382,21 +383,21 @@ def feature_comp(opt, opt_release, checkpoint_file,responses_filename,response_r
     plt.style.use('ggplot') 
     for i, feature in enumerate(features):
         fig, ax = plt.subplots(1, figsize=(8,8))    
-        iter_dict = dict()
-        iter_dict_release = dict()
-        tick_label = []
+        iter_dict = defaultdict(list)
+        iter_dict_release = defaultdict(list)
         for key in objectives.keys():
             if key.split('.')[-1] == feature:
-                iter_dict[key] = objectives[key]
-                iter_dict_release[key] = objectives_release[key]
                 amp = train_protocols[key.split('.')[0]]['stimuli'][0]['amp']
                 amp_reduced = round(amp,2)
-                tick_label.append(amp_reduced)    
+                iter_dict[amp_reduced].append(objectives[key])
+                iter_dict_release[amp_reduced].append(objectives_release[key])
         index = np.arange(len(iter_dict.keys()))
         xtick_pos = index + bar_width / 2
-
-        iter_dict = collections.OrderedDict(sorted(iter_dict.iteritems()))
-        iter_dict_release = collections.OrderedDict(sorted(iter_dict_release.iteritems()))
+        iter_dict ={float(key):np.mean(val) for key,val in iter_dict.items()}
+        iter_dict_release ={float(key):np.mean(val) for key,val in iter_dict_release.items()}
+        iter_dict = OrderedDict(sorted(iter_dict.iteritems()))
+        iter_dict_release = OrderedDict(sorted(iter_dict_release.iteritems()))
+        tick_label = iter_dict.keys()
         ax.bar(index+ bar_width,
               iter_dict.values(),
               bar_width,
@@ -405,7 +406,7 @@ def feature_comp(opt, opt_release, checkpoint_file,responses_filename,response_r
               alpha=opacity,
               label='Optimized')
         
-        if model_params_original:
+        if original_release_param:
             ax.bar(index,
                   iter_dict_release.values(),
                   bar_width,
@@ -415,6 +416,7 @@ def feature_comp(opt, opt_release, checkpoint_file,responses_filename,response_r
                   label='Released')  
         ax.set_xticks(xtick_pos)
         ax.set_xticklabels(tick_label, fontsize= 8)
+        plt.xticks(rotation=90)
         for tick in ax.yaxis.get_major_ticks():
             tick.label.set_fontsize(8) 
         ax.set_ylabel('Objective value (# std)',fontsize= 12)
@@ -472,10 +474,10 @@ def plot_Response(opt,opt_release,checkpoint_file, responses_filename,response_r
     checkpoint = pickle.load(open(checkpoint_file, "r"))
     hof = checkpoint['halloffame']
     
-    responses = get_responses(opt.evaluator, hof, responses_filename)
+    responses = get_responses(opt.evaluator, [hof[0]], responses_filename)
     response = responses[0]
     
-    if model_params_original:
+    if original_release_param:
         if response_release_filename and os.path.exists(response_release_filename):
             responses_release = pickle.load(open(response_release_filename, "r"))
             logger.debug('Retrieving Released Responses')
@@ -498,8 +500,7 @@ def plot_Response(opt,opt_release,checkpoint_file, responses_filename,response_r
                     pickle.dump(responses_release, fd)
     
     plt.style.use('ggplot') 
-    training_plots = 0
-    validation_plots = 0
+    all_plots = 0
     
     protocol_names_original = stim_df['DataPath'].tolist()
     amp_start_original = stim_df['Stim_Start'].tolist()
@@ -513,47 +514,57 @@ def plot_Response(opt,opt_release,checkpoint_file, responses_filename,response_r
     for i, trace_rep in enumerate(protocol_names):
         rep_id = trace_rep.split('|')[0]
         if rep_id.split('.')[0] in opt.evaluator.fitness_protocols.keys():
-            if rep_id.split('.')[0] in train_protocols.keys():
-                training_plots += len(trace_rep.split('|'))
-            else:
-                validation_plots += len(trace_rep.split('|'))
-    n_col = 3   
-    n_row_train =  int(math.ceil(training_plots/float(n_col)))
-    n_row_val =  int(math.ceil(validation_plots/float(n_col)))
-    fig_empty_index_train = range(training_plots,n_row_train*n_col)
-    fig_empty_index_val = range(validation_plots,n_row_val*n_col)
-    fig_train,ax_train = plt.subplots(n_row_train,n_col, figsize=(10,10))
-    fig_val,ax_val = plt.subplots(n_row_val,n_col, figsize=(10,10))
-
-    for ax_c,empty_index in zip([ax_val,ax_train],[fig_empty_index_val,fig_empty_index_train]):
-        if len(empty_index) != 0:
-            for ind in empty_index:
-                ax_c[ind/n_col,ind%n_col].axis('off')
+            all_plots += len(trace_rep.split('|'))
+            
+    n_col = 3  
+    n_row = 5
+    fig_per_page = n_col * n_row
+    fig_pages =  int(math.ceil(all_plots/float(fig_per_page)))
+    fig_mat = list()
+    ax_mat = list()
+    for page_i in range(fig_pages):
         
+        fig,ax = plt.subplots(n_row,n_col, figsize=(10,10),squeeze = False)
+        
+        if page_i == fig_pages-1:
+            remain_plots = all_plots - n_row*n_col*(fig_pages-1)
+            fig_empty_index_train = range(remain_plots,n_row*n_col)
     
-    index_train = 0
-    index_val = 0
-    for i, trace_rep in enumerate(protocol_names):
+
+            if len(fig_empty_index_train) != 0:
+                for ind in fig_empty_index_train:
+                    ax[ind/n_col,ind%n_col].axis('off')
+                    
+        fig_mat.append(fig)
+        ax_mat.append(ax)   
+        
+        
+    index = 0
+    index_plot = 0
+    fig_index = 0
+    
+    
+    for ix, trace_rep in enumerate(protocol_names):
         rep_id = trace_rep.split('|')[0]
+        if rep_id.split('.')[0] in train_protocols.keys():
+            state = ' (Train)'
+        else:
+            state = ' (Test)'
         name_loc = rep_id.split('.')[0] +'.soma.v'
+        
         if rep_id.split('.')[0] in opt.evaluator.fitness_protocols.keys():
-            if rep_id.split('.')[0] in train_protocols.keys():
-                analysis_state = '(T)'
-                ax = ax_train
-                index = index_train
-            else:
-                analysis_state = '(V)'
-                ax = ax_val
-                index = index_val
+            
             for name in trace_rep.split('|'):
+                ax_comp = ax_mat[fig_index]
+                fig_comp = fig_mat[fig_index]
                 response_time = response[name_loc]['time']
                 response_voltage = response[name_loc]['voltage']
                 color = 'blue'
-                l1, = ax[index/n_col,index%n_col].plot(response_time,
+                l1, = ax_comp[index/n_col,index%n_col].plot(response_time,
                         response_voltage,
                         color=color,
                         linewidth=1,
-                        label= 'Optimized',
+                        label= 'Model',
                         alpha = 0.8)
                     
     
@@ -561,47 +572,54 @@ def plot_Response(opt,opt_release,checkpoint_file, responses_filename,response_r
                 data = np.loadtxt(FileName)
                 exp_time = data[:,0]
                 exp_voltage = data[:,1]
-                l3, = ax[index/n_col,index%n_col].plot(exp_time,
+                l3, = ax_comp[index/n_col,index%n_col].plot(exp_time,
                             exp_voltage,
                             color='black',
                             linewidth=1,
-                            label = 'Cell Response',
-                            alpha = 0.5)  
+                            label = 'Experiment',
+                            alpha = 0.8)
                 
-                if (analysis_state == '(T)' and index/n_col == n_row_train-1) or \
-                                (analysis_state == '(V)' and index/n_col == n_row_val-1): 
-                    ax[index/n_col,index%n_col].set_xlabel('Time (ms)')
-                if (analysis_state == '(T)' and index%n_col == 0) or \
-                                (analysis_state == '(V)' and index%n_col == 0): 
-                    ax[index/n_col,index%n_col].set_ylabel('Voltage (mV)')
-                
-                ax[index/n_col,index%n_col].set_title(name.split('.')[0], fontsize=8)
+                if original_release_param:
+                    responses_release_time = responses_release[name_loc]['time']
+                    responses_release_voltage = responses_release[name_loc]['voltage']
+                    l4,=ax_comp[index/n_col,index%n_col].plot(responses_release_time,
+                            responses_release_voltage,
+                            color='r',
+                            linewidth=.1,
+                            label = 'Released',
+                            alpha = 0.4)  
+            
+
+                    
+                if index/n_col == n_row-1: 
+                    ax_comp[index/n_col,index%n_col].set_xlabel('Time (ms)')
+                if index%n_col == 0: 
+                    ax_comp[index/n_col,index%n_col].set_ylabel('Voltage (mV)')
+                ax_comp[index/n_col,index%n_col].set_title(name.split('.')[0] + state, fontsize=8)
                 
                 if 'LongDC' in name:
-                    ax[index/n_col,index%n_col].set_xlim([amp_start_list[i]-200,\
-                                                              amp_end_list[i]+200])
-                
+                    ax_comp[index/n_col,index%n_col].set_xlim([amp_start_list[ix]-200,\
+                                                              amp_end_list[ix]+200])
+                        
                 logger.debug('Plotting response comparisons for %s \n'%name.split('.')[0])
                 index += 1
-            if analysis_state == '(T)':
-                index_train = index
-                if index_train == training_plots:
-                    fig_train.legend(handles = (l1,l3), loc = 'lower center', ncol=2)
-            else:
-                index_val = index
-                if index_val == validation_plots:
-                    fig_val.legend(handles = (l1,l3), loc = 'lower center', ncol=2)
-                
-
-            
-    fig_train.suptitle('Training Set',fontsize=16)
-    fig_val.suptitle('Test Set',fontsize=16)
-
-    fig_val.tight_layout(rect=[0, 0.03, 1, 0.95])
-    fig_train.tight_layout(rect=[0, 0.03, 1, 0.95])
-    pdf_pages.savefig(fig_train)
-    plt.close(fig_train)
-    pdf_pages.savefig(fig_val)
-    plt.close(fig_val)
+                index_plot +=1
+                if index%fig_per_page == 0 or index_plot == all_plots:
+                    fig_comp.suptitle('Response Comparisons',fontsize=16)
+                    if original_release_param:
+                        handles = [l1, l3, l4]
+                        ncol = 3
+                    else:
+                         handles = [l1, l3]
+                         ncol = 2
+                    labels = [h.get_label() for h in handles]
+                    fig_comp.legend(handles = handles, labels=labels, loc = 'lower center', ncol=ncol)
+                    fig_comp.tight_layout(rect=[0, 0.03, 1, 0.95])
+                    pdf_pages.savefig(fig_comp)
+                    plt.close(fig_comp)
+                    index = 0
+                    fig_index += 1
+    
+   
     
     

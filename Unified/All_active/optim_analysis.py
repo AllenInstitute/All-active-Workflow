@@ -423,17 +423,15 @@ def feature_comp(opt, opt_release,responses_filename,response_release_filename):
         iter_dict = defaultdict(list)
         iter_dict_release = defaultdict(list)
         for key in objectives.keys():
-            if key.split('.',1)[-1] == feature:
-                
+            if key.split('.',1)[-1] == feature:                
                 amp = train_protocols[key.split('.')[0]]['stimuli'][0]['amp']
                 amp_reduced = round(amp,3)
                 iter_dict[str(amp_reduced)].append(objectives[key])
                 iter_dict_release[str(amp_reduced)].append(objectives_release[key])
-#                tick_label.append(amp_reduced)    
         index = np.arange(len(iter_dict.keys()))
         xtick_pos = index + bar_width / 2
-        iter_dict ={key:np.mean(val) for key,val in iter_dict.items()}
-        iter_dict_release ={key:np.mean(val) for key,val in iter_dict_release.items()}
+        iter_dict ={float(key):np.mean(val) for key,val in iter_dict.items()}
+        iter_dict_release ={float(key):np.mean(val) for key,val in iter_dict_release.items()}
         iter_dict = OrderedDict(sorted(iter_dict.iteritems()))
         iter_dict_release = OrderedDict(sorted(iter_dict_release.iteritems()))
         tick_label = iter_dict.keys()
@@ -528,6 +526,17 @@ def plot_Response(opt,opt_release,responses_filename,
     responses_release = pickle.load(open(response_release_filename, "r"))
     logger.debug('Retrieving Optimized and Released Responses')
     
+    
+    # Saving model response for hof[0]
+    model_response_path = 'model_response/'
+    if not os.path.exists(os.path.dirname(model_response_path)):
+        try:
+            os.makedirs(os.path.dirname(model_response_path))
+        except OSError as exc: # Guard against race condition
+            if exc.errno != errno.EEXIST:
+                raise
+    
+    
     plt.style.use('ggplot') 
     all_plots = 0
     
@@ -593,11 +602,24 @@ def plot_Response(opt,opt_release,responses_filename,
                         linewidth=1,
                         label= 'Model',
                         alpha = 0.8)                    
-
+                
+                model_response_filename = model_response_path + '%s'%name
+                with open(model_response_filename, 'w') as handle:
+                    np.savetxt(handle,
+                                  np.transpose([response_time.values, 
+                                                response_voltage.values]))
+                
                 FileName = 'preprocessed/' + name
                 data = np.loadtxt(FileName) 
-                l3, = ax_comp[index/n_col,index%n_col].plot(data[:,0],
-                            data[:,1],
+                if any(data[:,1]):
+                    exp_time  = data[:,0]
+                    exp_voltage = data[:,1]
+                    
+                else: # stolen triblip protocol
+                    exp_time,exp_voltage = [],[]
+                    
+                l3, = ax_comp[index/n_col,index%n_col].plot(exp_time,
+                            exp_voltage,
                             color='black',
                             linewidth=1,
                             label = 'Experiment',
@@ -719,9 +741,7 @@ def hof_statistics(opt, hof_response_dir = 'analysis_params'):
     
     sns.heatmap(hof_df_wo_index, cmap = cmap, ax = ax)
     plt.xticks(rotation = 45,ha="right")
-#    start, end = ax.get_ylim()
-#    ax.yaxis.set_ticks(np.linspace(end,start-1, 5))
-#    ax.yaxis.set_major_formatter(ticker.FormatStrFormatter('%d'))
+
     ax.set_ylabel('Hall of Fame')
     fig.tight_layout()
     pdf_pages.savefig(fig)
@@ -810,19 +830,32 @@ def hof_statistics(opt, hof_response_dir = 'analysis_params'):
         exp_variance_dict['Seed'] = seed_list[ii]
         
         exp_variance_hof.append(copy.deepcopy(exp_variance_dict))
-        spiketimes_hof.append(copy.deepcopy(peaktimes_model))
-        
-    spiketimes_hof_path = 'Validation_Responses/spiketimes_model_noise.pkl'
-    pickle.dump(peaktimes_model,open(spiketimes_hof_path, 'wb'))    
+        if peaktimes_model:
+            spiketimes_hof.append(copy.deepcopy(peaktimes_model))
+    
+    
+    
     exp_variance_hof_path = 'Validation_Responses/exp_variance_hof.pkl'
+    if not os.path.exists(os.path.dirname(exp_variance_hof_path)):
+        try:
+            os.makedirs(os.path.dirname(spiketimes_exp_path))
+        except OSError as exc: # Guard against race condition
+            if exc.errno != errno.EEXIST:
+                raise
+    
     pickle.dump(exp_variance_hof,open(exp_variance_hof_path, 'wb'))
+    
+    if noise_bool:    
+        spiketimes_hof_path = 'Validation_Responses/spiketimes_model_noise.pkl'
+        pickle.dump(spiketimes_hof,open(spiketimes_hof_path, 'wb'))    
+    
     
     validation_df = pd.DataFrame(exp_variance_hof)
     validation_df_shortened = validation_df.loc[:,['Explained_Variance',
                                                    'Feature_Average',
                                                    'Feature_Average_Generalization']]
 
-    
+    validation_df_shortened = validation_df_shortened.dropna(axis='columns')
     
     seed_index = validation_df.pop('Seed')
     lut = dict(zip(seed_index.unique(), "rbgy"))

@@ -6,8 +6,8 @@ Created on Fri Oct 19 16:36:19 2018
 @author: anin
 """
 
-from allensdk.core.cell_types_cache import CellTypesCache
-from allensdk.api.queries.biophysical_api import BiophysicalApi
+#from allensdk.core.cell_types_cache import CellTypesCache
+#from allensdk.api.queries.biophysical_api import BiophysicalApi
 from collections import defaultdict
 import json
 import glob
@@ -23,7 +23,7 @@ import matplotlib
 import math
 import efel
 from scipy import interpolate
-
+import shutil
 
 
 matplotlib.use('Agg')
@@ -180,7 +180,8 @@ def plot_Response_Peri(opt,responses_filename,response_peri_filename,pdf_pages):
                     fig_index += 1
 
 
-def fI_curve_generator(responses_filename,response_peri_filename,perisomatic_model_id,pdf_pages):
+def fI_curve_generator(responses_filename,response_peri_filename,\
+                                   perisomatic_model_id,pdf_pages,pdf_plot):
     
     # Reading the stimulus set from the data
     # Calculating Spikerate only for LongDC (1s step currents) 
@@ -368,13 +369,15 @@ def fI_curve_generator(responses_filename,response_peri_filename,perisomatic_mod
     ax.set_xlabel('Stimulation Amplitude (nA)',fontsize = 10)
     ax.set_ylabel('Spikes/sec',fontsize = 10)
     ax.legend()
-
-    pdf_pages.savefig(fig)
+    
+    if pdf_plot:
+        pdf_pages.savefig(fig)
     plt.close(fig)
     return fI_curve_data, select_stim_keys,stim_map,response_dict
 
 
-def get_spike_shape(select_stim_keys,stim_map,response_dict,perisomatic_model_id,pdf_pages):
+def get_spike_shape(select_stim_keys,stim_map,response_dict,\
+                                    perisomatic_model_id,pdf_pages,pdf_plot):
 
     spike_features = ['peak_time']
     spike_shape_data = {}
@@ -481,10 +484,89 @@ def get_spike_shape(select_stim_keys,stim_map,response_dict,perisomatic_model_id
         ax[kk].set_title(stim_name,fontsize = 12)
         spike_shape_data[stim_name+'_time'] = AP_shape_time
     
-    pdf_pages.savefig(fig)
+    if pdf_plot:
+        pdf_pages.savefig(fig)
+        pdf_pages.close()
+        
     plt.close(fig)
-    pdf_pages.close()
+    
     return spike_shape_data
+
+
+def aibs_params_to_bpopt_setup(peri_param_path):
+    with open(peri_param_path) as json_file:  
+            peri_params = json.load(json_file)
+                    
+    peri_params_release = list()
+    peri_mechs_release = defaultdict(list)
+    peri_mechs_release['all'].append('pas')
+    
+    
+    for key, values in peri_params.iteritems():            
+        if key == 'genome':
+            for j in range(len(values)):
+                 iter_dict_release = {'param_name':peri_params[key][j]['name']}
+                 iter_dict_release['sectionlist'] = section_map[peri_params[key][j]['section']]
+                 iter_dict_release['type'] = 'section'
+                 iter_dict_release['value'] = float(peri_params[key][j]['value'])
+                 iter_dict_release['dist_type'] = 'uniform'
+                 if peri_params[key][j]['mechanism'] != '':
+                        iter_dict_release['mech'] = peri_params[key][j]['mechanism']
+                        iter_dict_release['type'] = 'range'
+                 peri_params_release.append(iter_dict_release)
+                     
+        elif key == 'passive':
+             for key_pas,val_pas in values[0].items():
+                 if key_pas == 'cm':
+                     for pas_param in val_pas:
+                         iter_dict_release ={'param_name':'cm',
+                                             'sectionlist' : section_map[pas_param['section']],
+                                             'value' : pas_param['cm'],
+                                             'dist_type' : 'uniform',
+                                             'type' : 'section'}
+                         peri_params_release.append(iter_dict_release)
+                         
+                 elif key_pas == 'ra':
+                      iter_dict_release ={'param_name':'Ra',
+                                             'sectionlist' : 'all',
+                                             'value' : val_pas,
+                                             'dist_type' : 'uniform',
+                                             'type' : 'section'}
+                      peri_params_release.append(iter_dict_release)
+                 else:
+                      iter_dict_release ={'param_name':key_pas,
+                                             'sectionlist' : 'all',
+                                             'value' : val_pas,
+                                             'dist_type' : 'uniform',
+                                             'type' : 'section'}
+                      peri_params_release.append(iter_dict_release)
+                         
+                         
+                     
+                 
+    
+    for rev in rev_potential:
+        iter_dict_release =  {'param_name':rev, 'sectionlist':'somatic', 
+                              'dist_type': 'uniform', 'type':'section'}
+        if rev == 'ena':
+            iter_dict_release['value'] = rev_potential[rev]
+        elif rev == 'ek':
+            iter_dict_release['value'] = rev_potential[rev]
+        peri_params_release.append(iter_dict_release) 
+    
+    peri_params_release.append({"param_name": "celsius","type": "global","value": 34})     
+    peri_params_release.append({"param_name": "v_init","type": "global",
+                                 "value": peri_params['conditions'][0]["v_init"]})
+            
+    for param_dict in peri_params_release:
+        if 'mech' in param_dict.keys():
+            if param_dict['mech'] not in peri_mechs_release[param_dict['sectionlist']]:
+                peri_mechs_release[param_dict['sectionlist']].append(param_dict['mech'])         
+            
+            
+            
+    return peri_params_release, peri_mechs_release
+        
 
 
 def Main():
@@ -497,94 +579,34 @@ def Main():
     peri_response_filename = 'resp_peri.txt'
     all_active_response_filename = 'resp_opt.txt'
     analysis_write_path = cell_id + '_peri_comparison.pdf'
-    pdf_pages =  PdfPages(analysis_write_path)    
-    
+        
+    pdf_plot = False
+    pdf_pages = None
     if perisomatic_model_id != '':
+        pdf_pages =  PdfPages(analysis_write_path)
         perisomatic_model_id = int(float(cell_metadata['Perisomatic_id']))
-        
-            
-        bp = BiophysicalApi()
-        bp.cache_data(perisomatic_model_id,working_directory='peri_model')
-        
-        
-        
-        
-        peri_param_path = glob.glob('./peri_model/*_fit.json')[0]
-        
-        
-        with open(peri_param_path) as json_file:  
-            peri_params = json.load(json_file)
                     
-        peri_params_release = list()
-        peri_mechs_release = defaultdict(list)
-        peri_mechs_release['all'].append('pas')
+        perisomatic_dir = 'peri_model'
         
+        peri_param_path = glob.glob(perisomatic_dir + '/*_fit.json')[0]
         
-        for key, values in peri_params.iteritems():            
-            if key == 'genome':
-                for j in range(len(values)):
-                     iter_dict_release = {'param_name':peri_params[key][j]['name']}
-                     iter_dict_release['sectionlist'] = section_map[peri_params[key][j]['section']]
-                     iter_dict_release['type'] = 'section'
-                     iter_dict_release['value'] = float(peri_params[key][j]['value'])
-                     iter_dict_release['dist_type'] = 'uniform'
-                     if peri_params[key][j]['mechanism'] != '':
-                            iter_dict_release['mech'] = peri_params[key][j]['mechanism']
-                            iter_dict_release['type'] = 'range'
-                     peri_params_release.append(iter_dict_release)
-                         
-            elif key == 'passive':
-                 for key_pas,val_pas in values[0].items():
-                     if key_pas == 'cm':
-                         for pas_param in val_pas:
-                             iter_dict_release ={'param_name':'cm',
-                                                 'sectionlist' : section_map[pas_param['section']],
-                                                 'value' : pas_param['cm'],
-                                                 'dist_type' : 'uniform',
-                                                 'type' : 'section'}
-                             peri_params_release.append(iter_dict_release)
-                             
-                     elif key_pas == 'ra':
-                          iter_dict_release ={'param_name':'Ra',
-                                                 'sectionlist' : 'all',
-                                                 'value' : val_pas,
-                                                 'dist_type' : 'uniform',
-                                                 'type' : 'section'}
-                          peri_params_release.append(iter_dict_release)
-                     else:
-                          iter_dict_release ={'param_name':key_pas,
-                                                 'sectionlist' : 'all',
-                                                 'value' : val_pas,
-                                                 'dist_type' : 'uniform',
-                                                 'type' : 'section'}
-                          peri_params_release.append(iter_dict_release)
-                             
-                             
-                         
-                     
+        # Remove everything except the parameters
         
-        for rev in rev_potential:
-            iter_dict_release =  {'param_name':rev, 'sectionlist':'somatic', 
-                                  'dist_type': 'uniform', 'type':'section'}
-            if rev == 'ena':
-                iter_dict_release['value'] = rev_potential[rev]
-            elif rev == 'ek':
-                iter_dict_release['value'] = rev_potential[rev]
-            peri_params_release.append(iter_dict_release) 
+        for the_file in os.listdir(perisomatic_dir):
+            file_path = os.path.join(perisomatic_dir, the_file)
+            if not file_path.endswith('fit.json'):
+                try:
+                    if os.path.isfile(file_path):
+                        os.unlink(file_path)
+                    elif os.path.isdir(file_path): shutil.rmtree(file_path)
+                except Exception as e:
+                    print(e)
+       
+        peri_params_release, peri_mechs_release = aibs_params_to_bpopt_setup(peri_param_path)
         
-        peri_params_release.append({"param_name": "celsius","type": "global","value": 34})     
-        peri_params_release.append({"param_name": "v_init","type": "global",
-                                     "value": peri_params['conditions'][0]["v_init"]})
-                
-        for param_dict in peri_params_release:
-            if 'mech' in param_dict.keys():
-                if param_dict['mech'] not in peri_mechs_release[param_dict['sectionlist']]:
-                    peri_mechs_release[param_dict['sectionlist']].append(param_dict['mech'])         
-                
-                
-                
         mechanism_write_path = 'perisomatic_config/' + 'mechanism.json'
         parameters_write_path = 'perisomatic_config/' + 'parameters.json'
+        
         
         if not os.path.exists(os.path.dirname(mechanism_write_path)):
             try:
@@ -592,6 +614,7 @@ def Main():
             except OSError as exc: # Guard against race condition
                 if exc.errno != errno.EEXIST:
                     raise
+        
         with open(mechanism_write_path, 'w') as outfile:
             json.dump(peri_mechs_release, outfile,indent=4) 
         
@@ -632,13 +655,15 @@ def Main():
         
         plot_Response_Peri(opt_peri,all_active_response_filename,peri_response_filename,
                                                pdf_pages)
+        pdf_plot = True
+        
         
     fI_curve_data, select_stim_keys,\
                 stim_map,response_dict = fI_curve_generator(all_active_response_filename,
-                                    peri_response_filename,perisomatic_model_id,pdf_pages)
+                            peri_response_filename,perisomatic_model_id,pdf_pages,pdf_plot)
     
     spike_shape_data = get_spike_shape(select_stim_keys,stim_map,
-                                       response_dict,perisomatic_model_id,pdf_pages)  
+                                   response_dict,perisomatic_model_id,pdf_pages,pdf_plot)  
     
     fI_curve_path = 'perisomatic_comparison/fI_curve_' +str(cell_id)+'.pkl'
     spike_shape_path = 'perisomatic_comparison/spike_shape_' +str(cell_id)+'.pkl'

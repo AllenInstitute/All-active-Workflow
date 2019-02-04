@@ -5,7 +5,7 @@
 #SBATCH -t 4:00:00
 #SBATCH -C cpu|nvme
 #SBATCH -A proj36
-#SBATCH --mail-user=anirban.nandi@wustl.edu
+#SBATCH --mail-user=anin@alleninstitute.org
 #SBATCH --mail-type=ALL
 #SBATCH -J Stage0
 #SBATCH --signal=B:USR1@60

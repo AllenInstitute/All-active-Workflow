@@ -5,7 +5,6 @@
 #SBATCH -t 4:00:00
 #SBATCH -C haswell
 #SBATCH -L SCRATCH
-#SBATCH --mail-user=anirban.nandi@wustl.edu
 #SBATCH --mail-type=ALL
 #SBATCH -J Stage0
 #SBATCH --signal=B:USR1@60
@@ -27,6 +26,8 @@ run_dependent_script func_trap USR1
 
 set -e
 set -x
+
+source activate ateam
 
 PWD=$(pwd)
 LOGS=$PWD/logs

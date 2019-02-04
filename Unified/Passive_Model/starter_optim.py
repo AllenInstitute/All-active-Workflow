@@ -59,14 +59,14 @@ with open(path_to_cell_metadata,'r') as metadata:
         cell_metadata = json.load(metadata)   
 
 
-def calc_stimparams(time, stimulus_trace):
+def calc_stimparams(time, stimulus_trace,trace_name):
     """Calculate stimuls start, stop and amplitude from trace"""
 
     nonzero_indices = np.where(stimulus_trace != 0)[0]
 
-# make sure if the stimulus is ok if there was no input
-
-# if the stimulus is zero
+    # make sure if the stimulus is ok if there was no input
+    
+    # if the stimulus is zero
     if not nonzero_indices.any():   # if the list is empty
         # arbitrary values for the no-stimulus response
         stim_start = time[20000]    # after 100ms
@@ -78,12 +78,67 @@ def calc_stimparams(time, stimulus_trace):
         # if the stimulus is not zero
         stim_start = time[nonzero_indices[0]]
         stim_stop = time[nonzero_indices[-1]]
-        hold_curr = np.mean(stimulus_trace[nonzero_indices[-1]+1000:\
-                                   nonzero_indices[-1] + 20000])*1e12
-        stim_amp_start = stimulus_trace[nonzero_indices[0]] * 1e12 - hold_curr
-        stim_amp_end = stimulus_trace[nonzero_indices[-1]] * 1e12 - hold_curr
+        if 'DC' in trace_name:
+            hold_curr = np.mean(stimulus_trace[nonzero_indices[-1]+1000:\
+                                               nonzero_indices[-1] + 20000])*1e12
+        stim_amp_start = stimulus_trace[nonzero_indices[0]] * 1e12 
+        stim_amp_end = stimulus_trace[nonzero_indices[-1]] * 1e12
         
     tot_duration = time[-1]    
+    return stim_start, stim_stop, stim_amp_start, stim_amp_end, tot_duration, hold_curr
+
+
+def calc_stimparams_nonstandard(time, stimulus_trace,trace_name):
+    """Calculate stimuls start, stop and amplitude from trace for nonstandard nwb"""
+
+    # if the stimulus is not empty
+    # find the max/min of the noisy signal
+    gradient_thresh = 10  # arbitrary
+    gradient_f = np.gradient(stimulus_trace)*1e12
+    gradient_f[abs(gradient_f) <= gradient_thresh] = 0
+    
+    nonzero_indices = np.where(gradient_f != 0)[0]
+
+    if not nonzero_indices.any():
+        
+        stim_start = time[20000]    # after 100ms (arbitrary)
+        stim_stop = time[40000]     # after 200ms (arbitrary)
+        stim_amp_start = 0.0
+        stim_amp_end = 0.0
+        hold_curr =  np.mean(stimulus_trace[-20000:])*1e12
+   
+    else:
+        
+        signal_max = max(gradient_f)
+        signal_min = min(gradient_f)
+    
+        # find the max/min of the gradient
+        first_ind = np.where(gradient_f == signal_max)[0][0]
+        second_ind = np.where(gradient_f == signal_min)[0][0]
+    
+        # check for the first and second indexes
+        if first_ind > second_ind:
+            start_ind = second_ind
+            end_ind = first_ind
+        elif first_ind < second_ind:
+            start_ind = first_ind
+            end_ind = second_ind
+    
+        stim_start = time[start_ind]
+        stim_stop = time[end_ind]
+    
+        # check for the middle part of the signal
+    
+        # approximate the amp, it is the mean between the start and end
+        if 'DC' in trace_name:
+            hold_curr = np.mean(stimulus_trace[end_ind+1000:end_ind + 20000])*1e12
+        else:
+            hold_curr = 0
+        stim_amp = np.mean(stimulus_trace[start_ind:end_ind] ) * 1e12
+        stim_amp_start=stim_amp
+        stim_amp_end=stim_amp
+    tot_duration = time[-1]
+
     return stim_start, stim_stop, stim_amp_start, stim_amp_end, tot_duration, hold_curr
 
 def write_stimmap_csv(stim_map, output_dir, stim_sweep_map):
@@ -187,23 +242,10 @@ def calculate_md5hash(filename):
     return md5hash
 
 
-def write_specs(output_dir):
-    """Writing specs file"""
 
-    specs_content = 'junctionpotential=%.6g\ntemperature=%.6g\n' % \
-        (junction_potential, temperature)
 
-    specs_filename = os.path.join(output_dir, 'Specs')
-    with open(specs_filename, 'w') as specs_file:
-        specs_file.write(specs_content)
+def get_cell_data(nwb_path, non_standard_nwb = False):
 
-def get_cell_data(exten = '.nwb'):
-
-    global dir_list
-    dir_list = list()
-    v_initial = list()
-    os.path.walk(topdir, step, exten)
-    nwb_path = [str_path for str_path in dir_list if 'cell_types' in str_path][0]
     nwb_file = allensdk.core.nwb_data_set.NwbDataSet(nwb_path)
     
     stim_map = collections.defaultdict(list)
@@ -235,8 +277,14 @@ def get_cell_data(exten = '.nwb'):
             trace_name = '%s_%d' % (
             distinct_id_map[stim_type], sweep_number)
             
-            stim_start, stim_stop, stim_amp_start, stim_amp_end, tot_duration,hold_curr = calc_stimparams(
-                time, stimulus_trace)
+            
+            if non_standard_nwb:
+                calc_stimparams_func = calc_stimparams_nonstandard
+            else:
+                calc_stimparams_func = calc_stimparams
+            
+            stim_start, stim_stop, stim_amp_start, stim_amp_end, tot_duration,hold_curr = calc_stimparams_func(
+                time, stimulus_trace,trace_name)
          
 
             response_trace_short_filename = '%s.%s' % (trace_name, 'txt')
@@ -248,7 +296,6 @@ def get_cell_data(exten = '.nwb'):
             
             time = time * 1000.0
             response_trace = response_trace * 1000 + junction_potential
-            v_initial.append(response_trace[0])
             time_end = time[-1]
             response_end = response_trace[-1]
             
@@ -282,8 +329,6 @@ def get_cell_data(exten = '.nwb'):
     print 'Writing stimmap.csv ...',
 
     stim_reps_sweep_map = write_stimmap_csv(stim_map, output_dir, stim_sweep_map)
-
-    print "Done"
     
     write_provenance(
         output_dir,
@@ -291,32 +336,35 @@ def get_cell_data(exten = '.nwb'):
         stim_sweep_map,
         stim_reps_sweep_map)
 
-    write_specs(output_dir)
-    v_initial_avg = reduce(lambda x, y: x + y, v_initial) / len(v_initial)
     
-    return output_dir, v_initial_avg
+    
+    return output_dir
 
-topdir = '.'
-dir_list = list()
-
-def step(ext, dirname, names):
-    ext = ext.lower()
-    for name in names:
-        if name.lower().endswith(ext):
-            dir_list.append(os.path.join(dirname, name)) 
-            
-def get_cell_morphology(exten = '.swc'):
-    global dir_list
+def get_filepath_for_exten(exten, topdir = '.'):
     dir_list = list()
+    
+    def step(ext, dirname, names):
+        ext = ext.lower()
+        for name in names:
+            if name.lower().endswith(ext):
+                dir_list.append(os.path.join(dirname, name)) 
+                
     os.path.walk(topdir, step, exten)
+    return dir_list
+
+
+def get_ephys_data(exten = '.nwb'):
+    dir_list = get_filepath_for_exten(exten)
+    return dir_list
+
+def get_cell_morphology(exten = '.swc'):
+    dir_list = get_filepath_for_exten(exten)
     morph_path = [str_path for str_path in dir_list if 'cell_types' in str_path][0]
     return morph_path
 
 
 def get_cell_model(exten = '.json'):
-    global dir_list
-    dir_list = list()
-    os.path.walk(topdir, step, exten)
+    dir_list = get_filepath_for_exten(exten)
     param_path = [str_path for str_path in dir_list if 'fit_parameters' in str_path]
     if param_path:
         param_path = param_path[0]
@@ -420,7 +468,10 @@ def write_mechanisms_json(param_path,cell_id):
 
 def Main(): 
     cell_id = cell_metadata['Cell_id']
-    preprocessed_dir,_ = get_cell_data()
+    dir_list = get_ephys_data()
+    nwb_path = [str_path for str_path in dir_list if 'cell_types' in str_path][0]
+    non_standard_nwb = cell_metadata['Area'] == 'DG'
+    preprocessed_dir = get_cell_data(nwb_path,non_standard_nwb = non_standard_nwb)
     morph_path = get_cell_morphology()
     
     # check if there is an apical dendrite

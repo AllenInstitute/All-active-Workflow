@@ -2,7 +2,6 @@
 #SBATCH -q regular 
 #SBATCH -t 4:00:00 
 #SBATCH -L SCRATCH
-#SBATCH --mail-user=anirban.nandi@wustl.edu
 #SBATCH --mail-type=ALL
 #SBATCH -J analyze_Stage2 
 #SBATCH -C haswell 
@@ -11,6 +10,8 @@
 
 set -e
 set -x
+
+source activate ateam
 
 PWD=$(pwd)
 LOGS=$PWD/logs
@@ -28,4 +29,3 @@ python Optim_Main.py -vv --checkpoint  checkpoints_final/seed1.pkl   --responses
 python Optim_Main.py -vv --responses resp_opt.txt   --response_release resp_release.txt --analyse
 python save_time.py
 python perisomatic_sim.py 
-#python get_validation_metrics.py

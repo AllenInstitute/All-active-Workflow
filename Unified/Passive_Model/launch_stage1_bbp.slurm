@@ -25,6 +25,8 @@ else
     echo "Stage 0 did NOT finish successfully" > Stage0_status.txt
 fi
 python Optim_Main.py --checkpoint checkpoints_backup/seed1.pkl --short_analyse
+python Optim_Main.py -vv --checkpoint checkpoints_backup/seed1.pkl  --responses resp_opt.txt   --analyse
+
 echo "Saving the Optimized parameters for the next stage"
 #rm -rf preprocessed/ 
 
@@ -34,6 +36,7 @@ echo "Saving the Optimized parameters for the next stage"
 cp -r cell_types/ $PASS_IH_DIR/
 cp cell_id.txt $PASS_IH_DIR/
 mv fit_opt.json $PASS_IH_DIR/cell_types/
+mv peri_model/ $PASS_IH_DIR/
 cp -r $PASS_IH_REPO/* $PASS_IH_DIR/
 cd $PASS_IH_DIR
 python set_features_passive_and_Ih.py
