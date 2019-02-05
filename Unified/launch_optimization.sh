@@ -5,6 +5,9 @@ CELL_ID=${PARENT_DIR##*/}
 export PASS_DIR="Passive_Model"
 export PASSIVE_REPO="/project/projectdirs/m2043/AIBS/ani/Unified/Passive_Repo"
 
+source activate ateam
+export HDF5_USE_FILE_LOCKING=FALSE
+
 if [ ! -d "$PASS_DIR" ]; then
 	
 	mkdir $PASS_DIR && mv cell_types $PASS_DIR/

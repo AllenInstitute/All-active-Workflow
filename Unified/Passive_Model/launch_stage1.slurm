@@ -8,6 +8,9 @@
 #SBATCH -N 1 
 
 source activate ateam
+export LD_LIBRARY_PATH="/global/common/software/m2043/AIBS_Opt/software/x86_64/lib:$LD_LIBRARY_PATH"
+export PATH="/global/common/software/m2043/AIBS_Opt/software/x86_64/bin:$PATH"
+export HDF5_USE_FILE_LOCKING=FALSE
 
 export PASS_IH_REPO="/project/projectdirs/m2043/AIBS/ani/Unified/Passive_Ih_Repo"
 
