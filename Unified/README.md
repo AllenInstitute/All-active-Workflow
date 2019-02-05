@@ -8,7 +8,7 @@ The location of the main code base for Optimization on NERSC filesystem is
 
 Add the following lines to your .bashrc.ext on the home directory 
 
-`export PATH="/global/common/software/m2043/AIBS_Opt/software:$PATH"`
+`export PATH="/global/common/software/m2043/AIBS_Opt/software/bin:$PATH"`
 
 `export PATH="/global/common/software/m2043/AIBS_Opt/software/envs/ateam/bin:$PATH"`
 
