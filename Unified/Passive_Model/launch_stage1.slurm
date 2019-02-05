@@ -7,6 +7,10 @@
 #SBATCH -C haswell 
 #SBATCH -N 1 
 
+
+set -ex
+
+
 source activate ateam
 export LD_LIBRARY_PATH="/global/common/software/m2043/AIBS_Opt/software/x86_64/lib:$LD_LIBRARY_PATH"
 export PATH="/global/common/software/m2043/AIBS_Opt/software/x86_64/bin:$PATH"
@@ -40,7 +44,7 @@ echo "Saving the Optimized parameters for the next stage"
 cp -r cell_types/ $PASS_IH_DIR/
 cp cell_id.txt $PASS_IH_DIR/
 mv fit_opt.json $PASS_IH_DIR/cell_types/
-mv peri_model/ $PASS_IH_DIR/
+if [ -d "peri_model" ]; then mv peri_model/ $PASS_IH_DIR/; fi
 cp -r $PASS_IH_REPO/* $PASS_IH_DIR/
 cd $PASS_IH_DIR
 python set_features_passive_and_Ih.py

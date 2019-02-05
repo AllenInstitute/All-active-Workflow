@@ -5,6 +5,8 @@
 #SBATCH -C cpu|nvme
 #SBATCH -A proj36
 #SBATCH -J launch_Stage_2 
+
+set -ex
  
 source activate CompNeuro
 export ALL_ACTIV_REPO="/gpfs/bbp.cscs.ch/home/anirban/Unified/All_Active_Repo"
@@ -34,7 +36,7 @@ echo "Saving the Optimized parameters for the next stage"
 
 cp -r cell_types/ $ALL_ACTIV_DIR/
 cp cell_id.txt $ALL_ACTIV_DIR/
-mv peri_model/ $ALL_ACTIV_DIR/
+if [ -d "peri_model" ]; then mv peri_model/ $ALL_ACTIV_DIR/; fi
 mv fit_opt.json $ALL_ACTIV_DIR/cell_types/
 cp -r $ALL_ACTIV_REPO/* $ALL_ACTIV_DIR/
 cd $ALL_ACTIV_DIR
@@ -50,5 +52,4 @@ sed -i -e "s/Stage2/$JOBNAME/g" start_bbp.sh
 sed -i -e "s/Stage2/$JOBNAME/g" restart_bbp.sh
 sed -i -e "s/Stage2/$JOBNAME/g" analyse_stage2_bbp.slurm
 echo "Launching Stage 2 Opimization"
-#RES_2=$(sbatch start_haswell.sh) && RES_3=$(sbatch --dependency=afternotok:${RES_2##* } restart_haswell.sh)  # sbatch command goes here
 sbatch start_bbp.sh

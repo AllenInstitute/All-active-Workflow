@@ -6,6 +6,9 @@
 #SBATCH -C haswell 
 #SBATCH -N 1  
 
+
+set -ex
+
 source activate ateam
 export LD_LIBRARY_PATH="/global/common/software/m2043/AIBS_Opt/software/x86_64/lib:$LD_LIBRARY_PATH"
 export PATH="/global/common/software/m2043/AIBS_Opt/software/x86_64/bin:$PATH"
@@ -38,7 +41,7 @@ echo "Saving the Optimized parameters for the next stage"
 
 cp -r cell_types/ $ALL_ACTIV_DIR/
 cp cell_id.txt $ALL_ACTIV_DIR/
-mv peri_model/ $ALL_ACTIV_DIR/
+if [ -d "peri_model" ]; then mv peri_model/ $ALL_ACTIV_DIR/; fi
 mv fit_opt.json $ALL_ACTIV_DIR/cell_types/
 cp -r $ALL_ACTIV_REPO/* $ALL_ACTIV_DIR/
 cd $ALL_ACTIV_DIR
@@ -56,5 +59,4 @@ sed -i -e "s/Stage2/$JOBNAME/g" start_batchjob_stage2.slurm
 sed -i -e "s/Stage2/$JOBNAME/g" restart_batchjob_stage2.slurm
 sed -i -e "s/Stage2/$JOBNAME/g" analyse_stage2.slurm
 echo "Launching Stage 2 Opimization"
-#RES_2=$(sbatch start_haswell.sh) && RES_3=$(sbatch --dependency=afternotok:${RES_2##* } restart_haswell.sh)  # sbatch command goes here
 sbatch start_haswell.sh
