@@ -31,6 +31,8 @@ set -e
 set -x
 
 source activate ateam
+export LD_LIBRARY_PATH="/global/common/software/m2043/AIBS_Opt/software/x86_64/lib:$LD_LIBRARY_PATH"
+export PATH="/global/common/software/m2043/AIBS_Opt/software/x86_64/bin:$PATH"
 
 PWD=$(pwd)
 LOGS=$PWD/logs
