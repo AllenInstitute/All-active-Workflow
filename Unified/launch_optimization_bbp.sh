@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -ex
+
 PARENT_DIR=$(pwd)
 CELL_ID=${PARENT_DIR##*/}
 export PASS_DIR="Passive_Model"
@@ -8,13 +10,16 @@ export PASSIVE_REPO="/gpfs/bbp.cscs.ch/home/anirban/Unified/Passive_Repo"
 if [ ! -d "$PASS_DIR" ]; then
 	
 	mkdir $PASS_DIR && mv cell_types $PASS_DIR/
-	all_active_model_file=$(find neuronal_model -maxdepth 1 -name "*fit.json")
-	peri_model_file=$(find peri_model -maxdepth 1 -name "*fit.json")
-	if [ ! -z "$all_active_model_file" ]; then
-		mv $all_active_model_file $PASS_DIR/cell_types/fit_parameters.json && rm -rf neuronal_model
+	all_active_model_dir=neuronal_model
+	peri_model_dir=peri_model
+	
+	if [ -d "$all_active_model_dir" ]; then
+		all_active_model_file=$(find $all_active_model_dir -maxdepth 1 -name "*fit.json")
+		mv $all_active_model_file $PASS_DIR/cell_types/fit_parameters.json && rm -rf $all_active_model_dir
 	fi
-	if [ ! -z "$peri_model_file" ]; then
-		mkdir -p $PASS_DIR/peri_model && mv $peri_model_file $PASS_DIR/peri_model/ && rm -rf peri_model
+	if [ -d "$peri_model_dir" ]; then
+		peri_model_file=$(find $peri_model_dir -maxdepth 1 -name "*fit.json")
+		mkdir -p $PASS_DIR/$peri_model_dir && mv $peri_model_file $PASS_DIR/$peri_model_dir/ && rm -rf $peri_model_dir
 	fi
 	
 else
