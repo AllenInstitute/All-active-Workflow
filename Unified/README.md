@@ -1,35 +1,38 @@
-### Directory structure for the scripts to work:
+### Running the optimization jobs using shared conda environment on NERSC
 
-* Put the .nwb and .swc file in a directory named 'cell_types'
-* Then run starter_optim.py
+Add the following line to your .bashrc.ext on the home directory 
 
-> Make sure you have the following directory structure:
+`export PATH="/global/common/software/m2043/AIBS_Opt/software:$PATH"`
 
-     .      
-     ├── ...
-     ├── cell_metadata.json
-     ├── Passive_Model/Ih_step/All_Active1 (Stage 0, Stage 1, Stage 2)
-     │               ├── ...
-     │               ├── cell_types                             
-     │               │   ├── .nwb                               # stimulus response file
-     │               │   ├── .swc                               # morphology file
-     │               │   └── fit_parameters.json                # parameters of a previously fitted model (if one exists)
-     │               │── config ── cell_id                                 
-     │               │              ├── parameters.json         # parameters to be fitted
-     │               │              ├── mechanism.json          # mechanisms to be added in each section 
-     │               │              ├── features.json           # features on which the model is fitted
-     │               │              └── protocols.json          # protocols used (stimulus and recording)
-     │               │
-     │               │── starter_optim.py
-     │               │── get_features.py
-     │               │── Optim_Main.py
-     │               │── model_helper.py
-     │               │── evaluator_helper.py
-     │               │── feature_set.json
-     │               │── *bounds.json
-     │               │── optim_analysis.py                      # Analysis Script 
-     │               │── jobscript.sh                           # Batch Script 
-     │               │── modfiles/                              # mechanism files 
-     │               ├── ...
-     │
-     ├── ...
+Log out and log back in or use
+
+`source ~/.bashrc.ext`
+
+for changes to take effect. The shared conda environment ateam with all necessary packages should be available at this time.
+
+`source activate ateam`
+
+#### Create a directory with the same name as cell id 
+
+Note that for cells part of the online product the name has to match the cell id exactly.
+
+`mkdir <cell_id>`
+
+`cd <cell_id>`
+
+Copy the file `move_opt_files.sh` in this directory and run this file
+
+`sh move_opt_files.sh #this will copy the necessary starter files to the current directory`
+
+#### Run the save_cell_metadata.py with suitable options
+
+For cells part of the online product run
+
+`python save_cell_metadata.py --launch_job`
+
+For DG cells provide the .nwb and .swc path using --nwb_path and --swc_path options. For manually setting other fields in the metadata (this should be populated automatically for online cells) run 
+
+`python save_cell_metadata.py --help`
+
+for help.
+
