@@ -6,9 +6,11 @@ The location of the main code base on NERSC filesystem is
 
 #### Shared python environment
 
-Add the following line to your .bashrc.ext on the home directory 
+Add the following lines to your .bashrc.ext on the home directory 
 
 `export PATH="/global/common/software/m2043/AIBS_Opt/software:$PATH"`
+
+`export PATH="/global/common/software/m2043/AIBS_Opt/software/envs/ateam/bin:$PATH"`
 
 Log out and log back in or use
 
