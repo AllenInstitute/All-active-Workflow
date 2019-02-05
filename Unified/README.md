@@ -1,5 +1,11 @@
 ### Running the optimization jobs using shared conda environment on NERSC
 
+The location of the main code base on NERSC filesystem is
+
+`/project/projectdirs/m2043/AIBS/ani/Unified/`
+
+#### Shared python environment
+
 Add the following line to your .bashrc.ext on the home directory 
 
 `export PATH="/global/common/software/m2043/AIBS_Opt/software:$PATH"`
@@ -20,7 +26,7 @@ Note that for cells part of the online product the name has to match the cell id
 
 `cd <cell_id>`
 
-Copy the file `move_opt_files.sh` in this directory and run this file
+Copy the file `move_opt_files.sh` (available @ `/project/projectdirs/m2043/AIBS/ani/Unified/move_opt_files.sh`) in this directory and run this file
 
 `sh move_opt_files.sh #this will copy the necessary starter files to the current directory`
 
