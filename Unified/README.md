@@ -1,6 +1,6 @@
 ### Running the optimization jobs using shared conda environment on NERSC
 
-The location of the main code base on NERSC filesystem is
+The location of the main code base for Optimization on NERSC filesystem is
 
 `/project/projectdirs/m2043/AIBS/ani/Unified/`
 
