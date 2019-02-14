@@ -32,6 +32,7 @@ fi
 # Launch the passive optimization (Stage 0)
 
 cp -r $PASSIVE_REPO/* $PASS_DIR/
+if [ -f nersc_queue.txt ]; then cp nersc_queue.txt $PASS_DIR/ ; fi
 cd $PASS_DIR
 python set_features_passive.py
 python set_params_passive.py
@@ -41,6 +42,7 @@ STAGE_NEXT="_STAGE1"
 JOBNAME=$CELL_ID$STAGE
 LAUNCH_JOBNAME=$CELL_ID$STAGE_NEXT
 sed -i -e "s/Stage0/$JOBNAME/g" start_haswell.sh
+if [ -f nersc_queue.txt ]; then sed -i -e "s/regular/premium/g" start_haswell.sh ; fi
 sed -i -e "s/Stage_1/$LAUNCH_JOBNAME/g" launch_stage1.slurm
 echo "Launching Stage 0 Opimization"
 RES_0=$(sbatch start_haswell.sh)  # sbatch command goes here

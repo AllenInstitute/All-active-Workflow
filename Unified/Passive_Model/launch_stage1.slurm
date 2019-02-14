@@ -46,6 +46,7 @@ cp cell_id.txt $PASS_IH_DIR/
 mv fit_opt.json $PASS_IH_DIR/cell_types/
 if [ -d "peri_model" ]; then mv peri_model/ $PASS_IH_DIR/; fi
 cp -r $PASS_IH_REPO/* $PASS_IH_DIR/
+if [ -f nersc_queue.txt ]; then cp nersc_queue.txt $PASS_IH_DIR/ ; fi
 cd $PASS_IH_DIR
 python set_features_passive_and_Ih.py
 python set_params_passive_and_Ih.py
@@ -57,6 +58,7 @@ CELL_ID=$(<cell_id.txt)
 JOBNAME=$CELL_ID$STAGE
 LAUNCH_JOBNAME=$CELL_ID$STAGE_NEXT
 sed -i -e "s/Stage1/$JOBNAME/g" start_haswell.sh
+if [ -f nersc_queue.txt ]; then sed -i -e "s/regular/premium/g" start_haswell.sh ; fi
 sed -i -e "s/Stage_2/$LAUNCH_JOBNAME/g" launch_stage2.slurm
 echo "Launching Stage 1 Opimization"
 RES_1=$(sbatch start_haswell.sh)  # sbatch command goes here
