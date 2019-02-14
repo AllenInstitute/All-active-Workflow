@@ -1,6 +1,6 @@
 #!/bin/bash -l 
 #SBATCH -q regular 
-#SBATCH -t 4:00:00 
+#SBATCH -t 5:00:00 
 #SBATCH -L SCRATCH
 #SBATCH --mail-type=ALL
 #SBATCH -J analyze_Stage2 

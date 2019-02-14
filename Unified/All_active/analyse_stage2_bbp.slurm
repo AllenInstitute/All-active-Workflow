@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #SBATCH -p prod 
-#SBATCH -t 4:00:00 
+#SBATCH -t 5:00:00 
 #SBATCH -n 40
 #SBATCH -C cpu|nvme
 #SBATCH -A proj36

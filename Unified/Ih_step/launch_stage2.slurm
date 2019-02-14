@@ -44,6 +44,7 @@ cp cell_id.txt $ALL_ACTIV_DIR/
 if [ -d "peri_model" ]; then mv peri_model/ $ALL_ACTIV_DIR/; fi
 mv fit_opt.json $ALL_ACTIV_DIR/cell_types/
 cp -r $ALL_ACTIV_REPO/* $ALL_ACTIV_DIR/
+if [ -f nersc_queue.txt ]; then cp nersc_queue.txt $ALL_ACTIV_DIR/ ; fi
 cd $ALL_ACTIV_DIR
 mkdir -p checkpoints_final
 python set_features_all_active.py
@@ -58,5 +59,7 @@ sed -i -e "s/Stage2/$JOBNAME/g" restart_haswell.sh
 sed -i -e "s/Stage2/$JOBNAME/g" start_batchjob_stage2.slurm
 sed -i -e "s/Stage2/$JOBNAME/g" restart_batchjob_stage2.slurm
 sed -i -e "s/Stage2/$JOBNAME/g" analyse_stage2.slurm
+if [ -f nersc_queue.txt ]; then sed -i -e "s/regular/premium/g" start_haswell.sh restart_haswell.sh analyse_stage2.slurm ; fi
+
 echo "Launching Stage 2 Opimization"
 sbatch start_haswell.sh

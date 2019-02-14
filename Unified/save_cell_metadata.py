@@ -46,6 +46,8 @@ def main():
                         help='Set Layer of the cell in metadata')
     parser.add_argument('--launch_job', action="store_true", default=False,
                         help='launch the Optimization')
+    parser.add_argument('--premium_queue', action="store_true", default=False,
+                        help='For premium queue on NERSC')
     
     args = parser.parse_args()
     
@@ -123,6 +125,11 @@ def main():
         
 
         cell_info_dict['Machine'] =  socket.gethostname()
+        
+        if 'cori' in cell_info_dict['Machine'] and args.premium_queue:
+            with open('nersc_queue.txt', 'a') as handle:
+                handle.write('premium')
+            
         
         # Set Metadata (Layer,Area,Species,Dendrite_type) from argparse
         if set_cell_metadata:

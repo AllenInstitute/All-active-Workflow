@@ -588,7 +588,7 @@ def Main():
                     
         perisomatic_dir = 'peri_model'
         
-        peri_param_path = glob.glob(perisomatic_dir + '/*_fit.json')[0]
+        peri_param_path = glob.glob(perisomatic_dir + '/*fit*.json')[0]
         
         # Remove everything except the parameters
         
