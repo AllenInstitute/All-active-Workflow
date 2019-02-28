@@ -19,11 +19,13 @@ import glob
 
 import get_features
 
+import logging
+logging.basicConfig(level=logging.DEBUG) 
+logger = logging.getLogger(__name__)
+
 junction_potential = -14
 temperature = 34
-acceptable_stimtypes = [
-    'Long Square'
-    ]
+acceptable_stimtypes = ['Long Square']
 
 
 distinct_id_map = {
@@ -258,11 +260,16 @@ def get_cell_data(nwb_path, non_standard_nwb = False):
         except OSError as exc: # Guard against race condition
             if exc.errno != errno.EEXIST:
                 raise             
-                
+    
     for sweep_number in nwb_file.get_sweep_numbers():
         sweep_data = nwb_file.get_sweep_metadata(sweep_number)
         stim_type = sweep_data['aibs_stimulus_name']
-
+        
+        try:
+            stim_type = stim_type.decode('UTF-8')
+        except:
+            pass
+            
         if stim_type in acceptable_stimtypes:
             sweep = nwb_file.get_sweep(sweep_number)
 
@@ -326,7 +333,7 @@ def get_cell_data(nwb_path, non_standard_nwb = False):
 
             stim_sweep_map[trace_name] = sweep_number
             
-    print 'Writing stimmap.csv ...',
+    logger.debug('Writing stimmap.csv ...')
 
     stim_reps_sweep_map = write_stimmap_csv(stim_map, output_dir, stim_sweep_map)
     
@@ -348,8 +355,12 @@ def get_filepath_for_exten(exten, topdir = '.'):
         for name in names:
             if name.lower().endswith(ext):
                 dir_list.append(os.path.join(dirname, name)) 
-                
-    os.path.walk(topdir, step, exten)
+    
+    try:            
+        os.path.walk(topdir, step, exten)
+    except:
+        import glob
+        dir_list = glob.glob(topdir+'/**/*'+exten,recursive=True)
     return dir_list
 
 
@@ -470,7 +481,8 @@ def Main():
     cell_id = cell_metadata['Cell_id']
     dir_list = get_ephys_data()
     nwb_path = [str_path for str_path in dir_list if 'cell_types' in str_path][0]
-    non_standard_nwb = cell_metadata['Area'] == 'DG'
+#    non_standard_nwb = cell_metadata['Area'] == 'DG'
+    non_standard_nwb = True
     preprocessed_dir = get_cell_data(nwb_path,non_standard_nwb = non_standard_nwb)
     morph_path = get_cell_morphology()
     

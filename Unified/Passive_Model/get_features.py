@@ -9,13 +9,17 @@ import math
 import collections
 import errno
 import efel
+import logging
 
+
+logging.basicConfig(level=logging.DEBUG) 
+logger = logging.getLogger(__name__)
 
 def run(cell_map, force_feature_extraction=False,dend_recording = None, record_locations = None):
    
     """Get feature values"""
     
-    cell_name = cell_map.keys()[0]
+    cell_name = list(cell_map.keys())[0]
     features_json_filename = 'config/'+ cell_name +'/features.json'
     protocols_json_filename = 'config/'+cell_name+'/protocols.json'
     all_protocols_json_filename = 'config/'+cell_name+'/all_protocols.json'
@@ -54,8 +58,8 @@ def run(cell_map, force_feature_extraction=False,dend_recording = None, record_l
             
             for stim_name in stim_map.keys():
                 
-                print "\n### Getting features from %s of cell %s ###\n" \
-                    % (stim_name, cell_name)
+                logger.debug("\n### Getting features from %s of cell %s ###\n" \
+                    % (stim_name, cell_name))
                 
                 # Features for this stimulus
                 stim_features = feature_set_map['passive features']
