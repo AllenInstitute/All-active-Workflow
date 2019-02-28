@@ -157,8 +157,7 @@ def main():
 
     if args.compile:
         logger.debug('Doing compile')
-        import commands
-        commands.getstatusoutput('nrnivmodl modfiles/')
+        os.system('nrnivmodl modfiles/')
 
     if args.start or args.continu:
         logger.debug('Doing start or continue')

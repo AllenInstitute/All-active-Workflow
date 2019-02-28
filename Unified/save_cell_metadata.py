@@ -14,6 +14,11 @@ from allensdk.api.queries.biophysical_api import BiophysicalApi
 import allensdk.api.queries.rma_api
 import shutil
 import subprocess
+import logging
+
+
+logging.basicConfig(level=logging.DEBUG) 
+logger = logging.getLogger(__name__)
 
 template_model_dict = {'all_active' :491455321,
              'perisomatic' : 329230710}
@@ -58,7 +63,6 @@ def main():
                      'Feature_avg_Released_AllActive', 'Explained_variance_Released_AllActive',
                      'Feature_avg_Peri','Explained_variance_Peri','Machine']
     
-    #cell_id_str = raw_input('Enter the cell_id : ')
     cell_id_str = os.path.basename(os.getcwd())
     metadata_path = 'cell_metadata_' + cell_id_str +'.json'
     
@@ -66,11 +70,16 @@ def main():
         cell_info_dict = {meta_field : '' for meta_field in metadata_keys}
         cell_info_dict['Cell_id'] = cell_id_str
         
-        cell_id = int(float(cell_info_dict['Cell_id']))
+        try:
+            cell_id = int(float(cell_info_dict['Cell_id']))
+        except:
+            logger.debug('Cell not part of online product')
+            cell_id = cell_id_str
+            
         ctc = CellTypesCache(manifest_file='cell_types/manifest.json')
         cells = ctc.get_cells(require_reconstruction=True)
         metadata_list = list(filter(lambda x: x['id'] == cell_id, cells))
-        set_cell_metadata = False
+        
                 
         # download the ephys data and sweep metadata
         if not args.nwb_path:
@@ -89,17 +98,22 @@ def main():
             dest_swc = 'cell_types/'
             shutil.copy(src_swc, dest_swc)
         
-        # download all-active model
+        # download all-active model (if exists)
         bp = BiophysicalApi()
-        model_list = bp.get_neuronal_models(cell_id)
-        model_dict = {key : '' for key in template_model_dict.keys()}
+        try:
+            model_list = bp.get_neuronal_models(cell_id)
+            model_dict = {key : '' for key in template_model_dict.keys()}
         
-        for model_type,template_id in template_model_dict.items():
-            for model_meta in model_list:
-                if model_meta['neuronal_model_template_id'] == template_id:
-                    model_dict[model_type] = model_meta['id']
+            for model_type,template_id in template_model_dict.items():
+                for model_meta in model_list:
+                    if model_meta['neuronal_model_template_id'] == template_id:
+                        model_dict[model_type] = model_meta['id']
         
+        except:
+            logger.debug('No biophysical model available')
+            
         if metadata_list:
+            set_cell_metadata = False
             metadata_cell =  metadata_list[0]
             cell_info_dict['Released_AllActive_id'] = str(model_dict['all_active'])
             cell_info_dict['Perisomatic_id'] = str(model_dict['perisomatic'])
@@ -140,10 +154,11 @@ def main():
 
         save_cell_info(cell_info_dict,metadata_path)
     
-    if args.launch_job:    
-        try:
+    if args.launch_job: 
+        machine_name = socket.gethostname()
+        if 'cori' in machine_name:
             subprocess.call(['./start_job.sh'])
-        except:
+        elif 'bbp' in machine_name:
             subprocess.call(['./start_job_bbp.sh'])
 
 # Run this file in the parent directory (cell_id) to save the metadata
