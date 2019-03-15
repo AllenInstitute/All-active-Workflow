@@ -58,7 +58,7 @@ def get_cell_morphXYZ(morph_path):
         y.append(y_coord)
         z.append(z_coord)
         
-        if n['type']==4 :
+        if n['type']==4:
             x_apical.append(x_coord)
             y_apical.append(y_coord)
             z_apical.append(z_coord)
@@ -86,8 +86,8 @@ def rotate3D_point(point,theta,axis_of_rot):
     
     # use one of these two commands to rotate the morphology upside down
     
-#    point_rotated = Quaternion(axis=axis_of_rot,angle=-theta ).rotate(point)
-    point_rotated = Quaternion(axis=axis_of_rot,angle=-theta + math.pi).rotate(point)
+    point_rotated = Quaternion(axis=axis_of_rot,angle=-theta ).rotate(point)
+#    point_rotated = Quaternion(axis=axis_of_rot,angle=-theta + math.pi).rotate(point)
 
     return point_rotated
 
@@ -103,7 +103,7 @@ def Main():
     color_dict = {4:'darkred',3:'orange',2:'royalblue',1:'black'}   
     label_dict = {4:'apical dendrite',3:'basal dendrite',2:'axon',1:'soma'}
     
-    plt.style.use('classic')
+    plt.style.use('seaborn-whitegrid')
     fig = plt.figure(figsize=(10, 8), dpi=100)
     ax = fig.add_subplot(111, projection='3d')
     
@@ -140,7 +140,7 @@ def Main():
 #    
 #
     ax.axis('off')
-    plt.show()
+#    plt.show()
     
     angles = np.linspace(0,360,21)[:-1] # Take 20 angles between 0 and 360
  

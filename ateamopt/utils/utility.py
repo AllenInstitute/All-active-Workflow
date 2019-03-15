@@ -8,7 +8,6 @@ import pickle
 import allensdk.core.swc as swc
 import ateamopt.scripts as pyscripts
 
-
 bpopt_section_map = {
                       'soma':'somatic',
                       'apic':'apical',
@@ -147,3 +146,5 @@ def locate_template_file(rel_file_path):
 def locate_script_file(rel_file_path):
     file_path = pkg_resources.resource_filename(pyscripts.__name__, rel_file_path)
     return file_path
+
+
