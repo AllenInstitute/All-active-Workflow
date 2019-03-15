@@ -12,6 +12,8 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import math
+import efel
+from analysis_module import get_spike_shape
 
 logger = logging.getLogger(__name__)
 
@@ -259,13 +261,13 @@ class Optim_Analyzer(object):
             
         return aibs_format_params
         
-    def plot_grid_Response(self,responses_filename,
+    def plot_grid_Response(self,response_filename,
                       response_release_filename,
                       stim_file,
                       pdf_pages,
                       save_model_response = False,
                       model_response_dir = 'model_response/',
-                      nwb_dir= 'preprocessed/',
+                      ephys_dir= 'preprocessed/',
                       opt_config_file='config_file.json'):
         
         stim_df = pd.read_csv(stim_file, sep='\s*,\s*',
@@ -279,7 +281,7 @@ class Optim_Analyzer(object):
         
         opt = self._opt # Optimizer object
         
-        response = utility.load_pickle(responses_filename)[0] # response with minimum training error
+        response = utility.load_pickle(response_filename)[0] # response with minimum training error
         responses_release = utility.load_pickle(response_release_filename)
         logger.debug('Retrieving Optimized and Released Responses')
         
@@ -360,7 +362,7 @@ class Optim_Analyzer(object):
                                           np.transpose([response_time.values, 
                                                         response_voltage.values]))
                     
-                    FileName = nwb_dir + name
+                    FileName = ephys_dir + name
                     data = np.loadtxt(FileName) 
                     if any(data[:,1]):
                         exp_time  = data[:,0]
@@ -419,14 +421,14 @@ class Optim_Analyzer(object):
   
         return pdf_pages
     
-    def plot_feature_comp(self, responses_filename,
+    def plot_feature_comp(self, response_filename,
                      response_release_filename,
                      pdf_pages,
                      opt_config_file = 'config_file.json'):
     
         # objectives
         opt = self._opt # Optimizer object
-        opt_response = utility.load_pickle(responses_filename)[0]
+        opt_response = utility.load_pickle(response_filename)[0]
         responses_release =  utility.load_pickle(response_release_filename)
         
         opt_config = utility.load_json(opt_config_file)
@@ -679,3 +681,104 @@ class Optim_Analyzer(object):
         utility.create_filepath(save_params_filename)
         bpopt_param_dict = self.create_bpopt_param_template(bpopt_param_list)
         utility.save_json(save_params_filename,bpopt_param_dict)
+        
+    @staticmethod    
+    def prepare_spike_shape(response_filename,stim_file,
+                        stim_name, ephys_dir= 'preprocessed/',
+                        prefix_pad = 2, posfix_pad = 5,
+                        res =0.05):
+    
+        stim_map_content = pd.read_csv(stim_file, sep='\s*,\s*',
+                                   header=0, encoding='ascii', engine='python')
+        response = utility.load_pickle(response_filename)[0]
+        
+        reject_stimtype_list = ['LongDCSupra','Ramp', 'ShortDC',
+                                'Noise','Short_Square_Triple']
+        
+        spike_features = ['peak_time']
+        stim_map = defaultdict(dict)
+        
+        # Get the stim configuration for each stim
+        for line in stim_map_content.split('\n')[1:-1]:
+            if line != '':
+                stim_name, stim_type, holding_current, amplitude_start, amplitude_end, \
+                    stim_start, stim_end, duration, sweeps = line.split(',')
+                if not any(stim_type_iter in stim_name for stim_type_iter in reject_stimtype_list):
+                    iter_dict= dict()
+                    iter_dict['type'] = stim_type.strip()
+                    iter_dict['amp'] = 1e9 * float(amplitude_start)
+                    iter_dict['delay'] = float(stim_start)
+                    iter_dict['stim_end'] = float(stim_end)
+                    iter_dict['sweep_filenames'] = [
+                        x.strip() for x in sweeps.split('|')]
+                    
+                    iter_list = [iter_dict]
+                    stim_map[stim_name]['stimuli'] = iter_list
+        
+        
+        sweep_filenames = stim_map[stim_name]['stimuli'][0]['sweep_filenames']    
+        for sweep_filename in sweep_filenames:
+            sweep_fullpath = os.path.join(
+                    ephys_dir,
+                    sweep_filename)
+            data = np.loadtxt(sweep_fullpath)
+            time = data[:, 0]
+            voltage = data[:, 1]
+    
+            # Prepare sweep for eFEL
+            sweep = {}
+            sweep['T'] = time
+            sweep['V'] = voltage
+            sweep['stim_start'] = [stim_map[stim_name]['stimuli'][0]['delay']]
+            sweep['stim_end'] = [stim_map[stim_name]['stimuli'][0]['stim_end']]               
+            sweeps.append(sweep)
+            
+        # Extract experimental spike times    
+        feature_results = efel.getFeatureValues(sweeps, spike_features)
+        AP_shape_time = np.arange(-prefix_pad,posfix_pad, res) 
+        AP_shape_exp = np.zeros(AP_shape_time.size)
+        AP_shape_model = np.zeros(AP_shape_time.size)
+        
+        # Experimental AP shape
+        num_spikes_exp = 0
+        for k,sweep_filename in enumerate(sweep_filenames):
+            sweep_fullpath = os.path.join(
+                ephys_dir,
+                sweep_filename)
+    
+            data = np.loadtxt(sweep_fullpath)
+            time = data[:, 0]
+            voltage = data[:, 1]
+            spike_times_exp = feature_results[k]['peak_time']
+            AP_shape_exp = get_spike_shape(time,voltage,
+                    spike_times_exp,AP_shape_time,
+                    AP_shape_exp)
+            num_spikes_exp += len(spike_times_exp)
+        AP_shape_exp /= num_spikes_exp
+            
+        
+        # Calculate model spike times
+        model_sweeps = []    
+        model_sweep = {}
+        name_loc = stim_name+'.soma.v'
+        resp_time = response[name_loc]['time'].values
+        resp_voltage = response[name_loc]['voltage'].values
+        model_sweep['T'] = resp_time
+        model_sweep['V'] = resp_voltage
+        model_sweep['stim_start'] = [stim_map[stim_name]['stimuli'][0]['delay']]
+        model_sweep['stim_end'] = [stim_map[stim_name]['stimuli'][0]['stim_end']]
+        model_sweeps.append(model_sweep)
+        feature_results_model = efel.getFeatureValues(model_sweeps, spike_features)
+        
+        # Model AP shape
+        spike_times_model = feature_results_model[0]['peak_time']
+    
+        AP_shape_model = get_spike_shape(time,voltage,
+                    spike_times_exp,AP_shape_time,
+                    AP_shape_exp)
+           
+        num_spikes_model = len(spike_times_model)
+        AP_shape_model /= num_spikes_model
+        
+        return AP_shape_exp, AP_shape_model
+        
