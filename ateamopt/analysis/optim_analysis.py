@@ -13,7 +13,7 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import math
 import efel
-from analysis_module import get_spike_shape
+from .analysis_module import get_spike_shape
 
 logger = logging.getLogger(__name__)
 
@@ -36,9 +36,11 @@ class Optim_Analyzer(object):
             if cp_log_min < cp_min:
                 cp_min = cp_log_min
                 cp_best = filename
-            
-        logger.debug('Best checkpoint file is %s with min. objective %s'\
+        try:    
+            logger.debug('Best checkpoint file is %s with min. objective %s'\
                          %(cp_best.split('/')[-1],cp_min))
+        except:
+            logger.debug('No checkpoint file available at specified path')
         
         return cp_best
     
