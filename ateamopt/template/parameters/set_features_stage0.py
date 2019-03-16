@@ -22,6 +22,5 @@ def main():
     utility.save_json(path,feature_set)
     
         
-        
 if __name__ == '__main__':
     main()

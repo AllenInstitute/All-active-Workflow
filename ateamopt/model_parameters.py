@@ -134,7 +134,8 @@ class AllActive_Model_Parameters(object):
         
         return model_params_opt, model_params_release
     
-    
+    def reduce_param_space(model_params_prev):
+        pass
     
     def load_params_prev_stage(self,section_map):
         model_prev_stage = utility.load_json(self.prev_stage_model_path)
@@ -248,9 +249,9 @@ class AllActive_Model_Parameters(object):
 
     def write_opt_config_file(self,morph_path,param_write_path,
                               mech_write_path,mech_release_write_path,
-                              features_write_path,protocols_write_path,
-                              all_protocols_write_path,release_params,
-                              release_param_write_path,
+                              features_write_path,untrained_features_write_path,
+                              protocols_write_path,all_protocols_write_path,
+                              release_params,release_param_write_path,
                               opt_config_filename = 'config_file.json'):
         
         path_dict =  dict()
@@ -259,10 +260,10 @@ class AllActive_Model_Parameters(object):
         path_dict['mechanism'] = mech_write_path
         path_dict['mechanism_release'] = mech_release_write_path
         path_dict['features'] = features_write_path
+        path_dict['untrained_features'] = untrained_features_write_path
         path_dict['protocols'] = protocols_write_path
         path_dict['all_protocols'] = all_protocols_write_path
         path_dict['release_params_bpopt'] = release_params
         path_dict['released_model'] = release_param_write_path
-        
         
         utility.save_json(opt_config_filename,path_dict)

@@ -20,8 +20,9 @@ def filter_feat_proto_passive(features_dict,protocols_dict):
                               if key not in spiking_proto}
     protocols_dict_filtered = {key:val for key,val in protocols_dict.items() \
                               if key not in spiking_proto}
-    
-    return features_dict_filtered, protocols_dict_filtered
+    untrained_features_dict = {key:val for key,val in features_dict.items() \
+                              if key not in features_dict_filtered.keys()}
+    return features_dict_filtered, untrained_features_dict, protocols_dict_filtered
 
 
 def adjust_param_bounds(model_param, model_param_prev,tolerance=0.5):

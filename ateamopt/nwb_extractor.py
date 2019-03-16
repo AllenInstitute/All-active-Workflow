@@ -358,6 +358,7 @@ class NWB_Extractor(object):
         
         cell_name = self.cell_id
         features_write_path = 'config/'+ cell_name +'/features.json'
+        untrained_features_write_path = 'config/'+ cell_name +'/untrained_features.json'
         protocols_write_path = 'config/'+cell_name+'/protocols.json'
         all_protocols_write_path = 'config/'+cell_name+'/all_protocols.json'
         
@@ -434,12 +435,14 @@ class NWB_Extractor(object):
                 training_stim_map[stim_name] = cell_stim_map[stim_name]
         
 
-        features_meanstd_filered,training_stim_map_filtered = \
+        features_meanstd_filtered,untrained_features_dict,training_stim_map_filtered = \
                 filter_rule_func(features_meanstd,training_stim_map)    
-        utility.save_json(features_write_path,features_meanstd_filered)
+        utility.save_json(features_write_path,features_meanstd_filtered)
+        utility.save_json(untrained_features_write_path,untrained_features_dict)
         utility.save_json(protocols_write_path,training_stim_map_filtered)
         utility.save_json(all_protocols_write_path,cell_stim_map)
         
-        return features_write_path,protocols_write_path,all_protocols_write_path
+        return features_write_path,untrained_features_write_path,\
+                                protocols_write_path,all_protocols_write_path
     
     

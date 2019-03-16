@@ -6,18 +6,10 @@ Created on Tue Jul 31 13:54:54 2018
 @author: anin
 """
 
-import json
-import os
-import glob
-
-#parent_dir = os.path.abspath(os.path.join('.', os.pardir))
-#path_to_cell_metadata = glob.glob(parent_dir+'/*.json')[0]
-#       
-#with open(path_to_cell_metadata,'r') as metadata:
-#    cell_metadata = json.load(metadata)
+from ateamopt.utils import utility
 
 
-passive_and_Ih_params = {   
+passive_params = {   
                     'cm' : {'section' : ['soma', 'apic', 'dend', 'axon'],
                               'bounds':{'soma':[1e-1,10], 'apic':[1e-1,10], 'dend' : [1e-1,10],
                                         'axon':[1e-1,10]},
@@ -36,8 +28,8 @@ passive_and_Ih_params = {
 
 
 def main():
-    with open('param_bounds_stage0.json','w') as bound_file:
-        json.dump(passive_and_Ih_params,bound_file,indent=4)   
+    path = 'param_bounds_stage0.json'
+    utility.save_json(path,passive_params)   
         
         
 if __name__ == '__main__':
