@@ -170,6 +170,7 @@ class Optim_Analyzer(object):
         return param_dict
            
     def create_aibs_param_template(self,param_list,
+                                   expand_params = False,
                                    opt_config_file='config_file.json'):
         opt_config = utility.load_json(opt_config_file)
         bpopt_param_path = opt_config['parameters']
@@ -224,27 +225,29 @@ class Optim_Analyzer(object):
                                         item["param_name"] == "v_init")
                           })
         
-        # If section == 'all' distribute to all section names
-        param_all_entries = {}
-        param_del_entries = []
-        sect_reject_list_bpopt = [bpopt_section_map[sect_] for sect_ in sect_reject_list]
-        temp_sect_map = [sect for sect in bpopt_section_map \
-                         if sect not in sect_reject_list_bpopt]
+        if expand_params:
+            # If section == 'all' distribute to all section names
+            
+            param_all_entries = {}
+            param_del_entries = []
+            sect_reject_list_bpopt = [bpopt_section_map[sect_] for sect_ in sect_reject_list]
+            temp_sect_map = [sect for sect in bpopt_section_map \
+                             if sect not in sect_reject_list_bpopt]
+            
+            for param,val in param_dict.items():
+                param_name,sect = param.split('.') 
+                if sect == 'all':
+                    for sec_ in temp_sect_map:
+                        param_all_entries.update({'%s.%s'%(param_name,sec_):\
+                                                  val})
+                    param_del_entries.append(param)
+                
+            # delete the all entries and repopulate with the four section names   
+            param_dict = utility.remove_entries_dict(param_dict,param_del_entries)
+            param_dict.update(param_all_entries)        
+        
         
         for param,val in param_dict.items():
-            param_name,sect = param.split('.') 
-            if sect == 'all':
-                for sec_ in temp_sect_map:
-                    param_all_entries.update({'%s.%s'%(param_name,sec_):\
-                                              val})
-                param_del_entries.append(param)
-            
-        # delete the all entries and repopulate with the four section names   
-        param_dict_mod = utility.remove_entries_dict(param_dict,param_del_entries)
-        param_dict_mod.update(param_all_entries)        
-        
-        
-        for param,val in param_dict_mod.items():
             param_name,sect = param.split('.') 
             param_match = list(filter(lambda x:x['param_name'] == param_name,
                            bpopt_sim_params))[0]
@@ -673,9 +676,10 @@ class Optim_Analyzer(object):
     
     
     def save_params_aibs_format(self,save_params_filename,
-                                bpopt_param_list):
+                                bpopt_param_list,expand_params = False):
         utility.create_filepath(save_params_filename)
-        aibs_params = self.create_aibs_param_template(bpopt_param_list)
+        aibs_params = self.create_aibs_param_template(bpopt_param_list,
+                                              expand_params = False)
         utility.save_json(save_params_filename,aibs_params)
     
     def save_params_bpopt_format(self,save_params_filename,

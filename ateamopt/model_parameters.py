@@ -39,10 +39,10 @@ class AllActive_Model_Parameters(object):
         ena_sect, ek_sect = [],[]
         
         for param_name,param_dict in params_dict.items():
-            if re.search('gbar_Na', param_name):           # Use re.IGNORECASE if needed
+            if re.search('Na', param_name, re.IGNORECASE):           # Use re.IGNORECASE if needed
                 for sect in param_dict['section']: 
                     ena_sect.append(sect)
-            elif re.search('gbar_K', param_name):
+            elif re.search('K', param_name, re.IGNORECASE):
                 for sect in param_dict['section']:         # Use re.IGNORECASE if needed
                     ek_sect.append(sect)
         
@@ -134,8 +134,7 @@ class AllActive_Model_Parameters(object):
         
         return model_params_opt, model_params_release
     
-    def reduce_param_space(model_params_prev):
-        pass
+        
     
     def load_params_prev_stage(self,section_map):
         model_prev_stage = utility.load_json(self.prev_stage_model_path)

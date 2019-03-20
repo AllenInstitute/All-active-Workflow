@@ -145,4 +145,6 @@ class Allactive_Optim(object):
             filename='cell_metadata_%s.json'%cell_id
             utility.save_json(filename,cell_metadata)
             
+        return cell_metadata
+            
             

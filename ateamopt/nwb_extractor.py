@@ -353,7 +353,7 @@ class NWB_Extractor(object):
     
     
     def get_ephys_features(self,feature_set_filename,ephys_data_path,stimmap_filename, 
-                           filter_rule_func,
+                           filter_rule_func,*args,
                            dend_recording = None, record_locations = None):
         
         cell_name = self.cell_id
@@ -400,7 +400,10 @@ class NWB_Extractor(object):
                 sweep['V'] = voltage
                 sweep['stim_start'] = [stim_map[stim_name]['stimuli'][0]['delay']]
                 sweep['stim_end'] = [stim_map[stim_name]['stimuli'][0]['stim_end']]
-
+                sweep['T;location_AIS'] = time
+                sweep['V;location_AIS'] = voltage
+                sweep['stim_start;location_AIS'] = [stim_map[stim_name]['stimuli'][0]['delay']]
+                sweep['stim_end;location_AIS'] = [stim_map[stim_name]['stimuli'][0]['stim_end']]
                 sweeps.append(sweep)
 
             # Do the actual feature extraction
@@ -429,18 +432,23 @@ class NWB_Extractor(object):
                 if mean == 0:
                     std = 0.05
                 
+                if feature_name in ['voltage_base', 'steady_state_voltage'] \
+                        and len(feature_values) == 1:
+                    std = 0
+                     
+                
                 features_meanstd[stim_name]['soma'][
                     feature_name] = [mean , std]
             if stim_name in features_meanstd.keys():
                 training_stim_map[stim_name] = cell_stim_map[stim_name]
         
 
-        features_meanstd_filtered,untrained_features_dict,training_stim_map_filtered = \
-                filter_rule_func(features_meanstd,training_stim_map)    
+        features_meanstd_filtered,untrained_features_dict,training_stim_map_filtered,\
+                all_stim_filtered = filter_rule_func(features_meanstd,training_stim_map,cell_stim_map,*args)    
         utility.save_json(features_write_path,features_meanstd_filtered)
         utility.save_json(untrained_features_write_path,untrained_features_dict)
         utility.save_json(protocols_write_path,training_stim_map_filtered)
-        utility.save_json(all_protocols_write_path,cell_stim_map)
+        utility.save_json(all_protocols_write_path,all_stim_filtered)
         
         return features_write_path,untrained_features_write_path,\
                                 protocols_write_path,all_protocols_write_path
