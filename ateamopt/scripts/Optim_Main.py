@@ -89,7 +89,6 @@ def get_parser():
                         help='number of individuals in offspring')
     parser.add_argument('--max_ngen', type=int, required=False, default=2,
                         help='maximum number of generations')
-    parser.add_argument('--compile', action="store_true")
     parser.add_argument('--seed', type=int, default=1,
                         help='Seed to use for optimization')
     parser.add_argument('--ipyparallel', action="store_true", default=False,
@@ -112,10 +111,6 @@ def main():
                                logging.DEBUG)[args.verbose],
                                stream=sys.stdout)
     opt = create_optimizer(args)
-
-    if args.compile:
-        logger.debug('Doing compile')
-        os.system('nrnivmodl modfiles/')
 
     if args.start or args.continu:
         logger.debug('Doing start or continue')

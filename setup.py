@@ -5,6 +5,12 @@ setup(name='ateamopt',
       description='Ateam all-active optimization toolbox',
       author='Ani Nandi',
       author_email='anin@alleninstitute.org',
-      packages=find_packages()
-      )
+      packages=find_packages(),
+      entry_points={
+        'console_scripts':[
+            'launch_optimjob = ateamopt.jobscript.launch_optimjob:main'
+        ]
+      },
+      platforms='any'
+    )
 

@@ -17,7 +17,7 @@ passive_and_Ih_params = {
                         'gbar_Ih' : {'section' : ['soma', 'apic', 'dend'],
                                 'mechanism': 'Ih',
                                 'bounds' : {'soma':[1e-7,1e-4], 'apic':[1e-7, 1e-4], 'dend' : [1e-7,1e-4]}
-                                },
+                                }
                             }
 
 def main():
