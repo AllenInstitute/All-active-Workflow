@@ -2,8 +2,8 @@
 
 #PBS -q celltypes
 #PBS -l walltime=4:00:00
-#PBS -l nodes=16 -n
-#PBS -l mem=8gb
+#PBS -l nodes=16:ppn=16
+#PBS -l mem=10g
 #PBS -N Stage0
 #PBS -r n
 #PBS -m n
@@ -29,8 +29,6 @@ sleep 10
 CHECKPOINTS_DIR="checkpoints"
 mkdir -p ${CHECKPOINTS_DIR}
 
-#pids=""
-#for seed in 1; do
 python Optim_Main.py             \
     -vv                                \
     --offspring_size=${OFFSPRING_SIZE} \
@@ -39,10 +37,9 @@ python Optim_Main.py             \
     --ipyparallel                      \
     --start                        \
     --checkpoint "${CHECKPOINTS_DIR}/seed${seed}.pkl" &
-    #pids+="$! "
-#done
 
-#wait $pids
+pid=$!
+wait $pid
 
 # Launch the Stage 1 optimization 
 #qsub launch_stage1_hpc.pbs

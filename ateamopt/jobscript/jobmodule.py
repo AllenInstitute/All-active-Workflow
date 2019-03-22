@@ -21,10 +21,27 @@ class ChainSubJob(JobModule):
                      conda_env='ateam_opt'):
         
         super().__init__(machine,script_name)
-        self.conda_env = conda_env
+        
+        if 'cori' in self.machine:
+            self.conda_env = 'ateam'
+        elif 'bbp' in self.machine:
+            self.conda_env = 'CompNeuro'
+        else:
+            self.conda_env = conda_env
         self.script_template = utility.locate_template_file(script_template)
         
+    
+    def HDF5_file_locking(self):
+        with open(self.script_name, "r") as in_file:
+            buf = in_file.readlines()
         
+        with open(self.script_name, "w") as out_file:
+            for line in buf:
+                if line == "source activate %s\n"%self.conda_env:
+                    line = line + "export HDF5_USE_FILE_LOCKING=FALSE\n"
+                out_file.write(line)
+        
+    
     def script_generator(self):
         with open(self.script_template,'r') as job_template:
             subjob_string = job_template.read()
@@ -35,10 +52,19 @@ class ChainSubJob(JobModule):
         if 'hpc-login' in self.machine:
             submit_cmd = 'qsub'
             subjob_string = subjob_string.replace('submit_cmd',submit_cmd)
-            
+        elif any(substring in self.machine for substring in ['cori', 'bbp']):
+            submit_cmd = 'sbatch'
+            subjob_string = subjob_string.replace('submit_cmd',submit_cmd)
+        
         chainsubjob_script = open(self.script_name, "w")
         chainsubjob_script.write(subjob_string)
-     
+        
+        # HDF5 file locking
+        if 'cori' in self.machine:
+            self.HDF5_file_locking()
+        
+        
+        
     def run_job(self):
         
         os.system('chmod +x %s'%self.script_name)
@@ -87,7 +113,56 @@ class test_JobModule(JobModule):
         
 
 class Slurm_JobModule(JobModule):
-    pass
+    def __init__(self, script_template, machine,script_name = 'batch_job.sh'):
+    
+        super().__init__(machine,script_name)
+        
+        if 'cori' in self.machine:
+            self.conda_env = 'ateam'
+        elif 'bbp' in self.machine:
+            self.conda_env = 'CompNeuro'
+            
+        self.script_template = utility.locate_template_file(script_template)
+        self.submit_verb = 'sbatch'
+        
+    def script_generator(self):
+        with open(self.script_template,'r') as job_template:
+            batchjob_string = job_template.read()
+        
+        batchjob_string = batchjob_string.replace('ateam_opt',self.conda_env)
+        batchjob_script = open(self.script_name, "w")
+        batchjob_script.write(batchjob_string)
+        
+        self.adjust_for_NERSC('#SBATCH -p prod', '#SBATCH -q regular')
+        self.adjust_for_NERSC('#SBATCH -C cpu|nvme', '#SBATCH -C haswell')                      
+        self.adjust_for_NERSC('#SBATCH -A proj36','')
+        self.adjust_for_NERSC('#SBATCH -n 256', '#SBATCH -N 8') 
+        Path_append ='export PATH="/global/common/software/m2043/AIBS_Opt/software/x86_64/bin:$PATH"'
+        self.adjust_for_NERSC('source activate %s'%self.conda_env, Path_append, 
+                              add = True)
+
+    def adjust_for_NERSC(self,match_line, replace_line, add = False):
+        with open(self.script_name, "r") as in_file:
+            buf = in_file.readlines()
+        
+        with open(self.script_name, "w") as out_file:
+            for line in buf:
+                if line == "%s"%match_line:
+                    if add:
+                        line +=  "\n%s\n"%replace_line
+                    else:
+                        line = "%s"%replace_line
+                out_file.write(line)
+       
+    
+    def submit_job(self):
+        
+        os.system('chmod +x %s'%self.script_name)
+        process = Popen(['%s', '%s'%(self.submit_verb,self.script_name)],
+                         stdout=PIPE, stderr=PIPE)
+        stdout, stderr = process.communicate()
+        print(stderr)           
+
 
 class PBS_JobModule(JobModule):
     def __init__(self, script_template, machine,script_name = 'batch_job.sh',
@@ -103,10 +178,7 @@ class PBS_JobModule(JobModule):
         with open(self.script_template,'r') as job_template:
             batchjob_string = job_template.read()
         
-        if self.conda_env != 'ateam_opt':
-            batchjob_string = batchjob_string.replace('ateam_opt',self.conda_env)
-            
-         
+        batchjob_string = batchjob_string.replace('ateam_opt',self.conda_env)         
         batchjob_script = open(self.script_name, "w")
         batchjob_script.write(batchjob_string)
         

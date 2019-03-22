@@ -35,6 +35,10 @@ def create_optim_job(args):
     
     cell_metadata = optim_model.save_cell_metadata(**me_props)
     machine = cell_metadata['Machine']
+    
+    if args.premium_queue and 'cori' in machine:
+       with open('nersc_queue.txt', 'a') as handle:
+           handle.write('premium') 
     jobtemplate_path = 'job_templates/Stage0_chainjob_template.sh'
     chain_job = ChainSubJob(jobtemplate_path,machine)
     chain_job.script_generator()
@@ -52,6 +56,7 @@ def main():
                         help='Morphology path for unpublished cells')
     parser.add_argument('--nwb_path', required=False, default=None,
                         help='Ephys path for unpublished cells')
-    
+    parser.add_argument('--premium_queue', action="store_true", default=False,
+                        help='For premium queue on NERSC')
     args = parser.parse_args()
     create_optim_job(args)

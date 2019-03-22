@@ -19,10 +19,13 @@ logger = logging.getLogger(__name__)
 
 class Optim_Analyzer(object):
     
-    def __init__(self,opt_obj,cp_dir):
+    def __init__(self,opt_obj=None,cp_dir=None):
         self._opt = opt_obj
         self.cp_dir = cp_dir
-        self._cp_path = self.get_best_cp_seed() # the seed file with minimum error
+        if self.cp_dir:
+            self._cp_path = self.get_best_cp_seed() # the seed file with minimum error
+        else:
+            self._cp_path = None
         
     def get_best_cp_seed(self):
         checkpoint_dir  = self.cp_dir + 'seed*.pkl'
@@ -687,7 +690,29 @@ class Optim_Analyzer(object):
         utility.create_filepath(save_params_filename)
         bpopt_param_dict = self.create_bpopt_param_template(bpopt_param_list)
         utility.save_json(save_params_filename,bpopt_param_dict)
+    
+    def convert_aibs_param_to_dict(self,aibs_param_file,repeat_params = []):
+        aibs_params = utility.load_json(aibs_param_file)
+        model_param_dict = {}
+        section_map = utility.bpopt_section_map
         
+        written_repeat_params = []    
+
+        for key, values in aibs_params.items():            
+            if key == 'genome':
+                for j in range(len(values)):
+                    param_name = aibs_params[key][j]['name'] 
+                    param_sect = section_map[aibs_params[key][j]['section']] 
+                    if param_name not in written_repeat_params:
+                        if param_name in repeat_params:
+                            param_sect = 'all'
+                            written_repeat_params.append(param_name)
+                        param_name_with_sect = param_name + '.' + param_sect    
+                        param_value = float(aibs_params[key][j]['value'])
+                        model_param_dict[param_name_with_sect] = param_value
+        
+        return model_param_dict
+    
     @staticmethod    
     def prepare_spike_shape(response_filename,stim_file,
                         stim_name, ephys_dir= 'preprocessed/',
