@@ -20,7 +20,7 @@ class ChainSubJob(JobModule):
     def __init__(self, script_template, machine,script_name = 'chain_job.sh',
                      conda_env='ateam_opt'):
         
-        super().__init__(machine,script_name)
+        super(ChainSubJob,self).__init__(machine,script_name)
         
         if 'cori' in self.machine:
             self.conda_env = 'ateam'
@@ -80,7 +80,7 @@ class test_JobModule(JobModule):
                  optim_script= 'Optim_Main.py',
                  parallel = False,
                  job_status = 'start'):
-        super().__init__(machine,script_name)
+        super(test_JobModule,self).__init__(machine,script_name)
         self.cp_file = cp_file
         self.offspring = offspring
         self.max_ngen = max_ngen
@@ -115,7 +115,7 @@ class test_JobModule(JobModule):
 class Slurm_JobModule(JobModule):
     def __init__(self, script_template, machine,script_name = 'batch_job.sh'):
     
-        super().__init__(machine,script_name)
+        super(Slurm_JobModule,self).__init__(machine,script_name)
         
         if 'cori' in self.machine:
             self.conda_env = 'ateam'
@@ -168,7 +168,7 @@ class PBS_JobModule(JobModule):
     def __init__(self, script_template, machine,script_name = 'batch_job.sh',
                      conda_env='ateam_opt'):
     
-        super().__init__(machine,script_name)
+        super(PBS_JobModule,self).__init__(machine,script_name)
         self.conda_env = conda_env
         self.script_template = utility.locate_template_file(script_template)
         self.submit_verb = 'qsub'
