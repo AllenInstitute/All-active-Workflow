@@ -36,7 +36,7 @@ fi
 
 # Run scripts to prepare for the jobs
 
-cp $SCRIPT_REPO/prepare_stage0_run.py .
+cp $SCRIPT_REPO/prepare_stage0_run.py $STAGE_DIR/
 if [ -f nersc_queue.txt ]; then cp nersc_queue.txt $STAGE_DIR/ ; fi # Specific to Cori
 cd $STAGE_DIR
 
