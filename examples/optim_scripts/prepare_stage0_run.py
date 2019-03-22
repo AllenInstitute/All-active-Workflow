@@ -7,7 +7,8 @@ from ateamopt.optim_config_rules import filter_feat_proto_passive
 from ateamopt.analysis.optim_analysis import Optim_Analyzer
 from ateamopt.bpopt_evaluator import Bpopt_Evaluator
 import bluepyopt as bpopt
-from ateamopt.jobscript.jobmodule import test_JobModule,PBS_JobModule
+from ateamopt.jobscript.jobmodule import test_JobModule,\
+            PBS_JobModule,Slurm_JobModule,ChainSubJob
 from matplotlib.backends.backend_pdf import PdfPages
 import shutil
 import logging
@@ -67,6 +68,19 @@ def main():
         jobtemplate_path = 'job_templates/Stage0_pbs.sh'
         batch_job = PBS_JobModule(jobtemplate_path,machine)
         batch_job.script_generator()
+    elif any(substring in machine for substring in ['cori', 'bbp']):
+        jobtemplate_path = 'job_templates/Stage0_slurm.sh'
+        batch_job = Slurm_JobModule(jobtemplate_path,machine)
+        batch_job.script_generator()
+    
+    
+    # Create Chain job for next stage
+    chain_jobtemplate_path = 'job_templates/Stage1_chainjob_template.sh'
+    if any(substring in machine for substring in ['cori', 'bbp']):
+        chain_job = ChainSubJob(chain_jobtemplate_path,machine)
+        chain_job.script_generator()
+        
+    
     
     # Trial run
     
