@@ -299,7 +299,7 @@ class NWB_Extractor(object):
     
     
     @staticmethod
-    def get_stim_map(stim_map_filename, dend_recording = None, locations = None):
+    def get_stim_map(stim_map_filename, record_locations = None):
         """Get stim map"""
     
         stim_map = defaultdict(dict)
@@ -338,9 +338,9 @@ class NWB_Extractor(object):
                     iter_list = [iter_dict1]
                 
                 stim_map[stim_name]['stimuli'] = iter_list
-                if dend_recording:
+                if record_locations:
                     record_list = list()
-                    for i, loc in enumerate(locations):
+                    for i, loc in enumerate(record_locations):
                         record_dict = dict()
                         record_dict['var'] = 'v'
                         record_dict['somadistance'] = loc
@@ -352,9 +352,8 @@ class NWB_Extractor(object):
         return stim_map
     
     
-    def get_ephys_features(self,feature_set_filename,ephys_data_path,stimmap_filename, 
-                           filter_rule_func,*args,
-                           dend_recording = None, record_locations = None):
+    def get_ephys_features(self,feature_set_filename,ephys_data_path,stimmap_filename,
+                           filter_rule_func,*args,**kwargs):
         
         cell_name = self.cell_id
         features_write_path = 'config/'+ cell_name +'/features.json'
@@ -371,9 +370,14 @@ class NWB_Extractor(object):
             lambda: defaultdict(
                 lambda: defaultdict(dict)))
 
-
+        # if additional dendritic recordings
+        if 'location' in kwargs:
+            record_locations = kwargs['locations']
+        else:
+            record_locations = None
+            
         stim_map = self.get_stim_map(os.path.join(ephys_data_path,stimmap_filename),
-                            dend_recording = dend_recording, locations = record_locations)
+                                record_locations = record_locations)
 
         cell_stim_map= stim_map.copy()
         training_stim_map = dict()
