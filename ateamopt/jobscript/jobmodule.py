@@ -147,11 +147,11 @@ class Slurm_JobModule(JobModule):
         
         with open(self.script_name, "w") as out_file:
             for line in buf:
-                if line == "%s"%match_line:
+                if line == "%s\n"%match_line:
                     if add:
-                        line +=  "\n%s\n"%replace_line
+                        line +=  "%s\n"%replace_line
                     else:
-                        line = "%s"%replace_line
+                        line = "%s\n"%replace_line
                 out_file.write(line)
        
     
