@@ -46,7 +46,10 @@ STAGE_NEXT="_STAGE1"
 JOBNAME=$CELL_ID$STAGE
 LAUNCH_JOBNAME=$CELL_ID$STAGE_NEXT
 sed -i -e "s/Stage0/$JOBNAME/g" batch_job.sh
-if [ -f nersc_queue.txt ]; then sed -i -e "s/regular/premium/g" batch_job.sh ; fi  # Specific to Cori
+if [ -f nersc_queue.txt ]; then
+	queue=$(<nersc_queue.txt)
+	sed -i -e "s/regular/$queue/g" batch_job.sh # Specific to Cori
+fi
 sed -i -e "s/Stage_1/$LAUNCH_JOBNAME/g" chain_job.sh
 echo "Launching Stage 0 Opimization"
 

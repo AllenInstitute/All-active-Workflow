@@ -46,21 +46,18 @@ sleep 10
 CHECKPOINTS_DIR="checkpoints"
 mkdir -p ${CHECKPOINTS_DIR}
 
-pids=""
-for seed in 1; do
-    python Optim_Main.py             \
-        -vv                                \
-        --compile                          \
-        --offspring_size=${OFFSPRING_SIZE} \
-        --max_ngen=${MAX_NGEN}             \
-        --seed=${seed}                     \
-        --ipyparallel                      \
-        --start                         \
-        --checkpoint "${CHECKPOINTS_DIR}/seed${seed}.pkl" &
-    pids+="$! "
-done
+python Optim_Main.py             \
+    -vv                                \
+    --compile                          \
+    --offspring_size=${OFFSPRING_SIZE} \
+    --max_ngen=${MAX_NGEN}             \
+    --seed=${seed}                     \
+    --ipyparallel                      \
+    --start                         \
+    --checkpoint "${CHECKPOINTS_DIR}/seed${seed}.pkl" &
 
-wait $pids
+pid=$!
+wait $pid
 
 # Launch the passive+Ih optimization (Stage 1)
 sbatch chain_job.sh
