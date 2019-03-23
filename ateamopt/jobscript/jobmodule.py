@@ -46,8 +46,7 @@ class ChainSubJob(JobModule):
         with open(self.script_template,'r') as job_template:
             subjob_string = job_template.read()
         
-        if self.conda_env != 'ateam_opt':
-            subjob_string = subjob_string.replace('ateam_opt',self.conda_env)
+        subjob_string = subjob_string.replace('ateam_opt',self.conda_env)
             
         if 'hpc-login' in self.machine:
             submit_cmd = 'qsub'
@@ -56,8 +55,8 @@ class ChainSubJob(JobModule):
             submit_cmd = 'sbatch'
             subjob_string = subjob_string.replace('submit_cmd',submit_cmd)
         
-        chainsubjob_script = open(self.script_name, "w")
-        chainsubjob_script.write(subjob_string)
+        with open(self.script_name, "w") as chainsubjob_script:
+            chainsubjob_script.write(subjob_string)
         
         # HDF5 file locking
         if 'cori' in self.machine:
@@ -99,8 +98,8 @@ class test_JobModule(JobModule):
         testjob_string += ' --offspring_size=%s --max_ngen=%s --%s'%(self.offspring,
                                                     self.max_ngen,self.job_status)
         
-        shell_script = open(self.script_name, "w")
-        shell_script.write(testjob_string)
+        with open(self.script_name, "w") as shell_script:
+            shell_script.write(testjob_string)
      
     def run_job(self):
         utility.create_filepath(self.cp_file)
@@ -130,8 +129,8 @@ class Slurm_JobModule(JobModule):
             batchjob_string = job_template.read()
         
         batchjob_string = batchjob_string.replace('ateam_opt',self.conda_env)
-        batchjob_script = open(self.script_name, "w")
-        batchjob_script.write(batchjob_string)
+        with open(self.script_name, "w") as batchjob_script:
+            batchjob_script.write(batchjob_string)
         
         self.adjust_for_NERSC('#SBATCH -p prod', '#SBATCH -q regular')
         self.adjust_for_NERSC('#SBATCH -C cpu|nvme', '#SBATCH -C haswell')                      
@@ -179,8 +178,8 @@ class PBS_JobModule(JobModule):
             batchjob_string = job_template.read()
         
         batchjob_string = batchjob_string.replace('ateam_opt',self.conda_env)         
-        batchjob_script = open(self.script_name, "w")
-        batchjob_script.write(batchjob_string)
+        with open(self.script_name, "w") as batchjob_script:
+            batchjob_script.write(batchjob_string)
         
     def submit_job(self):
         
