@@ -13,7 +13,7 @@ from matplotlib.backends.backend_pdf import PdfPages
 import shutil
 import logging
 
-logging.basicConfig(level=logging.DEBUG) 
+logger = logging.getLogger(__name__)
 
 
 def main():
@@ -76,9 +76,8 @@ def main():
     
     # Create Chain job for next stage
     chain_jobtemplate_path = 'job_templates/Stage1_chainjob_template.sh'
-    if any(substring in machine for substring in ['cori', 'bbp']):
-        chain_job = ChainSubJob(chain_jobtemplate_path,machine)
-        chain_job.script_generator()
+    chain_job = ChainSubJob(chain_jobtemplate_path,machine)
+    chain_job.script_generator()
         
     
     

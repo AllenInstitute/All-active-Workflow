@@ -37,7 +37,7 @@ fi
 # Run scripts to prepare for the jobs
 
 cp $SCRIPT_REPO/prepare_stage0_run.py $STAGE_DIR/
-if [ -f nersc_queue.txt ]; then cp nersc_queue.txt $STAGE_DIR/ ; fi # Specific to Cori
+if [ -f qos.txt ]; then cp nersc_queue.txt $STAGE_DIR/ ; fi # Specific to Cori
 cd $STAGE_DIR
 
 python prepare_stage0_run.py
@@ -46,8 +46,8 @@ STAGE_NEXT="_STAGE1"
 JOBNAME=$CELL_ID$STAGE
 LAUNCH_JOBNAME=$CELL_ID$STAGE_NEXT
 sed -i -e "s/Stage0/$JOBNAME/g" batch_job.sh
-if [ -f nersc_queue.txt ]; then
-	queue=$(<nersc_queue.txt)
+if [ -f qos.txt ]; then
+	queue=$(<qos.txt)
 	sed -i -e "s/regular/$queue/g" batch_job.sh # Specific to Cori
 fi
 sed -i -e "s/Stage_1/$LAUNCH_JOBNAME/g" chain_job.sh

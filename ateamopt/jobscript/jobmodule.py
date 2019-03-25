@@ -13,7 +13,20 @@ class JobModule(object):
         
         self.machine = machine
         self.script_name = script_name
+   
+
+    def adjust_for_NERSC(self,match_line, replace_line, add = False):
+        with open(self.script_name, "r") as in_file:
+            buf = in_file.readlines()
         
+        with open(self.script_name, "w") as out_file:
+            for line in buf:
+                if line == "%s\n"%match_line:
+                    if add:
+                        line +=  "%s\n"%replace_line
+                    else:
+                        line = "%s\n"%replace_line
+                out_file.write(line)     
 
 class ChainSubJob(JobModule):
     
@@ -31,16 +44,16 @@ class ChainSubJob(JobModule):
         self.script_template = utility.locate_template_file(script_template)
         
     
-    def HDF5_file_locking(self):
-        with open(self.script_name, "r") as in_file:
-            buf = in_file.readlines()
-        
-        with open(self.script_name, "w") as out_file:
-            for line in buf:
-                if line == "source activate %s\n"%self.conda_env:
-                    line = line + "export HDF5_USE_FILE_LOCKING=FALSE\n"
-                out_file.write(line)
-        
+#    def HDF5_file_locking(self):
+#        with open(self.script_name, "r") as in_file:
+#            buf = in_file.readlines()
+#        
+#        with open(self.script_name, "w") as out_file:
+#            for line in buf:
+#                if line == "source activate %s\n"%self.conda_env:
+#                    line = line + "export HDF5_USE_FILE_LOCKING=FALSE\n"
+#                out_file.write(line)
+#        
     
     def script_generator(self):
         with open(self.script_template,'r') as job_template:
@@ -60,7 +73,9 @@ class ChainSubJob(JobModule):
         
         # HDF5 file locking
         if 'cori' in self.machine:
-            self.HDF5_file_locking()
+            HDF5_cmd = "export HDF5_USE_FILE_LOCKING=FALSE"
+            self.adjust_for_NERSC('source activate %s'%self.conda_env,
+                                  HDF5_cmd,add = True)
         
         
         
@@ -134,24 +149,24 @@ class Slurm_JobModule(JobModule):
         
         self.adjust_for_NERSC('#SBATCH -p prod', '#SBATCH -q regular')
         self.adjust_for_NERSC('#SBATCH -C cpu|nvme', '#SBATCH -C haswell')                      
-        self.adjust_for_NERSC('#SBATCH -A proj36','')
+        self.adjust_for_NERSC('#SBATCH -A proj36','#SBATCH -L SCRATCH')
         self.adjust_for_NERSC('#SBATCH -n 256', '#SBATCH -N 8') 
         Path_append ='export PATH="/global/common/software/m2043/AIBS_Opt/software/x86_64/bin:$PATH"'
         self.adjust_for_NERSC('source activate %s'%self.conda_env, Path_append, 
                               add = True)
 
-    def adjust_for_NERSC(self,match_line, replace_line, add = False):
-        with open(self.script_name, "r") as in_file:
-            buf = in_file.readlines()
-        
-        with open(self.script_name, "w") as out_file:
-            for line in buf:
-                if line == "%s\n"%match_line:
-                    if add:
-                        line +=  "%s\n"%replace_line
-                    else:
-                        line = "%s\n"%replace_line
-                out_file.write(line)
+#    def adjust_for_NERSC(self,match_line, replace_line, add = False):
+#        with open(self.script_name, "r") as in_file:
+#            buf = in_file.readlines()
+#        
+#        with open(self.script_name, "w") as out_file:
+#            for line in buf:
+#                if line == "%s\n"%match_line:
+#                    if add:
+#                        line +=  "%s\n"%replace_line
+#                    else:
+#                        line = "%s\n"%replace_line
+#                out_file.write(line)
        
     
     def submit_job(self):
