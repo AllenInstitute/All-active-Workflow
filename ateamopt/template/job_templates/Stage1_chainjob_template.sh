@@ -1,17 +1,16 @@
-#!/bin/sh
+#!/bin/bash
 
-#SBATCH -q debug
-#SBATCH -t 0:30:00
-#SBATCH -L SCRATCH
+#SBATCH -p prod
+#SBATCH -t 30:00
+#SBATCH -n 1
+#SBATCH -C cpu|nvme
+#SBATCH -A proj36
 #SBATCH -J launch_Stage_1
-#SBATCH -C haswell
-#SBATCH -N 1
 
 
 set -ex
 
-
-source activate ateam
+source activate ateam_opt
 
 JOBID_0=$(<Job_0.txt)
 PARENT_DIR=$(<pwd.txt)
@@ -27,12 +26,11 @@ if [[ $STATUS_0 = "COMPLETED" ]]; then
 else
     echo "Stage 0 did NOT finish successfully" > Stage0_status.txt
 fi
-python Optim_Main.py --checkpoint checkpoints_backup/seed1.pkl --short_analyse
-python Optim_Main.py -vv --checkpoint checkpoints_backup/seed1.pkl  --responses resp_opt.txt   --analyse
+python analysis_stage0.py
 
 echo "Saving the Optimized parameters for the next stage"
-#rm -rf preprocessed/
-
+rm -rf preprocessed/
+rm -rf .ipython/
 
 # Launch the passive+Ih optimization (Stage 1)
 
@@ -41,20 +39,26 @@ cp cell_id.txt $STAGE_DIR/
 mv fit_opt.json $STAGE_DIR/cell_types/
 if [ -d "peri_model" ]; then mv peri_model/ $STAGE_DIR/; fi
 cp -r $PASS_IH_REPO/* $STAGE_DIR/
-if [ -f nersc_queue.txt ]; then cp nersc_queue.txt $STAGE_DIR/ ; fi
+if [ -f qos.txt ]; then cp qos.txt $STAGE_DIR/ ; fi
+cp $SCRIPT_REPO/prepare_stage1_run.py $STAGE_DIR/
+cp -r $SCRIPT_REPO/modfiles/ $STAGE_DIR/
+
+
 cd $STAGE_DIR
-python set_features_passive_and_Ih.py
-python set_params_passive_and_Ih.py
-python starter_optim.py
+
+python prepare_stage1_run.py
 nrnivmodl modfiles/
 STAGE="_STAGE1"
 STAGE_NEXT="_STAGE2"
 CELL_ID=$(<cell_id.txt)
 JOBNAME=$CELL_ID$STAGE
 LAUNCH_JOBNAME=$CELL_ID$STAGE_NEXT
-sed -i -e "s/Stage1/$JOBNAME/g" start_haswell.sh
-if [ -f nersc_queue.txt ]; then sed -i -e "s/regular/premium/g" start_haswell.sh ; fi
-sed -i -e "s/Stage_2/$LAUNCH_JOBNAME/g" launch_stage2.slurm
+sed -i -e "s/Stage1/$JOBNAME/g" batch_job.sh
+if [ -f qos.txt ]; then
+    queue=$(<qos.txt)
+    sed -i -e "s/regular/$queue/g" batch_job.sh # Specific to Cori
+fi
+sed -i -e "s/Stage_2/$LAUNCH_JOBNAME/g" chain_job.sh
 echo "Launching Stage 1 Opimization"
 RES_1=$(sbatch start_haswell.sh)  # sbatch command goes here
 echo ${RES_1##* } > Job_1.txt
