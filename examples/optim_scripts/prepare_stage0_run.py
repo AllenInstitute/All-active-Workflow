@@ -78,7 +78,15 @@ def main():
     chain_jobtemplate_path = 'job_templates/Stage1_chainjob_template.sh'
     chain_job = ChainSubJob(chain_jobtemplate_path,machine)
     chain_job.script_generator()
-        
+    
+    if 'cori' in machine:
+        chain_job.adjust_for_NERSC('#SBATCH -p prod', '#SBATCH -q regular')
+        chain_job.adjust_for_NERSC('#SBATCH -C cpu|nvme', '#SBATCH -C haswell')                      
+        chain_job.adjust_for_NERSC('#SBATCH -A proj36','#SBATCH -L SCRATCH')
+        chain_job.adjust_for_NERSC('#SBATCH -n 256', '#SBATCH -N 8') 
+        Path_append ='export PATH="/global/common/software/m2043/AIBS_Opt/software/x86_64/bin:$PATH"'
+        chain_job.adjust_for_NERSC('source activate %s'%chain_job.conda_env, Path_append, 
+                                  add = True)    
     
     
     # Trial run

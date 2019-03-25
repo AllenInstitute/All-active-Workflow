@@ -37,7 +37,7 @@ fi
 # Run scripts to prepare for the jobs
 
 cp $SCRIPT_REPO/prepare_stage0_run.py $STAGE_DIR/
-if [ -f qos.txt ]; then cp nersc_queue.txt $STAGE_DIR/ ; fi # Specific to Cori
+if [ -f qos.txt ]; then cp qos.txt $STAGE_DIR/ ; fi # Specific to Cori
 cd $STAGE_DIR
 
 python prepare_stage0_run.py

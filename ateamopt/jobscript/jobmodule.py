@@ -43,18 +43,7 @@ class ChainSubJob(JobModule):
             self.conda_env = conda_env
         self.script_template = utility.locate_template_file(script_template)
         
-    
-#    def HDF5_file_locking(self):
-#        with open(self.script_name, "r") as in_file:
-#            buf = in_file.readlines()
-#        
-#        with open(self.script_name, "w") as out_file:
-#            for line in buf:
-#                if line == "source activate %s\n"%self.conda_env:
-#                    line = line + "export HDF5_USE_FILE_LOCKING=FALSE\n"
-#                out_file.write(line)
-#        
-    
+
     def script_generator(self):
         with open(self.script_template,'r') as job_template:
             subjob_string = job_template.read()
@@ -76,7 +65,6 @@ class ChainSubJob(JobModule):
             HDF5_cmd = "export HDF5_USE_FILE_LOCKING=FALSE"
             self.adjust_for_NERSC('source activate %s'%self.conda_env,
                                   HDF5_cmd,add = True)
-        
         
         
     def run_job(self):
