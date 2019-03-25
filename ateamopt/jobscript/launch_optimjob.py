@@ -37,7 +37,7 @@ def create_optim_job(args):
     machine = cell_metadata['Machine']
     
     if args.qos and 'cori' in machine:
-       with open('qos.txt', 'a') as handle:
+       with open('qos.txt', 'w') as handle:
            handle.write(args.qos) 
     jobtemplate_path = 'job_templates/Stage0_chainjob_template.sh'
     chain_job = ChainSubJob(jobtemplate_path,machine)
