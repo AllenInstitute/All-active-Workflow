@@ -33,7 +33,8 @@ def create_optim_job(args):
     except Exception as e:
         print(e)
     
-    cell_metadata = optim_model.save_cell_metadata(**me_props)
+    get_data = not os.path.exists('./cell_types')
+    cell_metadata = optim_model.save_cell_metadata(get_data,**me_props)
     machine = cell_metadata['Machine']
     
     if args.qos and 'cori' in machine:
