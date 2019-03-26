@@ -142,20 +142,6 @@ class Slurm_JobModule(JobModule):
         Path_append ='export PATH="/global/common/software/m2043/AIBS_Opt/software/x86_64/bin:$PATH"'
         self.adjust_for_NERSC('source activate %s'%self.conda_env, Path_append, 
                               add = True)
-
-#    def adjust_for_NERSC(self,match_line, replace_line, add = False):
-#        with open(self.script_name, "r") as in_file:
-#            buf = in_file.readlines()
-#        
-#        with open(self.script_name, "w") as out_file:
-#            for line in buf:
-#                if line == "%s\n"%match_line:
-#                    if add:
-#                        line +=  "%s\n"%replace_line
-#                    else:
-#                        line = "%s\n"%replace_line
-#                out_file.write(line)
-       
     
     def submit_job(self):
         

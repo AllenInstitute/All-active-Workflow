@@ -28,8 +28,7 @@ def main():
     
     # Extract data and get the features for the stage
     nwb_handler = NWB_Extractor(cell_id)
-    ephys_data_path,stimmap_filename = nwb_handler.save_cell_data(acceptable_stimtypes,
-                                                    non_standard_nwb = True)
+    ephys_data_path,stimmap_filename = nwb_handler.save_cell_data(acceptable_stimtypes)
     feature_path = 'parameters/feature_set_stage0.json'
     filter_rule_func = filter_feat_proto_passive 
     features_write_path,untrained_features_write_path,\
@@ -141,7 +140,7 @@ def main():
             eval_handler_release = Bpopt_Evaluator(all_protocols_write_path, 
                                        features_write_path,
                                        morph_path, release_param_write_path,
-                                       mech_write_path,
+                                       mech_release_write_path,
                                        do_replace_axon = False,
                                        do_replace_axon_swc = True)
             evaluator_release = eval_handler_release.create_evaluator()

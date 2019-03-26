@@ -34,7 +34,7 @@ else
 fi
 
 
-# Run scripts to prepare for the jobs
+# Run scripts to prepare for the batch-job
 
 cp $SCRIPT_REPO/prepare_stage0_run.py $STAGE_DIR/
 if [ -f qos.txt ]; then cp qos.txt $STAGE_DIR/ ; fi # Specific to Cori
@@ -51,10 +51,11 @@ if [ -f qos.txt ]; then
 	sed -i -e "s/regular/$queue/g" batch_job.sh # Specific to Cori
 fi
 sed -i -e "s/Stage_1/$LAUNCH_JOBNAME/g" chain_job.sh
-echo "Launching Stage 0 Opimization"
+if [ -d modfiles ]; then nrnivmodl modfiles/ ; fi # Compile mechanisms
 
 # Launch batch job
 
+echo "Launching Stage 0 Opimization"
 RES=$(submit_cmd batch_job.sh)
 echo ${RES##* } > Job_0.txt
 echo $PARENT_DIR > pwd.txt

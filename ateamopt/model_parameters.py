@@ -238,7 +238,7 @@ class AllActive_Model_Parameters(object):
                         model_mechs_release[param_dict_release['sectionlist']].append(param_dict_release['mech']) 
          
             mechanism_release_write_path = 'config/'+ self.cell_id + '/mechanism_release.json'    
-            
+            utility.save_json(mechanism_release_write_path,model_mechs_release)
         else:
             model_mechs_release = None
             mechanism_release_write_path = None
