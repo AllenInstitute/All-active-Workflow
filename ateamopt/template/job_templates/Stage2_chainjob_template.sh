@@ -5,7 +5,7 @@
 #SBATCH -n 1
 #SBATCH -C cpu|nvme
 #SBATCH -A proj36
-#SBATCH -J launch_Stage_1
+#SBATCH -J launch_Stage_2
 
 set -ex
 
@@ -15,7 +15,7 @@ source activate ateam_opt
 
 JOBID_0=$(<Job_0.txt)
 PARENT_DIR=$(<pwd.txt)
-export STAGE_DIR=$PARENT_DIR/Stage1
+export STAGE_DIR=$PARENT_DIR/Stage2
 export SCRIPT_REPO=$PARENT_DIR/Script_Repo
 
 mkdir $STAGE_DIR
@@ -32,7 +32,7 @@ fi
 
 # Run analysis
 
-python analysis_stage0.py
+python analysis_stage1.py
 echo "Saving the Optimized parameters for the next stage"
 
 # Cleaning up large files and Moving data
@@ -50,24 +50,21 @@ cp -r $SCRIPT_REPO/modfiles/ $STAGE_DIR/
 # Run scripts to prepare for the batch-job
 
 cd $STAGE_DIR
-python prepare_stage1_run.py
+python prepare_stage2_run.py
 if [ -d modfiles ]; then nrnivmodl modfiles/ ; fi # Compile mechanisms
-STAGE="_STAGE1"
-STAGE_NEXT="_STAGE2"
+STAGE="_STAGE2"
 CELL_ID=$(<cell_id.txt)
 JOBNAME=$CELL_ID$STAGE
-LAUNCH_JOBNAME=$CELL_ID$STAGE_NEXT
 sed -i -e "s/Stage1/$JOBNAME/g" batch_job.sh
 if [ -f qos.txt ]; then
     queue=$(<qos.txt)
     sed -i -e "s/regular/$queue/g" batch_job.sh # Specific to Cori
 fi
-sed -i -e "s/Stage_2/$LAUNCH_JOBNAME/g" chain_job.sh
+sed -i -e "s/Stage2/$JOBNAME/g" analyze_results.sh
 
 # Launch the batch job (Stage 1)
 
 echo "Launching Stage 1 Opimization"
-RES_1=$(submit_cmd batch_job.sh)
-echo ${RES_1##* } > Job_1.txt
+submit_cmd batch_job.sh
 
 
