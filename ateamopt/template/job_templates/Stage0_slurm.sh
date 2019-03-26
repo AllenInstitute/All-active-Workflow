@@ -34,6 +34,7 @@ mkdir -p $LOGS
 
 OFFSPRING_SIZE=512
 MAX_NGEN=50
+seed=1
 
 export IPYTHONDIR=${PWD}/.ipython
 export IPYTHON_PROFILE=benchmark.${SLURM_JOBID}

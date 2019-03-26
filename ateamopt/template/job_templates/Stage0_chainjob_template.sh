@@ -37,6 +37,7 @@ fi
 # Run scripts to prepare for the batch-job
 
 cp $SCRIPT_REPO/{prepare_stage0_run.py,analysis_stage0.py} $STAGE_DIR/
+cp -r $SCRIPT_REPO/modfiles/ $STAGE_DIR/
 if [ -f qos.txt ]; then cp qos.txt $STAGE_DIR/ ; fi # Specific to Cori
 cd $STAGE_DIR
 

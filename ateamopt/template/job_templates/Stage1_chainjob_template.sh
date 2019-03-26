@@ -44,7 +44,7 @@ cp cell_id.txt $STAGE_DIR/
 mv fitted_params/fit_opt.json $STAGE_DIR/cell_types/
 if [ -d "peri_model" ]; then mv peri_model/ $STAGE_DIR/; fi
 if [ -f qos.txt ]; then cp qos.txt $STAGE_DIR/ ; fi
-cp $SCRIPT_REPO/prepare_stage1_run.py $STAGE_DIR/
+cp $SCRIPT_REPO/{prepare_stage1_run.py,analysis_stage1.py} $STAGE_DIR/
 cp -r $SCRIPT_REPO/modfiles/ $STAGE_DIR/
 
 # Run scripts to prepare for the batch-job
@@ -67,7 +67,7 @@ sed -i -e "s/Stage_2/$LAUNCH_JOBNAME/g" chain_job.sh
 # Launch the batch job (Stage 1)
 
 echo "Launching Stage 1 Opimization"
-RES_1=$(submit_cmd chain_job.sh)
+RES_1=$(submit_cmd batch_job.sh)
 echo ${RES_1##* } > Job_1.txt
 
 

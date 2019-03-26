@@ -53,7 +53,7 @@ def main():
                                   protocols_write_path,all_protocols_write_path,
                                   release_params,release_param_write_path)
 
-    # Copy the optimer scripts in the current directory
+    # Copy the optimizer scripts in the current directory
     
     optimizer_script=utility.locate_script_file('Optim_Main.py')
     stage_cwd = os.getcwd()
