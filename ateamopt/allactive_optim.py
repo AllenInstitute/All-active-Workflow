@@ -55,6 +55,8 @@ class Allactive_Optim(object):
 
         cell_id = self.cell_id
         
+        metadata_filename='cell_metadata_%s.json'%cell_id
+        
         if get_data:
             cell_metadata = {meta_field : '' for meta_field in metadata_keys}
             cell_metadata['Cell_id'] = cell_id
@@ -142,9 +144,10 @@ class Allactive_Optim(object):
                 for metadata_key in cell_metadata_set.intersection(props_set):
                     cell_metadata[metadata_key] = props[metadata_key]
             
-            filename='cell_metadata_%s.json'%cell_id
-            utility.save_json(filename,cell_metadata)
             
+            utility.save_json(metadata_filename,cell_metadata)
+        else:
+            cell_metadata = utility.load_json(metadata_filename)
         return cell_metadata
             
             
