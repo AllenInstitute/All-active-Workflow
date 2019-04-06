@@ -67,26 +67,26 @@ def main():
         jobtemplate_path = 'job_templates/Stage0_pbs.sh'
         batch_job = PBS_JobModule(jobtemplate_path,machine)
         batch_job.script_generator()
+        chain_jobtemplate_path = 'job_templates/Stage1_chainjob_template_pbs.sh'
+
     elif any(substring in machine for substring in ['cori', 'bbp']):
         jobtemplate_path = 'job_templates/Stage0_slurm.sh'
         batch_job = Slurm_JobModule(jobtemplate_path,machine)
         batch_job.script_generator()
-    
+        chain_jobtemplate_path = 'job_templates/Stage1_chainjob_template.sh'
+    else:
+        cp_dir = 'checkpoints'
+        testJob = test_JobModule(machine,'batch_job.sh','%s/seed1.pkl'%cp_dir,
+                                 2,2)
+        testJob.script_generator()
+        chain_jobtemplate_path = 'job_templates/Stage1_chainjob_template_pbs.sh'
     
     # Create Chain job for next stage
-    chain_jobtemplate_path = 'job_templates/Stage1_chainjob_template.sh'
+    
     chain_job = ChainSubJob(chain_jobtemplate_path,machine)
     chain_job.script_generator()
     
-    if 'cori' in machine:
-        chain_job.adjust_for_NERSC('#SBATCH -p prod', '#SBATCH -q regular')
-        chain_job.adjust_for_NERSC('#SBATCH -C cpu|nvme', '#SBATCH -C haswell')                      
-        chain_job.adjust_for_NERSC('#SBATCH -A proj36','#SBATCH -L SCRATCH')
-        chain_job.adjust_for_NERSC('#SBATCH -n 256', '#SBATCH -N 8') 
-        Path_append ='export PATH="/global/common/software/m2043/AIBS_Opt/software/x86_64/bin:$PATH"'
-        chain_job.adjust_for_NERSC('source activate %s'%chain_job.conda_env, Path_append, 
-                                  add = True)    
-    
+     
     
     # Trial run
     
