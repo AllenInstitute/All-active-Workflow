@@ -13,10 +13,10 @@ logger = logging.getLogger(__name__)
 
 class Allactive_Optim(object):
     
-    def __init__(self):
+    def __init__(self,nwb_path = None, swc_path = None):
         self.cell_id = os.path.basename(os.getcwd())
-        self._nwb_path = None
-        self._swc_path = None
+        self._nwb_path = nwb_path
+        self._swc_path = swc_path
     
     @property
     def nwb_path(self):

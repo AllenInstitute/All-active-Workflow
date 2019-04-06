@@ -15,7 +15,7 @@ class JobModule(object):
         self.script_name = script_name
    
 
-    def adjust_for_NERSC(self,match_line, replace_line, add = False):
+    def adjust_template(self,match_line, replace_line, add = False):
         with open(self.script_name, "r") as in_file:
             buf = in_file.readlines()
         
@@ -56,16 +56,33 @@ class ChainSubJob(JobModule):
         elif any(substring in self.machine for substring in ['cori', 'bbp']):
             submit_cmd = 'sbatch'
             subjob_string = subjob_string.replace('submit_cmd',submit_cmd)
-        
+        else:
+            submit_cmd = 'sh'
+            subjob_string = subjob_string.replace('submit_cmd',submit_cmd)
+            
         with open(self.script_name, "w") as chainsubjob_script:
             chainsubjob_script.write(subjob_string)
         
+        # Adjusting the job based on machine
+        
         # HDF5 file locking
         if 'cori' in self.machine:
+            self.adjust_template('#SBATCH -p prod', '#SBATCH -q regular')
+            self.adjust_template('#SBATCH -C cpu|nvme', '#SBATCH -C haswell')                      
+            self.adjust_template('#SBATCH -A proj36','#SBATCH -L SCRATCH')
+            self.adjust_template('#SBATCH -n 256', '#SBATCH -N 8') 
+            Path_append ='export PATH="/global/common/software/m2043/AIBS_Opt/software/x86_64/bin:$PATH"'
+            self.adjust_template('source activate %s'%self.conda_env, Path_append, 
+                                      add = True)
             HDF5_cmd = "export HDF5_USE_FILE_LOCKING=FALSE"
-            self.adjust_for_NERSC('source activate %s'%self.conda_env,
+            self.adjust_template('source activate %s'%self.conda_env,
                                   HDF5_cmd,add = True)
         
+        elif 'hpc-login' in self.machine:
+            self.adjust_template('nrnivmodl modfiles/',
+                                 'echo "Loading compiled modfiles"')
+
+            
         
     def run_job(self):
         
@@ -100,7 +117,7 @@ class test_JobModule(JobModule):
             
         testjob_string += ' --offspring_size=%s --max_ngen=%s --%s'%(self.offspring,
                                                     self.max_ngen,self.job_status)
-        
+        testjob_string += '\n sh chain_job.sh'
         with open(self.script_name, "w") as shell_script:
             shell_script.write(testjob_string)
      
@@ -135,12 +152,12 @@ class Slurm_JobModule(JobModule):
         with open(self.script_name, "w") as batchjob_script:
             batchjob_script.write(batchjob_string)
         
-        self.adjust_for_NERSC('#SBATCH -p prod', '#SBATCH -q regular')
-        self.adjust_for_NERSC('#SBATCH -C cpu|nvme', '#SBATCH -C haswell')                      
-        self.adjust_for_NERSC('#SBATCH -A proj36','#SBATCH -L SCRATCH')
-        self.adjust_for_NERSC('#SBATCH -n 256', '#SBATCH -N 8') 
+        self.adjust_template('#SBATCH -p prod', '#SBATCH -q regular')
+        self.adjust_template('#SBATCH -C cpu|nvme', '#SBATCH -C haswell')                      
+        self.adjust_template('#SBATCH -A proj36','#SBATCH -L SCRATCH')
+        self.adjust_template('#SBATCH -n 256', '#SBATCH -N 8') 
         Path_append ='export PATH="/global/common/software/m2043/AIBS_Opt/software/x86_64/bin:$PATH"'
-        self.adjust_for_NERSC('source activate %s'%self.conda_env, Path_append, 
+        self.adjust_template('source activate %s'%self.conda_env, Path_append, 
                               add = True)
     
     def submit_job(self):
