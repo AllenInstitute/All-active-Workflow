@@ -15,7 +15,6 @@ export STAGE_DIR=$PARENT_DIR/Stage1
 export SCRIPT_REPO=$PARENT_DIR/Script_Repo
 
 mkdir $STAGE_DIR
-cp pwd.txt $STAGE_DIR/
 
 
 # Run analysis
