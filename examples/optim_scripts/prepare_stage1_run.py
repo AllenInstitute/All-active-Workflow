@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 def main():
 
     parent_dir = os.path.abspath(os.path.join('.', os.pardir))
-    path_to_cell_metadata = glob.glob(parent_dir+'/*.json')[0]
+    path_to_cell_metadata = glob.glob(parent_dir+'/cell_metadata*.json')[0]
     cell_metadata=utility.load_json(path_to_cell_metadata)
 
     acceptable_stimtypes = ['Long Square']
