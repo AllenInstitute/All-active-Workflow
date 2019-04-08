@@ -1,19 +1,12 @@
 #!/bin/sh
 
-#SBATCH -p prod
-#SBATCH -t 30:00
-#SBATCH -n 1
-#SBATCH -C cpu|nvme
-#SBATCH -A proj36
-#SBATCH -J launch_Stage_2
-
 set -ex
 
 # Activate conda environment
 
 source activate conda_env
 
-JOBID_1=$(<Job_1.txt)
+if [ -f Job_1.txt ]; then JOBID_1=$(<Job_1.txt) ; fi
 PARENT_DIR=$(<pwd.txt)
 CELL_ID=$(<cell_id.txt)
 
@@ -23,14 +16,6 @@ export SCRIPT_REPO=$PARENT_DIR/Script_Repo
 mkdir $STAGE_DIR
 cp pwd.txt $STAGE_DIR/
 
-# Check if the batch job was completed
-
-STATUS_0=$(sacct -j ${JOBID_1} -o State| sed -n '3 p'| xargs) # get the status of the job
-if [[ $STATUS_0 = "COMPLETED" ]]; then
-    echo "Stage 1 finished successfully" > Stage1_status.txt
-else
-    echo "Stage 1 did NOT finish successfully" > Stage1_status.txt
-fi
 
 # Run analysis
 
@@ -42,6 +27,7 @@ echo "Saving the Optimized parameters for the next stage"
 rm -rf preprocessed/
 rm -rf .ipython/
 cp -r cell_types $STAGE_DIR/
+cp cell_id.txt $STAGE_DIR/
 mv fitted_params/fit_opt.json $STAGE_DIR/cell_types/
 if [ -d "peri_model" ]; then mv peri_model/ $STAGE_DIR/; fi
 if [ -f qos.txt ]; then cp qos.txt $STAGE_DIR/ ; fi
@@ -51,21 +37,22 @@ cp -r $SCRIPT_REPO/modfiles $STAGE_DIR/
 # Run scripts to prepare for the batch-job
 
 cd $STAGE_DIR
-python prepare_stage2_run.py
+python prepare_stage1_run.py conda_env
 if [ -d modfiles ]; then nrnivmodl modfiles/ ; fi # Compile mechanisms
 STAGE="_STAGE2"
 JOBNAME=$CELL_ID$STAGE
 sed -i -e "s/Stage2/$JOBNAME/g" batch_job.sh
 if [ -f qos.txt ]; then
     queue=$(<qos.txt)
-    sed -i -e "s/regular/$queue/g" batch_job.sh  # Specific to Cori
+    sed -i -e "s/regular/$queue/g" batch_job.sh # Specific to Cori
 fi
-sed -i -e "s/Stage2/$JOBNAME/g" analyze_results.sh
+sed -i -e "s/Stage_2/$JOBNAME/g" analyze_results.sh
 echo $PARENT_DIR > pwd.txt
 echo $CELL_ID > cell_id.txt
 
 # Launch the batch job (Stage 2)
 echo "Launching Stage 2 Opimization"
-submit_cmd batch_job.sh
+RES=$(submit_cmd batch_job.sh)
+echo ${RES##* } > Job_2.txt
 
 

@@ -4,7 +4,7 @@
 #PBS -l walltime=4:00:00
 #PBS -l nodes=16:ppn=16
 #PBS -l mem=100g
-#PBS -N Stage0
+#PBS -N Stage1
 #PBS -r n
 #PBS -m n
 
@@ -43,5 +43,5 @@ python Optim_Main.py             \
 pid=$!
 wait $pid
 
-# Launch the Stage 1 optimization
+# Launch the Stage 2 optimization
 sh chain_job.sh

@@ -10,7 +10,7 @@ export SCRIPT_REPO=$PARENT_DIR/Script_Repo
 
 # Activate conda environment
 
-source activate ateam_opt
+source activate conda_env
 
 # Move the data
 
@@ -37,11 +37,11 @@ fi
 # Run scripts to prepare for the batch-job
 
 cp $SCRIPT_REPO/{prepare_stage0_run.py,analysis_stage0.py} $STAGE_DIR/
-cp -r $SCRIPT_REPO/modfiles/ $STAGE_DIR/
+cp -r $SCRIPT_REPO/modfiles $STAGE_DIR/
 if [ -f qos.txt ]; then cp qos.txt $STAGE_DIR/ ; fi # Specific to Cori
 cd $STAGE_DIR
 
-python prepare_stage0_run.py
+python prepare_stage0_run.py conda_env
 STAGE="_STAGE0"
 STAGE_NEXT="_STAGE1"
 JOBNAME=$CELL_ID$STAGE
@@ -53,11 +53,12 @@ if [ -f qos.txt ]; then
 fi
 sed -i -e "s/Stage_1/$LAUNCH_JOBNAME/g" chain_job.sh
 if [ -d modfiles ]; then nrnivmodl modfiles/ ; fi # Compile mechanisms
+echo $PARENT_DIR > pwd.txt
+echo $CELL_ID > cell_id.txt
 
 # Launch batch job
 
 echo "Launching Stage 0 Opimization"
 RES=$(submit_cmd batch_job.sh)
 echo ${RES##* } > Job_0.txt
-echo $PARENT_DIR > pwd.txt
-echo $CELL_ID > cell_id.txt
+
