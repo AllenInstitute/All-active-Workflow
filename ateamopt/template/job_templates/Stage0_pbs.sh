@@ -12,7 +12,7 @@ cd $PBS_O_WORKDIR
 
 set -ex
 
-source activate ateam_opt
+source activate conda_env
 
 OFFSPRING_SIZE=512
 MAX_NGEN=50

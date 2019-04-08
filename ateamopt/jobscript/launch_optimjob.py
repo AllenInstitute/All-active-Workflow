@@ -10,41 +10,43 @@ logger = logging.getLogger(__name__)
 
 
 def create_optim_job(args):
-    
+
     optim_dir = os.path.join(os.getcwd(),str(args.cell_id))
     utility.create_dirpath(optim_dir)
     os.chdir(optim_dir) # Change Working directory
-    
+
     optim_model = Allactive_Optim()
     me_props = {}
-    
-    if args.swc_path:  
+
+    if args.swc_path:
         me_props['swc_path'] = args.swc_path
-        
+
     if args.nwb_path:
         me_props['nwb_path'] = args.nwb_path
-    
+
     script_dir = os.path.join(os.getcwd(),'Script_Repo')
     if os.path.exists(script_dir):
         shutil.rmtree(script_dir)
-    try:    
+    try:
         shutil.copytree(args.ext_scripts, script_dir)
 
     except Exception as e:
         print(e)
-    
+
     get_data = not os.path.exists('./cell_types')
     cell_metadata = optim_model.save_cell_metadata(get_data,**me_props)
+    optim_model.save_morph_data()
+
     machine = cell_metadata['Machine']
-    
+
     if args.qos and 'cori' in machine:
        with open('qos.txt', 'w') as handle:
-           handle.write(args.qos) 
+           handle.write(args.qos)
     jobtemplate_path = 'job_templates/Stage0_chainjob_template.sh'
-    chain_job = ChainSubJob(jobtemplate_path,machine)
+    chain_job = ChainSubJob(jobtemplate_path,machine,conda_env = args.conda_env)
     chain_job.script_generator()
     chain_job.run_job()
-    
+
 
 
 def main():
@@ -59,5 +61,8 @@ def main():
                         help='Ephys path for unpublished cells')
     parser.add_argument('--qos', required=False, default=None,
                         help='Specify queue for NERSC')
+    parser.add_argument('--conda_env', required=False, default='ateam_opt',
+                        help='Specify the conda environment')
+
     args = parser.parse_args()
     create_optim_job(args)

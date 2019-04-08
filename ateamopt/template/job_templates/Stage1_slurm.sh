@@ -26,7 +26,7 @@ run_dependent_script func_trap USR1
 
 set -ex
 
-source activate ateam_opt
+source activate conda_env
 
 PWD=$(pwd)
 LOGS=$PWD/logs
@@ -60,5 +60,5 @@ python Optim_Main.py             \
 pid=$!
 wait $pid
 
-# Launch the passive+Ih optimization (Stage 1)
+# Launch the Stage 2 optimization
 sbatch chain_job.sh
