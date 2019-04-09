@@ -66,6 +66,7 @@ echo $CELL_ID > cell_id.txt
 
 # Launch the batch job (Stage 2)
 echo "Launching Stage 2 Opimization"
-submit_cmd batch_job.sh
+RES=$(submit_cmd batch_job.sh)
+echo ${RES##* } > Job_2.txt
 
 
