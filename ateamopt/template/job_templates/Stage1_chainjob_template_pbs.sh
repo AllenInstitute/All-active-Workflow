@@ -36,7 +36,9 @@ cp -r $SCRIPT_REPO/modfiles $STAGE_DIR/
 
 cd $STAGE_DIR
 python prepare_stage1_run.py conda_env
-if [ -d modfiles ]; then nrnivmodl modfiles/ ; fi # Compile mechanisms
+if [ -d modfiles ]; then # Compile mechanisms
+    nrnivmodl modfiles/
+fi
 STAGE="_STAGE1"
 STAGE_NEXT="_STAGE2"
 JOBNAME=$CELL_ID$STAGE
