@@ -28,7 +28,7 @@ class Optim_Analyzer(object):
             self._cp_path = None
         
     def get_best_cp_seed(self):
-        checkpoint_dir  = self.cp_dir + 'seed*.pkl'
+        checkpoint_dir  = os.path.join(self.cp_dir,'seed*.pkl')
         file_list = glob.glob(checkpoint_dir)
     
         cp_min = float('inf')
@@ -714,40 +714,15 @@ class Optim_Analyzer(object):
         return model_param_dict
     
     @staticmethod    
-    def prepare_spike_shape(response_filename,stim_file,
-                        stim_name, ephys_dir= 'preprocessed/',
+    def prepare_spike_shape(response_filename,stim_map,
+                        stim_name_select, ephys_dir= 'preprocessed/',
                         prefix_pad = 2, posfix_pad = 5,
                         res =0.05):
     
-        stim_map_content = pd.read_csv(stim_file, sep='\s*,\s*',
-                                   header=0, encoding='ascii', engine='python')
         response = utility.load_pickle(response_filename)[0]
-        
-        reject_stimtype_list = ['LongDCSupra','Ramp', 'ShortDC',
-                                'Noise','Short_Square_Triple']
-        
         spike_features = ['peak_time']
-        stim_map = defaultdict(dict)
-        
-        # Get the stim configuration for each stim
-        for line in stim_map_content.split('\n')[1:-1]:
-            if line != '':
-                stim_name, stim_type, holding_current, amplitude_start, amplitude_end, \
-                    stim_start, stim_end, duration, sweeps = line.split(',')
-                if not any(stim_type_iter in stim_name for stim_type_iter in reject_stimtype_list):
-                    iter_dict= dict()
-                    iter_dict['type'] = stim_type.strip()
-                    iter_dict['amp'] = 1e9 * float(amplitude_start)
-                    iter_dict['delay'] = float(stim_start)
-                    iter_dict['stim_end'] = float(stim_end)
-                    iter_dict['sweep_filenames'] = [
-                        x.strip() for x in sweeps.split('|')]
-                    
-                    iter_list = [iter_dict]
-                    stim_map[stim_name]['stimuli'] = iter_list
-        
-        
-        sweep_filenames = stim_map[stim_name]['stimuli'][0]['sweep_filenames']    
+        sweep_filenames = stim_map[stim_name_select]['stimuli'][0]['sweep_filenames']    
+        sweeps = []
         for sweep_filename in sweep_filenames:
             sweep_fullpath = os.path.join(
                     ephys_dir,
@@ -760,8 +735,8 @@ class Optim_Analyzer(object):
             sweep = {}
             sweep['T'] = time
             sweep['V'] = voltage
-            sweep['stim_start'] = [stim_map[stim_name]['stimuli'][0]['delay']]
-            sweep['stim_end'] = [stim_map[stim_name]['stimuli'][0]['stim_end']]               
+            sweep['stim_start'] = [stim_map[stim_name_select]['stimuli'][0]['delay']]
+            sweep['stim_end'] = [stim_map[stim_name_select]['stimuli'][0]['stim_end']]               
             sweeps.append(sweep)
             
         # Extract experimental spike times    
@@ -791,13 +766,13 @@ class Optim_Analyzer(object):
         # Calculate model spike times
         model_sweeps = []    
         model_sweep = {}
-        name_loc = stim_name+'.soma.v'
+        name_loc = stim_name_select+'.soma.v'
         resp_time = response[name_loc]['time'].values
         resp_voltage = response[name_loc]['voltage'].values
         model_sweep['T'] = resp_time
         model_sweep['V'] = resp_voltage
-        model_sweep['stim_start'] = [stim_map[stim_name]['stimuli'][0]['delay']]
-        model_sweep['stim_end'] = [stim_map[stim_name]['stimuli'][0]['stim_end']]
+        model_sweep['stim_start'] = [stim_map[stim_name_select]['stimuli'][0]['delay']]
+        model_sweep['stim_end'] = [stim_map[stim_name_select]['stimuli'][0]['stim_end']]
         model_sweeps.append(model_sweep)
         feature_results_model = efel.getFeatureValues(model_sweeps, spike_features)
         
@@ -812,4 +787,126 @@ class Optim_Analyzer(object):
         AP_shape_model /= num_spikes_model
         
         return AP_shape_exp, AP_shape_model
+    
+    def prepare_fI_curve(response_filename, stim_map,reject_stimtype_list,
+                         ephys_dir= 'preprocessed/'):
+        feature_mean_exp = defaultdict()
+        stim_name_exp = defaultdict()
         
+        somatic_features = ['Spikecount']
+        spike_stim_keys_dict = {}
+        
+        for stim_name in stim_map.keys():
+            stim_start = stim_map[stim_name]['stimuli'][0]['delay']
+            stim_end = stim_map[stim_name]['stimuli'][0]['stim_end']
+            sweeps = []
+            for sweep_filename in stim_map[stim_name]['stimuli'][0]['sweep_filenames']:
+                sweep_fullpath = os.path.join(
+                    'preprocessed',
+                    sweep_filename)
+        
+                data = np.loadtxt(sweep_fullpath)
+                time = data[:, 0]
+                voltage = data[:, 1]
+        
+                # Prepare sweep for eFEL
+                sweep = {}
+                sweep['T'] = time
+                sweep['V'] = voltage
+                sweep['stim_start'] = [stim_start]
+                sweep['stim_end'] = [stim_end]
+        
+                sweeps.append(sweep)
+            feature_results = efel.getFeatureValues(sweeps, somatic_features)
+            for feature_name in somatic_features:
+                feature_values = [np.mean(trace_dict[feature_name])
+                                  for trace_dict in feature_results
+                                  if trace_dict[feature_name] is not None]
+                
+            if feature_values:
+                feature_mean = np.mean(feature_values)
+                
+            else:
+                feature_mean = 0
+            if feature_mean != 0:
+                spike_stim_keys_dict[stim_name] = stim_map[stim_name]['stimuli'][0]['amp']
+                
+            stim_amp =stim_map[stim_name]['stimuli'][0]['amp']
+            stim_dur = (float(stim_end) - float(stim_start))/1e3  # in seconds
+            feature_mean_exp[stim_amp] = feature_mean/stim_dur
+            stim_name_exp[stim_amp] = stim_name
+        
+        stim_exp = sorted(stim_name_exp.keys())
+        mean_freq_exp = [feature_mean_exp[amp] for amp in stim_exp]
+        
+        # Calculating the spikerate for the model
+        response = utility.load_pickle(response_filename)[0]
+        feature_mean_model_dict = defaultdict()
+        stim_model_dict = defaultdict()
+        
+        for key,val in response.items():
+            if 'soma' in key:
+                if not any(stim_type_iter in key for stim_type_iter in \
+                           reject_stimtype_list):
+                    stim_name = key.split('.')[0]
+                    if 'DB' in stim_name:
+                        continue
+                    resp_time = val['time'].values
+                    resp_voltage = val['voltage'].values
+                    stim_amp = stim_map[stim_name]['stimuli'][0]['amp']
+                    trace1 = {}
+                    trace1['T'] = resp_time
+                    trace1['V'] = resp_voltage
+                    trace1['stim_start'] = [stim_map[stim_name]['stimuli'][0]['delay']]
+                    trace1['stim_end'] = [stim_map[stim_name]['stimuli'][0]['stim_end']]
+                    model_traces = [trace1]
+                    feature_results_model = efel.getFeatureValues(model_traces, somatic_features)
+                    for feature_name in somatic_features:
+                        feature_values_model = [np.mean(trace_dict[feature_name])
+                                          for trace_dict in feature_results_model
+                                          if trace_dict[feature_name] is not None]
+                    
+                    if feature_values_model:
+                        feature_mean_model = feature_values_model[0]
+                    else:
+                        feature_mean_model = 0
+                    
+                    stim_start = stim_map[stim_name]['stimuli'][0]['delay']
+                    stim_end = stim_map[stim_name]['stimuli'][0]['stim_end']
+                    stim_dur = (float(stim_end) - float(stim_start))/1e3
+                    feature_mean_model_dict[stim_amp] = feature_mean_model/stim_dur
+                    stim_model_dict[stim_amp] = stim_name
+                
+        select_stim_keys_list = sorted(spike_stim_keys_dict, key=spike_stim_keys_dict.__getitem__)
+        if len(select_stim_keys_list) > 2:
+            select_stim_keys =  [select_stim_keys_list[0], select_stim_keys_list[-2]]
+            
+        stim_model = sorted(stim_model_dict.keys())
+        mean_freq_model = [feature_mean_model_dict[amp] for amp in stim_model]
+        
+        return stim_exp,stim_model,mean_freq_exp, mean_freq_model,select_stim_keys
+        
+    def postprocess(stim_file):
+        stim_map_content = pd.read_csv(stim_file, sep='\s*,\s*',
+                                   header=0, encoding='ascii', engine='python')
+        reject_stimtype_list = ['LongDCSupra','Ramp', 'ShortDC',
+                                'Noise','Short_Square_Triple']
+        
+        stim_map = defaultdict(dict)
+        
+        # Get the stim configuration for each stim
+        for line in stim_map_content.split('\n')[1:-1]:
+            if line != '':
+                stim_name, stim_type, holding_current, amplitude_start, amplitude_end, \
+                    stim_start, stim_end, duration, sweeps = line.split(',')
+                if not any(stim_type_iter in stim_name for stim_type_iter in reject_stimtype_list):
+                    iter_dict= dict()
+                    iter_dict['type'] = stim_type.strip()
+                    iter_dict['amp'] = 1e9 * float(amplitude_start)
+                    iter_dict['delay'] = float(stim_start)
+                    iter_dict['stim_end'] = float(stim_end)
+                    iter_dict['sweep_filenames'] = [
+                        x.strip() for x in sweeps.split('|')]
+                    
+                    iter_list = [iter_dict]
+                    stim_map[stim_name]['stimuli'] = iter_list

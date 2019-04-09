@@ -14,7 +14,7 @@ CELL_ID=$(<cell_id.txt)
 export STAGE_DIR=$PARENT_DIR/Stage1
 export SCRIPT_REPO=$PARENT_DIR/Script_Repo
 
-mkdir $STAGE_DIR
+mkdir -p $STAGE_DIR
 
 
 # Run analysis
@@ -24,7 +24,6 @@ echo "Saving the Optimized parameters for the next stage"
 
 # Cleaning up large files and Moving data
 
-rm -rf preprocessed/
 rm -rf .ipython/
 cp -r cell_types $STAGE_DIR/
 mv fitted_params/fit_opt.json $STAGE_DIR/cell_types/
@@ -40,7 +39,6 @@ python prepare_stage1_run.py conda_env
 if [ -d modfiles ]; then nrnivmodl modfiles/ ; fi # Compile mechanisms
 STAGE="_STAGE1"
 STAGE_NEXT="_STAGE2"
-CELL_ID=$(<cell_id.txt)
 JOBNAME=$CELL_ID$STAGE
 LAUNCH_JOBNAME=$CELL_ID$STAGE_NEXT
 sed -i -e "s/Stage1/$JOBNAME/g" batch_job.sh

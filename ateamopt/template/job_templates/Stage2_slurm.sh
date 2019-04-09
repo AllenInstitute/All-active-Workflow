@@ -1,13 +1,13 @@
 #!/bin/sh
 
 #SBATCH -p prod
+#SBATCH -t 12:00:00
 #SBATCH -n 256
-#SBATCH -t 4:00:00
 #SBATCH -C cpu|nvme
 #SBATCH -A proj36
 #SBATCH --mail-type=ALL
-#SBATCH -J Stage0
-#SBATCH --signal=B:USR1@60
+#SBATCH -J Stage2
+#SBATCH --signal=B:USR1@120
 
 run_dependent_script() {
 func="$1" ; shift
@@ -16,12 +16,15 @@ trap "$func $sig" "$sig"
 done
 }
 
-# trap function to launch the passive+Ih optimization (Stage 1)
+# trap function to relaunch the optimization
 func_trap() {
-sbatch chain_job.sh
+new_cp=checkpoints.${SLURM_JOBID}
+mv checkpoints $new_cp
+mv checkpoints_backup checkpoints
+sbatch batch_job.sh
 }
 
-#submit launch script upon signal USR1
+# submit launch script upon signal USR1
 run_dependent_script func_trap USR1
 
 set -ex
@@ -33,7 +36,7 @@ LOGS=$PWD/logs
 mkdir -p $LOGS
 
 OFFSPRING_SIZE=512
-MAX_NGEN=50
+MAX_NGEN=200
 seed=1
 
 export IPYTHONDIR=${PWD}/.ipython
@@ -41,11 +44,20 @@ export IPYTHON_PROFILE=benchmark.${SLURM_JOBID}
 
 ipcontroller --init --ip='*' --sqlitedb --ping=30000 --profile=${IPYTHON_PROFILE} &
 sleep 10
-srun -n 256 --output="${LOGS}/engine_%j_%2t.out" ipengine --timeout=3000 --profile=${IPYTHON_PROFILE} &
+srun --output="${LOGS}/engine_%j_%2t.out" ipengine --timeout=3000 --profile=${IPYTHON_PROFILE} &
 sleep 10
 
 CHECKPOINTS_DIR="checkpoints"
 mkdir -p ${CHECKPOINTS_DIR}
+
+
+# Check the job status : Start or continue
+if [ "$(ls -A $CHECKPOINTS_DIR)" ]; then
+    JOB_STATUS=continu
+else
+    JOB_STATUS=start
+fi
+
 
 python Optim_Main.py             \
     -vv                                \
@@ -59,5 +71,17 @@ python Optim_Main.py             \
 pid=$!
 wait $pid
 
-# Launch the Stage 1 optimization
-sbatch chain_job.sh
+
+# If job finishes in time analyze result
+mv ${CHECKPOINTS_DIR}/seed${seed}.pkl checkpoints_final/
+
+
+# check if the job with 4th seed is finished
+
+if [[ $seed = 4 ]]; then
+    sbatch analyze_results.sh
+else
+    seed_new=$(($seed+1))
+    sed -i -e "s/seed=$seed/seed=$seed_new/g" batch_job.sh
+    sbatch batch_job.sh
+fi
