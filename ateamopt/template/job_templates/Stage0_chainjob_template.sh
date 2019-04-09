@@ -52,7 +52,9 @@ if [ -f qos.txt ]; then
 	sed -i -e "s/regular/$queue/g" batch_job.sh # Specific to Cori
 fi
 sed -i -e "s/Stage_1/$LAUNCH_JOBNAME/g" chain_job.sh
-if [ -d modfiles ]; then nrnivmodl modfiles/ ; fi # Compile mechanisms
+if [ -d modfiles ]; then # Compile mechanisms
+	nrnivmodl modfiles/
+fi
 echo $PARENT_DIR > pwd.txt
 echo $CELL_ID > cell_id.txt
 

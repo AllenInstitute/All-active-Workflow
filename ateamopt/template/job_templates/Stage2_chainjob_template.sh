@@ -16,11 +16,13 @@ source activate conda_env
 JOBID_1=$(<Job_1.txt)
 PARENT_DIR=$(<pwd.txt)
 CELL_ID=$(<cell_id.txt)
+IPYTHONDIR=.ipython
+
 
 export STAGE_DIR=$PARENT_DIR/Stage2
 export SCRIPT_REPO=$PARENT_DIR/Script_Repo
 
-mkdir $STAGE_DIR
+mkdir -p $STAGE_DIR
 
 # Check if the batch job was completed
 
@@ -38,8 +40,7 @@ echo "Saving the Optimized parameters for the next stage"
 
 # Cleaning up large files and Moving data
 
-rm -rf preprocessed/
-rm -rf .ipython/
+rm -rf $IPYTHONDIR
 cp -r cell_types $STAGE_DIR/
 mv fitted_params/fit_opt.json $STAGE_DIR/cell_types/
 if [ -d "peri_model" ]; then mv peri_model/ $STAGE_DIR/; fi

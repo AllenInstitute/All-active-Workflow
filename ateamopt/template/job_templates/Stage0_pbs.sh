@@ -15,7 +15,7 @@ set -ex
 source activate conda_env
 
 OFFSPRING_SIZE=512
-MAX_NGEN=50
+MAX_NGEN=10
 seed=1
 
 

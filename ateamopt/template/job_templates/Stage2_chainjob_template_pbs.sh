@@ -9,11 +9,12 @@ source activate conda_env
 if [ -f Job_1.txt ]; then JOBID_1=$(<Job_1.txt) ; fi
 PARENT_DIR=$(<pwd.txt)
 CELL_ID=$(<cell_id.txt)
+IPYTHONDIR=.ipython
 
 export STAGE_DIR=$PARENT_DIR/Stage2
 export SCRIPT_REPO=$PARENT_DIR/Script_Repo
 
-mkdir $STAGE_DIR
+mkdir -p $STAGE_DIR
 
 
 # Run analysis
@@ -23,8 +24,7 @@ echo "Saving the Optimized parameters for the next stage"
 
 # Cleaning up large files and Moving data
 
-rm -rf preprocessed/
-rm -rf .ipython/
+rm -rf $IPYTHONDIR
 cp -r cell_types $STAGE_DIR/
 cp cell_id.txt $STAGE_DIR/
 mv fitted_params/fit_opt.json $STAGE_DIR/cell_types/

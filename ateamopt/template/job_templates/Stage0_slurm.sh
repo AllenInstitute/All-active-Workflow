@@ -49,7 +49,6 @@ mkdir -p ${CHECKPOINTS_DIR}
 
 python Optim_Main.py             \
     -vv                                \
-    --compile                          \
     --offspring_size=${OFFSPRING_SIZE} \
     --max_ngen=${MAX_NGEN}             \
     --seed=${seed}                     \

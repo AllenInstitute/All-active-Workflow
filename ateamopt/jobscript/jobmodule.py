@@ -15,18 +15,24 @@ class JobModule(object):
         self.script_name = script_name
 
 
-    def adjust_template(self,match_line, replace_line, add = False):
+    def adjust_template(self,match_line, replace_line, add = False,
+                        partial_match = False):
         with open(self.script_name, "r") as in_file:
             buf = in_file.readlines()
-
-        with open(self.script_name, "w") as out_file:
-            for line in buf:
-                if line == "%s\n"%match_line:
-                    if add:
-                        line +=  "%s\n"%replace_line
-                    else:
-                        line = "%s\n"%replace_line
-                out_file.write(line)
+        
+        
+            with open(self.script_name, "w") as out_file:
+                for line in buf:
+                    match_eval = line == "%s\n"%match_line \
+                        if not partial_match else match_line in line
+                            
+                    if match_eval:
+                        if add:
+                            line +=  "%s\n"%replace_line
+                        else:
+                            line = "%s\n"%replace_line
+              
+                    out_file.write(line)
 
 class ChainSubJob(JobModule):
 
@@ -74,8 +80,10 @@ class ChainSubJob(JobModule):
                                   HDF5_cmd,add = True)
 
         elif 'hpc-login' in self.machine:
-            self.adjust_template('nrnivmodl modfiles/',
-                                 'echo "Loading compiled modfiles"')
+            self.adjust_template('cp -r $SCRIPT_REPO/modfiles $STAGE_DIR/',
+                             'cp -r $SCRIPT_REPO/x86_64 $STAGE_DIR/',add = True)
+            self.adjust_template('\tnrnivmodl modfiles/',
+                     '\techo "Loading compiled modfiles"',partial_match = True)
 
 
 
@@ -103,7 +111,7 @@ class test_JobModule(JobModule):
         self.job_status = job_status
 
 
-    def script_generator(self):
+    def script_generator(self,chain_job='chain_job.sh'):
         utility.create_filepath(self.cp_file)
         testjob_string = 'python %s -vv --checkpoint %s'%(self.optim_script,
                                                           self.cp_file)
@@ -113,7 +121,7 @@ class test_JobModule(JobModule):
 
         testjob_string += ' --offspring_size=%s --max_ngen=%s --%s\n'%(self.offspring,
                                                     self.max_ngen,self.job_status)
-        testjob_string += 'sh chain_job.sh\n'
+        testjob_string += 'sh %s\n'%chain_job
         with open(self.script_name, "w") as shell_script:
             shell_script.write(testjob_string)
 
@@ -179,7 +187,7 @@ class PBS_JobModule(JobModule):
         with open(self.script_template,'r') as job_template:
             batchjob_string = job_template.read()
 
-        batchjob_string = batchjob_string.replace('ateam_opt',self.conda_env)
+        batchjob_string = batchjob_string.replace('conda_env',self.conda_env)
         with open(self.script_name, "w") as batchjob_script:
             batchjob_script.write(batchjob_string)
 

@@ -5,12 +5,8 @@ from ateamopt.model_parameters import AllActive_Model_Parameters
 from ateamopt.utils import utility
 from ateamopt.optim_config_rules import filter_feat_proto_passive,\
                                     adjust_param_bounds
-from ateamopt.analysis.optim_analysis import Optim_Analyzer
-from ateamopt.bpopt_evaluator import Bpopt_Evaluator
-import bluepyopt as bpopt
 from ateamopt.jobscript.jobmodule import test_JobModule,\
             PBS_JobModule,Slurm_JobModule,ChainSubJob
-from matplotlib.backends.backend_pdf import PdfPages
 import shutil
 import logging
 logger = logging.getLogger(__name__)
@@ -28,8 +24,8 @@ def main():
 
     # Extract data and get the features for the stage
     nwb_handler = NWB_Extractor(cell_id)
-    ephys_data_path,stimmap_filename = nwb_handler.save_cell_data(acceptable_stimtypes,
-                                                    non_standard_nwb = True)
+    ephys_data_path,stimmap_filename = nwb_handler.save_cell_data\
+                    (acceptable_stimtypes)
     feature_path = 'parameters/feature_set_stage1.json'
     filter_rule_func = filter_feat_proto_passive
     features_write_path,untrained_features_write_path,\

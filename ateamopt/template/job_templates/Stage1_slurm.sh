@@ -6,7 +6,7 @@
 #SBATCH -C cpu|nvme
 #SBATCH -A proj36
 #SBATCH --mail-type=ALL
-#SBATCH -J Stage0
+#SBATCH -J Stage1
 #SBATCH --signal=B:USR1@60
 
 run_dependent_script() {
@@ -49,7 +49,6 @@ mkdir -p ${CHECKPOINTS_DIR}
 
 python Optim_Main.py             \
     -vv                                \
-    --compile                          \
     --offspring_size=${OFFSPRING_SIZE} \
     --max_ngen=${MAX_NGEN}             \
     --seed=${seed}                     \
