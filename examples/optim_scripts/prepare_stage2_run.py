@@ -32,10 +32,14 @@ def main():
                    'nospike_proto' :0}
     add_fi_kink = True
     
-    features_write_path,untrained_features_write_path,\
+    # Don't get features from these stim_types
+    feature_reject_stim_type = ['Ramp','LongDCSupra','Noise',
+                                'Short_Square_Triple']
+    features_write_path,untrained_features_write_path,all_features_write_path,\
         protocols_write_path,all_protocols_write_path = \
         nwb_handler.get_ephys_features(feature_path,ephys_data_path,
-                       stimmap_filename,filter_rule_func,select_dict,add_fi_kink)
+                       stimmap_filename,filter_rule_func,select_dict,
+                       add_fi_kink,feature_reject_stim_type= feature_reject_stim_type)
 
 
     # Create the parameter bounds for the optimization
@@ -54,6 +58,7 @@ def main():
     model_params_handler.write_opt_config_file(morph_path,param_write_path,
                                   mech_write_path,mech_release_write_path,
                                   features_write_path,untrained_features_write_path,
+                                  all_features_write_path,
                                   protocols_write_path,all_protocols_write_path,
                                   release_params,release_param_write_path)
     

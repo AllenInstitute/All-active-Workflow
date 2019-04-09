@@ -4,12 +4,8 @@ from ateamopt.nwb_extractor import NWB_Extractor
 from ateamopt.model_parameters import AllActive_Model_Parameters
 from ateamopt.utils import utility
 from ateamopt.optim_config_rules import filter_feat_proto_passive
-from ateamopt.analysis.optim_analysis import Optim_Analyzer
-from ateamopt.bpopt_evaluator import Bpopt_Evaluator
-import bluepyopt as bpopt
 from ateamopt.jobscript.jobmodule import test_JobModule,\
             PBS_JobModule,Slurm_JobModule,ChainSubJob
-from matplotlib.backends.backend_pdf import PdfPages
 import shutil
 import logging
 
@@ -31,7 +27,7 @@ def main():
     ephys_data_path,stimmap_filename = nwb_handler.save_cell_data(acceptable_stimtypes)
     feature_path = 'parameters/feature_set_stage0.json'
     filter_rule_func = filter_feat_proto_passive
-    features_write_path,untrained_features_write_path,\
+    features_write_path,untrained_features_write_path,all_features_write_path,\
         protocols_write_path,all_protocols_write_path = \
         nwb_handler.get_ephys_features(feature_path,ephys_data_path,
                                        stimmap_filename,filter_rule_func)
@@ -50,6 +46,7 @@ def main():
     model_params_handler.write_opt_config_file(morph_path,param_write_path,
                                   mech_write_path,mech_release_write_path,
                                   features_write_path,untrained_features_write_path,
+                                  all_features_write_path,
                                   protocols_write_path,all_protocols_write_path,
                                   release_params,release_param_write_path)
 

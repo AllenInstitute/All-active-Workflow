@@ -44,6 +44,8 @@ aibs_stimname_map = {
                         'Noise 2': 'Noise_2',
                     }
 
+bpopt_current_play_stimtypes = ['Short Square - Triple', 'Noise 1', 'Noise 2']
+
 rev_potential = {'ena' : 53, 'ek' : -107}
 
 #passive_params = ['cm', 'Ra', 'g_pas', 'e_pas']
@@ -112,18 +114,21 @@ def load_pickle(path):
     return pickle_data
 
 
-def downsample_ephys_data(time,response,downsample_interval=5):
+def downsample_ephys_data(time,stim,response,downsample_interval=5):
     
     time_end = time[-1]
+    stim_end = stim[-1]
     response_end = response[-1]
                 
     time = time[::downsample_interval]
+    stim = stim[::downsample_interval]
     response = response[::downsample_interval]
     if time_end != time[-1]:
         time = np.append(time,time_end)
+        stim = np.append(stim,stim_end)
         response = np.append(response,response_end)
         
-    return time,response
+    return time,stim,response
 
 def check_swc_for_apical(morph_path):
     morphology = swc.read_swc(morph_path)

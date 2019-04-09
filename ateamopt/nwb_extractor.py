@@ -247,8 +247,9 @@ class NWB_Extractor(object):
                 else:
                     calc_stimparams_func = self.calc_stimparams
                 
-                stim_start, stim_stop, stim_amp_start, stim_amp_end, tot_duration,hold_curr = calc_stimparams_func(
-                    time, stimulus_trace,trace_name)
+                stim_start, stim_stop, stim_amp_start, stim_amp_end, \
+                    tot_duration,hold_curr = calc_stimparams_func(
+                            time, stimulus_trace,trace_name)
              
     
                 response_trace_short_filename = '%s.%s' % (trace_name, 'txt')
@@ -256,18 +257,25 @@ class NWB_Extractor(object):
                 response_trace_filename = os.path.join(
                     output_dir, response_trace_short_filename)
                 
-    
-                
                 time *= 1e3 # in ms
                 response_trace *= 1e3 # in mV 
                 response_trace = utility.correct_junction_potential(response_trace,
                                                             self.junction_potential)
+                stimulus_trace *= 1e9 
                 
                 # downsampling
-                time,response_trace = utility.downsample_ephys_data(time,response_trace)
+                time,stimulus_trace,response_trace = utility.downsample_ephys_data\
+                                (time,stimulus_trace,response_trace)
                     
-                with open(response_trace_filename, 'wb') as response_trace_file:
-                    np.savetxt(response_trace_file,
+                
+                if stim_type in utility.bpopt_current_play_stimtypes:
+                    with open(response_trace_filename, 'wb') as response_trace_file:
+                        np.savetxt(response_trace_file,
+                                  np.transpose([time, response_trace,stimulus_trace]))
+                    
+                else:
+                    with open(response_trace_filename, 'wb') as response_trace_file:
+                        np.savetxt(response_trace_file,
                                   np.transpose([time, response_trace]))
                 
                 holding_current = hold_curr  # sweep['bias_current']
@@ -358,6 +366,7 @@ class NWB_Extractor(object):
         cell_name = self.cell_id
         features_write_path = 'config/'+ cell_name +'/features.json'
         untrained_features_write_path = 'config/'+ cell_name +'/untrained_features.json'
+        all_features_write_path = 'config/'+ cell_name +'/all_features.json'
         protocols_write_path = 'config/'+cell_name+'/protocols.json'
         all_protocols_write_path = 'config/'+cell_name+'/all_protocols.json'
         
@@ -383,6 +392,11 @@ class NWB_Extractor(object):
         training_stim_map = dict()
         
         for stim_name in stim_map.keys():
+            
+            if 'feature_reject_stim_type' in kwargs:
+                if any(reject_feat_stim in stim_name for reject_feat_stim in \
+                                          kwargs['feature_reject_stim_type']):
+                    continue
             
             logger.debug("\n### Getting features from %s of cell %s ###\n" \
                 % (stim_name, cell_name))
@@ -439,22 +453,22 @@ class NWB_Extractor(object):
                 if feature_name in ['voltage_base', 'steady_state_voltage'] \
                         and len(feature_values) == 1:
                     std = 0
-                     
                 
                 features_meanstd[stim_name]['soma'][
                     feature_name] = [mean , std]
             if stim_name in features_meanstd.keys():
                 training_stim_map[stim_name] = cell_stim_map[stim_name]
-        
 
         features_meanstd_filtered,untrained_features_dict,training_stim_map_filtered,\
-                all_stim_filtered = filter_rule_func(features_meanstd,training_stim_map,cell_stim_map,*args)    
+                all_stim_filtered = filter_rule_func(features_meanstd,training_stim_map,
+                                                     cell_stim_map,*args)    
         utility.save_json(features_write_path,features_meanstd_filtered)
         utility.save_json(untrained_features_write_path,untrained_features_dict)
+        utility.save_json(all_features_write_path,features_meanstd)
         utility.save_json(protocols_write_path,training_stim_map_filtered)
         utility.save_json(all_protocols_write_path,all_stim_filtered)
         
         return features_write_path,untrained_features_write_path,\
-                                protocols_write_path,all_protocols_write_path
+                all_features_write_path,protocols_write_path,all_protocols_write_path
     
     

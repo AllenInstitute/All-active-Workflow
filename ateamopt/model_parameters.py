@@ -243,12 +243,12 @@ class AllActive_Model_Parameters(object):
             model_mechs_release = None
             mechanism_release_write_path = None
         
-        
         return mechanism_write_path,mechanism_release_write_path
 
     def write_opt_config_file(self,morph_path,param_write_path,
                               mech_write_path,mech_release_write_path,
                               features_write_path,untrained_features_write_path,
+                              all_features_write_path,
                               protocols_write_path,all_protocols_write_path,
                               release_params,release_param_write_path,
                               opt_config_filename = 'config_file.json'):
@@ -260,6 +260,7 @@ class AllActive_Model_Parameters(object):
         path_dict['mechanism_release'] = mech_release_write_path
         path_dict['features'] = features_write_path
         path_dict['untrained_features'] = untrained_features_write_path
+        path_dict['all_features'] = all_features_write_path
         path_dict['protocols'] = protocols_write_path
         path_dict['all_protocols'] = all_protocols_write_path
         path_dict['release_params_bpopt'] = release_params
