@@ -51,7 +51,7 @@ cp -r $SCRIPT_REPO/modfiles $STAGE_DIR/
 # Run scripts to prepare for the batch-job
 
 cd $STAGE_DIR
-python prepare_stage2_run.py
+python prepare_stage2_run.py conda_env
 if [ -d modfiles ]; then nrnivmodl modfiles/ ; fi # Compile mechanisms
 STAGE="_STAGE2"
 JOBNAME=$CELL_ID$STAGE

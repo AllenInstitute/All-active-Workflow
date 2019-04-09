@@ -28,7 +28,7 @@ def main():
                     (acceptable_stimtypes)
     feature_path = 'parameters/feature_set_stage1.json'
     filter_rule_func = filter_feat_proto_passive
-    features_write_path,untrained_features_write_path,\
+    features_write_path,untrained_features_write_path,all_features_write_path,\
         protocols_write_path,all_protocols_write_path = \
         nwb_handler.get_ephys_features(feature_path,ephys_data_path,
                                        stimmap_filename,filter_rule_func)
@@ -49,6 +49,7 @@ def main():
     model_params_handler.write_opt_config_file(morph_path,param_write_path,
                                   mech_write_path,mech_release_write_path,
                                   features_write_path,untrained_features_write_path,
+                                  all_features_write_path,
                                   protocols_write_path,all_protocols_write_path,
                                   release_params,release_param_write_path)
 
