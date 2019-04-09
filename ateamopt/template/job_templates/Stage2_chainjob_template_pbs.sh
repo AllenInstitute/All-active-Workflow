@@ -36,8 +36,10 @@ cp -r $SCRIPT_REPO/modfiles $STAGE_DIR/
 # Run scripts to prepare for the batch-job
 
 cd $STAGE_DIR
-python prepare_stage1_run.py conda_env
-if [ -d modfiles ]; then nrnivmodl modfiles/ ; fi # Compile mechanisms
+python prepare_stage2_run.py conda_env
+if [ -d modfiles ]; then # Compile mechanisms
+    nrnivmodl modfiles/
+fi
 STAGE="_STAGE2"
 JOBNAME=$CELL_ID$STAGE
 sed -i -e "s/Stage2/$JOBNAME/g" batch_job.sh
@@ -45,7 +47,7 @@ if [ -f qos.txt ]; then
     queue=$(<qos.txt)
     sed -i -e "s/regular/$queue/g" batch_job.sh # Specific to Cori
 fi
-sed -i -e "s/Stage_2/$JOBNAME/g" analyze_results.sh
+if [ -f analyze_results.sh ]; then sed -i -e "s/Stage_2/$JOBNAME/g" analyze_results.sh ; fi
 echo $PARENT_DIR > pwd.txt
 echo $CELL_ID > cell_id.txt
 

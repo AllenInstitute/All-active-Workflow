@@ -15,6 +15,9 @@ set -ex
 source activate conda_env
 
 PWD=$(pwd)
+PARENT_DIR=$(<pwd.txt)
+CELL_ID=$(<cell_id.txt)
+
 LOGS=$PWD/logs
 mkdir -p $LOGS
 
