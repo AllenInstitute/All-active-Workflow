@@ -7,12 +7,12 @@ logger = logging.getLogger(__name__)
 
 
 class Bpopt_Evaluator(object):
-    
-    def __init__(self, protocol_path,feature_path, 
+
+    def __init__(self, protocol_path,feature_path,
                  morph_path, param_path, mech_path,**props):
         """
         do_replace_axon : stub axon (60 micron, uniform 1 micron dia)
-        do_replace_axon_swc : bluepyopt axon replace code, diameter taken 
+        do_replace_axon_swc : bluepyopt axon replace code, diameter taken
         from swc file
         """
         self.morph_path = morph_path
@@ -20,29 +20,29 @@ class Bpopt_Evaluator(object):
         self.feature_path = feature_path
         self.param_path=param_path
         self.mech_path=mech_path
-        
+
         feature_definitions = json.load(open(feature_path))
         feature_set = []
         for feat_key,feat_val in feature_definitions.items():
             feature_set.extend(feat_val['soma'].keys())
         self.AIS_check = True if 'check_AISInitiation' in list(set(feature_set)) else False
-        
+
         self.timed_evaluation = True
         if 'timed_evaluation' in props:
             self.timed_evaluation = props['timed_evaluation']
-        
-        self.axon_type = 'stub'
-        if 'do_replace_axon_swc' in props and props['do_replace_axon_swc']:
+
+        self.axon_type = 'stub_axon'
+        if props.get('do_replace_axon'):
             self.axon_type = 'bpopt_replaced_axon'
-        
+
     def define_mechanisms(self):
         """Define mechanisms"""
-        
+
         mech_path = self.mech_path
-    
+
         mech_definitions = json.load(
             open(mech_path))
-    
+
         mechanisms = []
         for sectionlist, channels in mech_definitions.items():
             seclist_loc = ephys.locations.NrnSeclistLocation(
@@ -55,16 +55,16 @@ class Bpopt_Evaluator(object):
                     suffix=channel,
                     locations=[seclist_loc],
                     preloaded=True))
-    
-        return mechanisms    
-    
+
+        return mechanisms
+
     def define_parameters(self):
         """Define parameters"""
-        
+
         param_path = self.param_path
         param_configs = json.load(open(param_path))
         parameters = []
-    
+
         for param_config in param_configs:
             if 'value' in param_config:
                 frozen = True
@@ -78,7 +78,7 @@ class Bpopt_Evaluator(object):
                 raise Exception(
                     'Parameter config has to have bounds or value: %s'
                     % param_config)
-    
+
             if param_config['type'] == 'global':
                 parameters.append(
                     ephys.parameters.NrnGlobalParameter(
@@ -96,10 +96,10 @@ class Bpopt_Evaluator(object):
                 seclist_loc = ephys.locations.NrnSeclistLocation(
                     param_config['sectionlist'],
                     seclist_name=param_config['sectionlist'])
-    
+
                 name = '%s.%s' % (param_config['param_name'],
                                   param_config['sectionlist'])
-    
+
                 if param_config['type'] == 'section':
                     parameters.append(
                         ephys.parameters.NrnSectionParameter(
@@ -124,19 +124,19 @@ class Bpopt_Evaluator(object):
                 raise Exception(
                     'Param config type has to be global, section or range: %s' %
                     param_config)
-    
+
         return parameters
-    
-    
+
+
     def define_morphology(self):
         """Define morphology"""
-        
+
         morph_path = self.morph_path
         return ephys.morphologies.NrnFileMorphology(morph_path,
-            do_replace_axon=self.axon_type =='stub', 
-            do_replace_axon_swc = self.axon_type !='stub')
+            stub_axon=self.axon_type =='stub_axon',
+            do_replace_axon = self.axon_type !='stub_axon')
 
-        
+
     def model_builder(self):
         """Create cell model"""
 
@@ -145,29 +145,29 @@ class Bpopt_Evaluator(object):
             morph=self.define_morphology(),
             mechs=self.define_mechanisms(),
             params=self.define_parameters())
-    
+
         return cell
-        
-    
+
+
     def define_protocols(self):
         """Define protocols"""
-        
+
         protocol_definitions = json.load(open(self.protocol_path))
-    
+
         protocols = {}
-    
+
         soma_loc = ephys.locations.NrnSeclistCompLocation(
             name='soma',
             seclist_name='somatic',
             sec_index=0,
             comp_x=0.5)
-        
+
         AIS_loc = ephys.locations.NrnSeclistCompLocation(
             name='AIS',
             seclist_name='axonal',
             sec_index=0,
             comp_x=0.5)
-    
+
         for protocol_name, protocol_definition in protocol_definitions.items():
             # By default include somatic recording
             somav_recording = ephys.recordings.CompRecording(
@@ -175,18 +175,18 @@ class Bpopt_Evaluator(object):
                 protocol_name,
                 location=soma_loc,
                 variable='v')
-            
+
             AIS_recording = ephys.recordings.CompRecording(
                 name='%s.AIS.v' %
                 protocol_name,
                 location=AIS_loc,
                 variable='v')
-            
+
             if self.AIS_check:
                 recordings = [somav_recording, AIS_recording]
             else:
                 recordings = [somav_recording]
-    
+
             if 'extra_recordings' in protocol_definition:
                 for recording_definition in protocol_definition['extra_recordings']:
                     if recording_definition['type'] == 'somadistance':
@@ -199,13 +199,13 @@ class Bpopt_Evaluator(object):
                             name='%s.%s.%s' % (protocol_name, location.name, var),
                             location=location,
                             variable=recording_definition['var'])
-    
+
                         recordings.append(recording)
                     else:
                         raise Exception(
                             'Recording type %s not supported' %
                             recording_definition['type'])
-    
+
             stimuli = []
             for stimulus_definition in protocol_definition['stimuli']:
                 if stimulus_definition['type'] == 'SquarePulse':
@@ -231,52 +231,52 @@ class Bpopt_Evaluator(object):
                     stimuli.append(ephys.stimuli.NrnCurrentPlayStimulus(
                         current_points=stim_play_current,
                         time_points=stim_play_time,
-                        location=soma_loc))        
-                    recordings = [somav_recording]    
+                        location=soma_loc))
+                    recordings = [somav_recording]
             protocols[protocol_name] = ephys.protocols.SweepProtocol(
                 protocol_name,
                 stimuli,
                 recordings)
-    
+
         return protocols
-    
-    
+
+
     def define_fitness_calculator(self,fitness_protocols):
-        """Define fitness calculator"""    
-    
+        """Define fitness calculator"""
+
         # TODO: add bAP stimulus
         objectives = []
         feature_definitions = json.load(open(self.feature_path))
         for protocol_name, locations in feature_definitions.items():
             for location, features in locations.items():
-    
+
                 for efel_feature_name, meanstd in features.items():
                     feature_name = '%s.%s.%s' % (protocol_name, location, efel_feature_name)
                     if self.AIS_check:
-                        recording_names = {'': '%s.%s.v' % (protocol_name, location), 
+                        recording_names = {'': '%s.%s.v' % (protocol_name, location),
                                        'location_AIS' : '%s.AIS.v' %protocol_name}
                     else:
-                        recording_names = {'': '%s.%s.v' % (protocol_name, location)}    
+                        recording_names = {'': '%s.%s.v' % (protocol_name, location)}
                     stimulus = fitness_protocols[protocol_name].stimuli[0]
                     if 'Ramp' in protocol_name:
-                        stim_start = stimulus.ramp_delay 
+                        stim_start = stimulus.ramp_delay
                         duration = stimulus.ramp_duration
                     elif 'DC' in protocol_name:
                         stim_start = stimulus.step_delay
                         duration = stimulus.step_duration
-    
+
                     if location == 'soma':
                         threshold = -20
                     elif 'dend' in location:
                         threshold = -55
-    
+
                     if protocol_name == 'bAP':
                         stim_end = stimulus.total_duration
     #                    stim_end = stimulus.step_delay + stimulus.step_duration
-    
+
                     else:
                         stim_end = stim_start + duration
-    
+
                     feature = ephys.efeatures.eFELFeature(
                         feature_name,
                         efel_feature_name=efel_feature_name,
@@ -288,31 +288,31 @@ class Bpopt_Evaluator(object):
                         threshold=threshold,
                         force_max_score=True,
                         max_score=250)
-    
+
                     objective = ephys.objectives.SingletonObjective(
                     feature_name,
                     feature)
                     objectives.append(objective)
-    
+
         fitcalc = ephys.objectivescalculators.ObjectivesCalculator(objectives)
-    
+
         return fitcalc
-    
-    
+
+
     def create_evaluator(self):
         """Setup"""
-    
+
         cell = self.model_builder()
-    
+
         fitness_protocols = self.define_protocols()
         fitness_calculator = self.define_fitness_calculator(fitness_protocols)
-    
+
         param_names = [param.name
                        for param in cell.params.values()
                        if not param.frozen]
-        
+
         sim = ephys.simulators.NrnSimulator()
-        
+
         if self.timed_evaluation:
             return ephys.evaluators.CellEvaluatorTimed(
                 cell_model=cell,
@@ -328,4 +328,3 @@ class Bpopt_Evaluator(object):
                 fitness_calculator=fitness_calculator,
                 sim=sim)
 
-            
