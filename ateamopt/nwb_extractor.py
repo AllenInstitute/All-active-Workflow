@@ -252,10 +252,8 @@ class NWB_Extractor(object):
                 stim_start, stim_stop, stim_amp_start, stim_amp_end, \
                     tot_duration,hold_curr = calc_stimparams_func(
                             time, stimulus_trace,trace_name)
-             
                 
                 response_trace_short_filename = '%s.%s' % (trace_name, 'txt')
-
                 response_trace_filename = os.path.join(
                     output_dir, response_trace_short_filename)
 
@@ -268,7 +266,6 @@ class NWB_Extractor(object):
                 # downsampling
                 time,stimulus_trace,response_trace = utility.downsample_ephys_data\
                                 (time,stimulus_trace,response_trace)
-                    
                 
                 if stim_type in utility.bpopt_current_play_stimtypes:
                     with open(response_trace_filename, 'wb') as response_trace_file:
@@ -465,8 +462,6 @@ class NWB_Extractor(object):
                 all_stim_filtered = filter_rule_func(features_meanstd,training_stim_map,
                                                      cell_stim_map,*args)    
 
-        features_meanstd_filtered,untrained_features_dict,training_stim_map_filtered,\
-                all_stim_filtered = filter_rule_func(features_meanstd,training_stim_map,cell_stim_map,*args)
         utility.save_json(features_write_path,features_meanstd_filtered)
         utility.save_json(untrained_features_write_path,untrained_features_dict)
         utility.save_json(all_features_write_path,features_meanstd)
@@ -474,6 +469,7 @@ class NWB_Extractor(object):
         utility.save_json(all_protocols_write_path,all_stim_filtered)
 
         return features_write_path,untrained_features_write_path,\
-                all_features_write_path, protocols_write_path,all_protocols_write_path
+                all_features_write_path, protocols_write_path,\
+                all_protocols_write_path
 
 

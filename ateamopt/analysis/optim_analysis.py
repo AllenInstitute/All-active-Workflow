@@ -71,7 +71,6 @@ class Optim_Analyzer(object):
 
     def get_model_responses(self,hof_params,
                           hof_responses_filename='analysis_params/hof_response_all.pkl'):
-    #    hof_responses_filename =
         utility.create_filepath(hof_responses_filename)
 
         # Calculate responses for the hall-of-fame parameters
@@ -681,7 +680,7 @@ class Optim_Analyzer(object):
                                 bpopt_param_list,expand_params = False):
         utility.create_filepath(save_params_filename)
         aibs_params = self.create_aibs_param_template(bpopt_param_list,
-                                              expand_params = False)
+                                              expand_params = expand_params)
         utility.save_json(save_params_filename,aibs_params)
 
     def save_params_bpopt_format(self,save_params_filename,
@@ -785,7 +784,7 @@ class Optim_Analyzer(object):
         num_spikes_model = len(spike_times_model)
         AP_shape_model /= num_spikes_model
 
-        return AP_shape_exp, AP_shape_model
+        return AP_shape_time, AP_shape_exp, AP_shape_model
 
     def prepare_fI_curve(response_filename, stim_map,reject_stimtype_list,
                          ephys_dir= 'preprocessed/'):
@@ -835,8 +834,6 @@ class Optim_Analyzer(object):
             feature_mean_exp[stim_amp] = feature_mean/stim_dur
             stim_name_exp[stim_amp] = stim_name
 
-        stim_exp = sorted(stim_name_exp.keys())
-        mean_freq_exp = [feature_mean_exp[amp] for amp in stim_exp]
 
         # Calculating the spikerate for the model
         response = utility.load_pickle(response_filename)[0]
@@ -880,18 +877,18 @@ class Optim_Analyzer(object):
         if len(select_stim_keys_list) > 2:
             select_stim_keys =  [select_stim_keys_list[0], select_stim_keys_list[-2]]
 
-        stim_model = sorted(stim_model_dict.keys())
-        mean_freq_model = [feature_mean_model_dict[amp] for amp in stim_model]
 
-        return stim_exp,stim_model,mean_freq_exp, mean_freq_model,select_stim_keys
+        return stim_name_exp,feature_mean_exp,stim_model_dict,\
+                        feature_mean_model_dict,select_stim_keys
 
-    def postprocess(self,stim_file,pdf_pages):
+    def postprocess(self,stim_file,response_filename, pdf_pages,
+                                 ephys_dir= 'preprocessed/'):
         stim_map_content = pd.read_csv(stim_file, sep='\s*,\s*',
                                    header=0, encoding='ascii', engine='python')
         reject_stimtype_list = ['LongDCSupra','Ramp', 'ShortDC',
                                 'Noise','Short_Square_Triple']
         stim_map = defaultdict(dict)
-
+        
         # Get the stim configuration for each stim
         for line in stim_map_content.split('\n')[1:-1]:
             if line != '':
@@ -909,10 +906,19 @@ class Optim_Analyzer(object):
                     iter_list = [iter_dict]
                     stim_map[stim_name]['stimuli'] = iter_list
 
-        stim_exp,stim_model,mean_freq_exp, mean_freq_model,select_stim_keys = \
+        stim_name_exp,feature_mean_exp,stim_model_dict,\
+                        feature_mean_model_dict,select_stim_keys= \
                             self.prepare_fI_curve(response_filename,
-                                                stim_map,reject_stimtype_list)
+                            stim_map,reject_stimtype_list,ephys_dir=ephys_dir)
 
+        stim_exp = sorted(stim_name_exp.keys())
+        mean_freq_exp = [feature_mean_exp[amp] for amp in stim_exp]
+        
+        stim_model = sorted(stim_model_dict.keys())
+        mean_freq_model = [feature_mean_model_dict[amp] for amp in stim_model]
+        max_freq = max([max(mean_freq_model), max(mean_freq_exp)])
+        
+        # Plot fi curve
         fig,ax= plt.subplots(1,figsize=(5,5),dpi =80)
 
         for key,val in stim_model_dict.items():
@@ -922,11 +928,15 @@ class Optim_Analyzer(object):
                 else:
                     shift = -feature_mean_model_dict[key]/2
                 ax.annotate(val,xy=(key,feature_mean_model_dict[key]),
-                            xytext =(key,feature_mean_model_dict[key]+shift), rotation=90,
-                            fontsize = 10,arrowprops=dict(facecolor='red', shrink=0.01,alpha =.5))
-        ax.scatter(stim_exp, mean_freq_exp,color = 'black',s=50, alpha = .8, label='Experiment')
+                            xytext =(key,feature_mean_model_dict[key]+shift),
+                            rotation=90,fontsize = 10,
+                            arrowprops=dict(facecolor='red', 
+                            shrink=0.01,alpha =.5))
+        ax.scatter(stim_exp, mean_freq_exp,color = 'black',
+                   s=50, alpha = .8, label='Experiment')
         ax.plot(stim_exp, mean_freq_exp,color = 'black',lw =.1, alpha = .1)
-        ax.scatter(stim_model, mean_freq_model,color = 'blue',s=100,alpha = .9, marker = '*',label='Model')
+        ax.scatter(stim_model, mean_freq_model,color = 'blue',
+                   s=100,alpha = .9, marker = '*',label='Model')
         ax.plot(stim_model, mean_freq_model,color = 'blue',lw = .1, alpha = .1)
         ax.set_xlabel('Stimulation Amplitude (nA)',fontsize = 10)
         ax.set_ylabel('Spikes/sec',fontsize = 10)
@@ -934,3 +944,22 @@ class Optim_Analyzer(object):
 
         pdf_pages.savefig(fig)
         plt.close(fig)
+        
+        # Plot spike shape
+        fig,ax= plt.subplots(1,len(select_stim_keys),figsize=(8,5),
+                             dpi=80, sharey = True,squeeze = False)   
+        for kk,stim_name in enumerate(select_stim_keys):
+            AP_shape_time, AP_shape_exp, AP_shape_model =\
+                self.prepare_spike_shape(response_filename,stim_map,
+                                         stim_name,ephys_dir=ephys_dir)
+            ax[kk].plot(AP_shape_time, AP_shape_exp,lw = 2, 
+                          color = 'black',label = 'Experiment')
+            ax[kk].plot(AP_shape_time, AP_shape_model,lw = 2, 
+                          color = 'blue',label = 'Model')
+            ax[kk].legend(prop={'size': 10})
+            ax[kk].set_title(stim_name,fontsize = 12) 
+            
+        pdf_pages.savefig(fig)
+        plt.close(fig)
+        return pdf_pages
+        
