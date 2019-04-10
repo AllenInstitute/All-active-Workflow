@@ -4,6 +4,7 @@ from ateamopt.analysis.optim_analysis import Optim_Analyzer
 from ateamopt.bpopt_evaluator import Bpopt_Evaluator
 import bluepyopt as bpopt
 from matplotlib.backends.backend_pdf import PdfPages
+import numpy as np
 import argparse
 
 
@@ -30,6 +31,18 @@ def analyzer_map(parallel=True):
         map_function = None
         
     return map_function
+
+def get_opt_obj(protocols_path,features_path,morph_path, param_path,
+                mech_path,args):
+    eval_handler = Bpopt_Evaluator(protocols_path, features_path,
+                                   morph_path, param_path,
+                                   mech_path)
+    evaluator = eval_handler.create_evaluator()
+    map_function = analyzer_map(args.ipyparallel)
+    opt = bpopt.optimisations.DEAPOptimisation(
+            evaluator=evaluator,map_function=map_function)
+    return opt
+    
 
 def get_parser():
     parser = argparse.ArgumentParser()
@@ -60,37 +73,78 @@ def main():
     
     all_protocols_write_path = opt_config['all_protocols']
     features_write_path = opt_config['features']
+    all_feature_path = opt_config['all_features']
+    untrained_feature_path = opt_config['untrained_features']
     morph_path = opt_config['morphology']
     param_write_path = opt_config['parameters']
     mech_write_path = opt_config['mechanism']
     release_param_write_path = opt_config['released_model']
     mech_release_write_path = opt_config['mechanism_release']
     
-    eval_handler = Bpopt_Evaluator(all_protocols_write_path, features_write_path,
+    opt_train = get_opt_obj(all_protocols_write_path, features_write_path,
                                    morph_path, param_write_path,
                                    mech_write_path)
-    evaluator = eval_handler.create_evaluator()
-    map_function = analyzer_map(args.ipyparallel)
-    opt_train = bpopt.optimisations.DEAPOptimisation(
-            evaluator=evaluator,map_function=map_function)
-
+    opt_gen = get_opt_obj(all_protocols_write_path, all_feature_path,
+                                   morph_path, param_write_path,
+                                   mech_write_path)
+    opt_untrain = get_opt_obj(all_protocols_write_path,untrained_feature_path,
+                                   morph_path, param_write_path,
+                                   mech_write_path)
+    
     cp_dir = args.cp_dir   
     analysis_handler = Optim_Analyzer(opt_train,cp_dir)
-    best_model = analysis_handler.get_best_model()
+    best_model = analysis_handler.get_best_model() # Model with least training error
     
     aibs_params_modelname = 'fitted_params/optim_param_%s.json'%cell_id
     analysis_handler.save_params_aibs_format(aibs_params_modelname,
-                                    best_model[0],expand_params = False)
+                                    best_model[0],expand_params = True)
     
-    aibs_params_modelname = 'fitted_params/optim_param_%s_bpopt.json'%cell_id
-    analysis_handler.save_params_bpopt_format(aibs_params_modelname,
+    bpopt_params_modelname = 'fitted_params/optim_param_%s_bpopt.json'%cell_id
+    analysis_handler.save_params_bpopt_format(bpopt_params_modelname,
                                     best_model[0])
     
     
-    hof_model_params,_ = analysis_handler.get_all_models()
+    hof_model_params,seed_indices = analysis_handler.get_all_models()
     hof_params_filename = 'analysis_params/hof_model_params.pkl'
-    analysis_handler.save_hof_output_params(hof_model_params,hof_params_filename)
+    hof_responses_filename = 'analysis_params/hof_response_all.pkl'    
+    obj_list_train_filename = 'analysis_params/hof_obj_train.pkl'
+    obj_list_gen_filename = 'analysis_params/hof_obj.pkl'    
+    obj_list_untrain_filename = 'analysis_params/hof_obj_untrain.pkl'
+    seed_indices_filename = 'analysis_params/seed_indices.pkl'
     
+    
+    # Response for the entire hall of fame not arranged
+    hof_response_list = analysis_handler.get_model_responses(hof_model_params)
+    
+    # Sort everything with respect to training error
+    obj_list_train = analysis_handler.get_response_scores(hof_response_list)
+    analysis_handler._opt = opt_gen
+    obj_list_gen = analysis_handler.get_response_scores(hof_response_list)
+    analysis_handler._opt = opt_untrain
+    obj_list_untrain = analysis_handler.get_response_scores(hof_response_list)
+    analysis_handler._opt = opt_train
+    
+    score_list_train = [np.sum(obj_dict_train.values()) \
+                        for obj_dict_train in obj_list_train]
+    
+    hof_response_sorted = analysis_handler.organize_models(hof_response_list,
+                                                                score_list_train)
+    seed_indices_sorted = analysis_handler.organize_models(seed_indices,
+                                                                score_list_train)
+    obj_list_train_sorted = analysis_handler.organize_models(obj_list_train,
+                                                                score_list_train)
+    obj_list_gen_sorted = analysis_handler.organize_models(obj_list_gen,
+                                                                score_list_train)
+    obj_list_untrain_sorted = analysis_handler.organize_models(obj_list_untrain,
+                                                                score_list_train)
+    
+    # Save the sorted hall of fame output in .pkl
+    analysis_handler.save_hof_output_params(hof_model_params,hof_params_filename)
+    utility.save_pickle(hof_responses_filename, hof_response_sorted)
+    utility.save_pickle(obj_list_train_filename, obj_list_train_sorted)
+    utility.save_pickle(obj_list_gen_filename, obj_list_gen_sorted)
+    utility.save_pickle(obj_list_untrain_filename, obj_list_untrain_sorted)
+    utility.save_pickle(seed_indices_filename, seed_indices_sorted)
     
     GA_evol_path = 'analysis_params/GA_evolution_params.pkl'
     analysis_handler.save_GA_evolultion_info(GA_evol_path)
@@ -115,11 +169,9 @@ def main():
     resp_release_filename = './resp_release.txt'
     analysis_handler.get_release_responses(opt_release,resp_release_filename)    
     
-    
     stim_mapfile = 'preprocessed/StimMapReps.csv'
     analysis_write_path = cell_id + '_Stage2.pdf'
     pdf_pages =  PdfPages(analysis_write_path)
-        
     pdf_pages= analysis_handler.plot_grid_Response(resp_filename,
                                         resp_release_filename,
                                         stim_mapfile,
@@ -131,8 +183,9 @@ def main():
     pdf_pages = analysis_handler.plot_GA_evol(GA_evol_path,pdf_pages)
     pdf_pages = analysis_handler.plot_param_diversity(hof_params_filename,
                                  pdf_pages)
+    pdf_pages = analysis_handler.postprocess(stim_mapfile,resp_filename,
+                                 pdf_pages)
     pdf_pages.close()
-    
     
 if __name__ == '__main__':
     main()    
