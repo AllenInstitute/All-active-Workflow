@@ -13,7 +13,9 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import math
 import efel
-from .analysis_module import get_spike_shape
+import seaborn as sns
+import copy
+from .analysis_module import get_spike_shape,calculate_spike_time_metrics
 
 logger = logging.getLogger(__name__)
 
@@ -157,7 +159,8 @@ class Optim_Analyzer(object):
 
             utility.save_pickle(response_release_filename, responses_release)
 
-
+#    def get_peri
+    
     def create_bpopt_param_template(self,param_list):
         opt = self._opt
         bpopt_section_map_inv = utility.bpopt_section_map_inv
@@ -963,14 +966,18 @@ class Optim_Analyzer(object):
         plt.close(fig)
         return pdf_pages
 
-    def hof_statistics(self, hof_response_dir = 'analysis_params'):
-        opt =self._opt
-        hof_score_path = hof_response_dir + '/hof_obj.pkl'
-        hof_score_list = pickle.load(open(hof_score_path,"rb"))
-        feature_list = list(set(list(map(lambda x:x.split('.')[-1], hof_score_list[0].keys()))))
+    def hof_statistics(self, stim_file, pdf_pages, hof_obj_all_filename,
+                       hof_responses_filename,hof_obj_train_filename,
+                       hof_obj_untrain_filename,seed_indices_filename,
+                       spiketimes_exp_path,spiketimes_hof_path,
+                       exp_variance_hof_path,cell_metadata,model_perf_filename,
+                       ephys_dir='preprocessed/'):
+        
+        hof_obj_all_list = utility.load_pickle(hof_obj_all_filename)
+        feature_list = list(set(list(map(lambda x:x.split('.')[-1], hof_obj_all_list[0].keys()))))
 
         hof_df_list = []
-        for i, hof_score in enumerate(hof_score_list):
+        for i, hof_score in enumerate(hof_obj_all_list):
             obj_dict = {'index':i}
             for feature in feature_list:
                 temp_list = list(map(lambda x:hof_score[x] if x.split('.')[-1] == feature else None,
@@ -985,7 +992,6 @@ class Optim_Analyzer(object):
 
 
         cmap = sns.cubehelix_palette(light=1, as_cmap=True)
-
         fig,ax = plt.subplots(figsize = (8,6),dpi = 80)
         sns.set(style="darkgrid", font_scale=.95)
 
@@ -997,28 +1003,19 @@ class Optim_Analyzer(object):
         pdf_pages.savefig(fig)
         plt.close(fig)
 
-
-        hof_response_path = hof_response_dir+'/hof_response_all.pkl'
-        hof_response_list = pickle.load(open(hof_response_path,"rb"))
-        spiketimes_exp_path = 'Validation_Responses/spiketimes_exp_noise.pkl'
+        hof_response_list = utility.load_pickle(hof_responses_filename)
         if os.path.exists(spiketimes_exp_path):
-            spike_times_exp_pkl = pickle.load(open(spiketimes_exp_path,"rb"))
+            spike_times_exp = utility.load_pickle(spiketimes_exp_path)
             noise_bool = True
         else:
             noise_bool = False
-        obj_train_path = hof_response_dir + '/hof_obj_train.pkl'
-        obj_untrain_path = hof_response_dir + '/hof_obj_untrain.pkl'
-        obj_train_list = pickle.load(open(obj_train_path,"rb"))
-        obj_untrain_list = pickle.load(open(obj_untrain_path,"rb"))
-        seed_list = pickle.load(open(hof_response_dir + '/seed_indices.pkl',"rb"))
+        
+        obj_train_list = utility.load_pickle(hof_obj_train_filename)
+        obj_untrain_list = utility.load_pickle(hof_obj_untrain_filename)
+        seed_list = utility.load_pickle(seed_indices_filename)
 
-
-        stim_file = 'preprocessed/StimMapReps.csv'
         stim_df = pd.read_csv(stim_file, sep='\s*,\s*',
                                header=0, encoding='ascii', engine='python')
-
-        import exp_var_metric
-        import copy
 
         dt = 1/200.0 # ms
         sigma = [10] # ms
@@ -1029,10 +1026,10 @@ class Optim_Analyzer(object):
         for ii,hof_response_all_proto in enumerate(hof_response_list):
 
             exp_variance_dict = {}
-            peaktimes_model = {}
+            spiketimes_model = {}
 
             if noise_bool:
-                spike_times_exp_copy = copy.deepcopy(spike_times_exp_pkl)
+                spike_times_exp_copy = copy.deepcopy(spike_times_exp)
 
                 hof_response = {key:val for key,val in hof_response_all_proto[0].items() if 'Noise' in key}
 
@@ -1058,16 +1055,16 @@ class Optim_Analyzer(object):
                     model_train = efel.getFeatureValues(
                         [trace],
                         ['peak_time'])[0]['peak_time']
-                    peaktimes_model[noise_stim_name] = copy.deepcopy(model_train)
+                    spiketimes_model[noise_stim_name] = copy.deepcopy(model_train)
                     for i,sp_time in enumerate(model_train):
                         model_train[i] = int(math.ceil(sp_time/dt))
 
                     model_train = model_train.astype(int)
-                    sweep_filename = 'preprocessed/'+noise_stim_name+'.txt'
+                    sweep_filename = ephys_dir+noise_stim_name+'.txt'
                     exp_data = np.loadtxt(sweep_filename)
                     exp_data_time = exp_data[:,0]
                     total_length = int(math.ceil(exp_data_time[-1]/dt))
-                    exp_variance_dict[noise_stim_type] = exp_var_metric.calculate_spike_time_metrics(expt_trains,
+                    exp_variance_dict[noise_stim_type] = calculate_spike_time_metrics(expt_trains,
                                 model_train, total_length, dt, sigma)[0]
 
             objectives_train = obj_train_list[ii]
@@ -1080,33 +1077,22 @@ class Optim_Analyzer(object):
             exp_variance_dict['Seed'] = seed_list[ii]
 
             exp_variance_hof.append(copy.deepcopy(exp_variance_dict))
-            if peaktimes_model:
-                spiketimes_hof.append(copy.deepcopy(peaktimes_model))
+            if spiketimes_model:
+                spiketimes_hof.append(copy.deepcopy(spiketimes_model))
 
-
-
-        exp_variance_hof_path = 'Validation_Responses/exp_variance_hof.pkl'
-        if not os.path.exists(os.path.dirname(exp_variance_hof_path)):
-            try:
-                os.makedirs(os.path.dirname(spiketimes_exp_path))
-            except OSError as exc: # Guard against race condition
-                if exc.errno != errno.EEXIST:
-                    raise
-
-        pickle.dump(exp_variance_hof,open(exp_variance_hof_path, 'wb'))
+        utility.create_filepath(exp_variance_hof_path)
+        utility.save_pickle(exp_variance_hof_path, exp_variance_hof)
 
         if noise_bool:
-            spiketimes_hof_path = 'Validation_Responses/spiketimes_model_noise.pkl'
-            pickle.dump(spiketimes_hof,open(spiketimes_hof_path, 'wb'))
-
+            utility.create_filepath(spiketimes_hof_path)
+            utility.save_pickle(spiketimes_hof_path,spiketimes_hof)
 
         validation_df = pd.DataFrame(exp_variance_hof)
         validation_df_shortened = validation_df.loc[:,['Explained_Variance',
-                                                       'Feature_Average',
-                                                       'Feature_Average_Generalization']]
+                                               'Feature_Average',
+                                               'Feature_Average_Generalization']]
 
         validation_df_shortened = validation_df_shortened.dropna(axis='columns')
-
         seed_index = validation_df.pop('Seed')
         lut = dict(zip(seed_index.unique(), "rbgy"))
         row_colors = seed_index.map(lut)
@@ -1116,33 +1102,30 @@ class Optim_Analyzer(object):
                        standard_scale=1)
         g=sns.clustermap(validation_df_shortened, annot = validation_arr[np.array(g.dendrogram_row.reordered_ind)],
                     col_cluster = False, row_colors=row_colors, standard_scale=1)
-
         g.fig.suptitle('Model Selection',fontsize = 14)
-
-
         pdf_pages.savefig(g.fig)
         plt.close(g.fig)
-
 
         if noise_bool:
             g = sns.lmplot(x="Feature_Average", y="Explained_Variance", data=validation_df)
             pdf_pages.savefig(g.fig)
             plt.close(g.fig)
 
-        fitness_metrics = pd.DataFrame({'species' : [species],
-                            'cell_id' : [cell_id],
-                            'layer' : [layer],
-                            'area' : [area],
-                            'cre_line' : [cre_line],
-                            'dendrite_type' : [dendrite_type],
-                            'feature_avg_train' : [exp_variance_hof[0]['Feature_Average']],
-                            'feature_avg_generalization' : [exp_variance_hof[0]['Feature_Average_Generalization']],
-                            'feature_avg_released_allactive' : [feature_avg_released_allactive],
-                            'feature_avg_peri' : [feature_avg_peri],
-                            'explained_variance' : [exp_variance_hof[0]['Explained_Variance']],
-                            'explained_variance_released_allactive' : [explained_variance_released_allactive],
-                            'explained_variance_peri' : [explained_variance_peri],
-                            })
-
-        fitness_filename = 'Validation_Responses/fitness_metrics_'+cell_id+'.csv'
-        fitness_metrics.to_csv(fitness_filename)
+        fitness_metrics = pd.DataFrame({'species' : [cell_metadata['Species']],
+                    'cell_id' : [cell_metadata['Cell_id']],
+                    'layer' : [cell_metadata['Layer']],
+                    'area' : [cell_metadata['Area']],
+                    'cre_line' : [cell_metadata['Cre_line']],
+                    'dendrite_type' : [cell_metadata['Dendrite_type']],
+                    'feature_avg_train' : [exp_variance_hof[0]['Feature_Average']],
+                    'feature_avg_generalization' : [exp_variance_hof[0]['Feature_Average_Generalization']],
+                    'feature_avg_released_allactive' : [cell_metadata['Feature_avg_Released_AllActive']],
+                    'feature_avg_peri' : [cell_metadata['Feature_avg_Peri']],
+                    'explained_variance' : [exp_variance_hof[0]['Explained_Variance']],
+                    'explained_variance_released_allactive' : [cell_metadata['Explained_variance_Released_AllActive']],
+                    'explained_variance_peri' : [cell_metadata['Explained_variance_Peri']],
+                    })
+        
+        utility.create_filepath(model_perf_filename)    
+        fitness_metrics.to_csv(model_perf_filename)
+        return pdf_pages

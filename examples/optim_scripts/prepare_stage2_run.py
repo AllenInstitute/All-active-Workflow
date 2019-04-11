@@ -7,20 +7,23 @@ from ateamopt.optim_config_rules import filter_feat_proto_active,\
                                 adjust_param_bounds
 from ateamopt.jobscript.jobmodule import test_JobModule,\
             PBS_JobModule,Slurm_JobModule,ChainSubJob
-
 import shutil
 import logging
-logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger()
 
 def main():
 
     parent_dir = os.path.abspath(os.path.join('.', os.pardir))
+    script_repo_dirname = 'Script_Repo'
+    script_repo_dir = os.path.join(parent_dir, script_repo_dirname)
     path_to_cell_metadata = glob.glob(parent_dir+'/cell_metadata*.json')[0]
     cell_metadata=utility.load_json(path_to_cell_metadata)
 
     acceptable_stimtypes = ['Long Square','Ramp', 'Square - 2s Suprathreshold',
                         'Short Square - Triple','Noise 1','Noise 2']
     cell_id = cell_metadata['Cell_id']
+    perisomatic_model_id = cell_metadata['Perisomatic_id']
     species = cell_metadata['Species']
     wasabi_bucket = 's3://aibs.snmo.01/'
     wasabi_bucket += '%s/%s'%(species.replace(' ',''),cell_id)
@@ -34,21 +37,28 @@ def main():
     select_dict = {'spike_proto': 2,
                    'nospike_proto' :0}
     add_fi_kink = True
-    
+
     # Don't get features from these stim_types
-    feature_reject_stim_type = ['Ramp','LongDCSupra','Noise',
-                                'Short_Square_Triple']
+    feature_reject_stim_type = ['Ramp','Short_Square_Triple']
+    spiketimes_exp_path = 'Validation_Responses/spiketimes_exp_noise.pkl'
     features_write_path,untrained_features_write_path,all_features_write_path,\
         protocols_write_path,all_protocols_write_path = \
         nwb_handler.get_ephys_features(feature_path,ephys_data_path,
-                       stimmap_filename,filter_rule_func,select_dict,
-                       add_fi_kink,feature_reject_stim_type= feature_reject_stim_type)
+                   stimmap_filename,filter_rule_func,select_dict,
+                   add_fi_kink,feature_reject_stim_type= feature_reject_stim_type,
+                   spiketimes_exp_path=spiketimes_exp_path)
 
 
     # Create the parameter bounds for the optimization
     model_params_handler = AllActive_Model_Parameters(cell_id)
     morph_path = model_params_handler.swc_path
-    param_bounds_path = 'parameters/param_bounds_stage2.json'
+    param_bounds_file = 'param_bounds_stage2.json'
+    param_bounds_repo = os.path.abspath(os.path.join(script_repo_dir,param_bounds_file))
+    param_bounds_repo = param_bounds_repo \
+            if os.path.exists(param_bounds_repo) else None
+    param_bounds_default_template = utility.locate_template_file(os.path.join('parameters',\
+                                            param_bounds_file))
+    param_bounds_path = param_bounds_repo or param_bounds_default_template
     param_rule_func = adjust_param_bounds
     model_params,model_params_release= model_params_handler.get_opt_params\
                                 (param_bounds_path,param_rule_func)
@@ -56,15 +66,27 @@ def main():
                         model_params_handler.write_params_opt(model_params,model_params_release)
     mech_write_path,mech_release_write_path = model_params_handler.write_mechanisms_opt(model_params,\
                                     model_params_release,param_bounds_path)
-
+    props = {}
+    
+    # Perisomatic model
+    if perisomatic_model_id != '':
+        perisomatic_dir = 'peri_model'
+        peri_model_path = os.path.join(perisomatic_dir,'/*fit*.json')
+        peri_param_path = glob.glob(peri_model_path)[0]
+        peri_params_write_path, peri_mech_write_path = \
+                model_params_handler.aibs_params_to_bpopt_setup(peri_param_path)
+        props['peri_parameters'] = peri_params_write_path
+        props['peri_mechanism'] = peri_mech_write_path        
+    
     # Config file with all the necessary paths to feed into the optimization
     model_params_handler.write_opt_config_file(morph_path,param_write_path,
                                   mech_write_path,mech_release_write_path,
                                   features_write_path,untrained_features_write_path,
                                   all_features_write_path,
                                   protocols_write_path,all_protocols_write_path,
-                                  release_params,release_param_write_path)
-
+                                  release_params,release_param_write_path,
+                                  **props)
+    
     # Copy the optimization files in the current directory
 
     optimizer_script=utility.locate_script_file('Optim_Main.py')
