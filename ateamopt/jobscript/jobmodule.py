@@ -136,15 +136,16 @@ class test_JobModule(JobModule):
 
 
 class Slurm_JobModule(JobModule):
-    def __init__(self, script_template, machine,script_name = 'batch_job.sh'):
+    def __init__(self, script_template, machine,script_name = 'batch_job.sh',
+                  conda_env='ateam_opt'):
 
         super(Slurm_JobModule,self).__init__(machine,script_name)
 
-        if 'cori' in self.machine:
-            self.conda_env = 'ateam'
-        elif 'bbp' in self.machine:
-            self.conda_env = 'CompNeuro'
-
+#        if 'cori' in self.machine:
+#            self.conda_env = 'ateam'
+#        elif 'bbp' in self.machine:
+#            self.conda_env = 'CompNeuro'
+        self.conda_env = conda_env
         self.script_template = utility.locate_template_file(script_template)
         self.submit_verb = 'sbatch'
 
