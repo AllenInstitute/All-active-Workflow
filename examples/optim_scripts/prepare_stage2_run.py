@@ -67,17 +67,17 @@ def main():
     mech_write_path,mech_release_write_path = model_params_handler.write_mechanisms_opt(model_params,\
                                     model_params_release,param_bounds_path)
     props = {}
-    
+
     # Perisomatic model
     if perisomatic_model_id != '':
         perisomatic_dir = 'peri_model'
         peri_model_path = os.path.join(perisomatic_dir,'*fit*.json')
         peri_param_path = glob.glob(peri_model_path)[0]
         peri_params_write_path, peri_mech_write_path = \
-                model_params_handler.aibs_params_to_bpopt_setup(peri_param_path)
+                model_params_handler.aibs_peri_to_bpopt(peri_param_path)
         props['peri_parameters'] = peri_params_write_path
-        props['peri_mechanism'] = peri_mech_write_path        
-    
+        props['peri_mechanism'] = peri_mech_write_path
+
     # Config file with all the necessary paths to feed into the optimization
     model_params_handler.write_opt_config_file(morph_path,param_write_path,
                                   mech_write_path,mech_release_write_path,
@@ -86,7 +86,7 @@ def main():
                                   protocols_write_path,all_protocols_write_path,
                                   release_params,release_param_write_path,
                                   **props)
-    
+
     # Copy the optimization files in the current directory
 
     optimizer_script=utility.locate_script_file('Optim_Main.py')
