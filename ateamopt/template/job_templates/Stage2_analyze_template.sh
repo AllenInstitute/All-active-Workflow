@@ -28,7 +28,6 @@ srun --output="${LOGS}/engine_%j_%2t.out" ipengine --timeout=3000 --profile=${IP
 sleep 10
 
 python analysis_stage2.py -vv --checkpoint  checkpoints_final  --ipyparallel
-# python save_time.py
-# python perisomatic_sim.py
 
-rm -rf $IPYTHONDIR
+
+# rm -rf $IPYTHONDIR

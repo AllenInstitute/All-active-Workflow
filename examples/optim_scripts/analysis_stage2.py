@@ -35,7 +35,7 @@ def get_opt_obj(protocols_path,features_path,morph_path, param_path,
                 mech_path,args):
     eval_handler = Bpopt_Evaluator(protocols_path, features_path,
                                    morph_path, param_path,
-                                   mech_path)
+                                   mech_path,timed_evaluation = False)
     evaluator = eval_handler.create_evaluator()
     map_function = analyzer_map(args.ipyparallel)
     opt = bpopt.optimisations.DEAPOptimisation(
@@ -158,7 +158,8 @@ def main():
                                    morph_path, release_param_write_path,
                                    mech_release_write_path,
                                    stub_axon = False,
-                                   do_replace_axon = True)
+                                   do_replace_axon = True,
+                                   timed_evaluation = False)
         evaluator_release = eval_handler_release.create_evaluator()
         opt_release = bpopt.optimisations.DEAPOptimisation(
                             evaluator=evaluator_release)
@@ -200,7 +201,8 @@ def main():
         eval_handler_peri = Bpopt_Evaluator(all_protocols_write_path,
                                    features_write_path,
                                    morph_path, peri_param_write_path,
-                                   peri_mech_write_path)
+                                   peri_mech_write_path,
+                                   timed_evaluation = False)
         evaluator_peri = eval_handler_peri.create_evaluator()
         opt_peri = bpopt.optimisations.DEAPOptimisation(
                             evaluator=evaluator_peri)

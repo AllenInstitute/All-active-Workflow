@@ -17,6 +17,7 @@ def filter_feat_proto_active(features_dict,protocols_dict,all_protocols_dict,
     spiking_proto_dict = OrderedDict()
     non_spiking_proto_dict =  OrderedDict()
     training_stimtype_reject = ['LongDCSupra','Ramp','Short_Square_Triple','Noise']
+    
     for feat_key,feat_val in features_dict.items():
         if any(reject_stim in feat_key for reject_stim in training_stimtype_reject):
             continue
@@ -29,8 +30,9 @@ def filter_feat_proto_active(features_dict,protocols_dict,all_protocols_dict,
             if 'depol_block' in feat_val['soma'].keys():
                 del feat_val['soma']['depol_block']
     
+    
     # Ignoring spiking protocol which are followed by non-spiking stim protocol
-    max_nospiking_amp = min(non_spiking_proto_dict.values())            
+    max_nospiking_amp = max(non_spiking_proto_dict.values())            
     for spike_stim,spike_amp in spiking_proto_dict.items():
         if spike_amp < max_nospiking_amp:
            del spiking_proto_dict[spike_stim] 
@@ -73,8 +75,17 @@ def filter_feat_proto_active(features_dict,protocols_dict,all_protocols_dict,
     untrained_features_dict = {key:val for key,val in features_dict.items() \
                               if key not in spiking_proto_select+
                                   nonspiking_proto_select}
-
-
+    
+    # For fI kink spiking proto only allow the following features
+    for u_key,u_val in untrained_features_dict.items():
+        u_val['soma'] = entries_to_remove(['depol_block',\
+                       'check_AISInitiation','Spikecount'],u_val['soma'])
+            
+    for f_key,f_val in features_dict_filtered[spiking_proto_sorted[0]]['soma']:
+        if f_key not in ['mean_frequency', 'depol_block',\
+                       'check_AISInitiation']:
+            features_dict_filtered[spiking_proto_sorted[0]]['soma'].pop(f_key)
+    
     if add_DB_check:
         max_proto_key = spiking_proto_sorted[-1]
         max_amp = max([proto['amp'] for proto in protocols_dict[max_proto_key]['stimuli']])
@@ -153,3 +164,9 @@ def adjust_param_bounds(model_param, model_param_prev,tolerance=0.5):
     adjusted_bound = [lb,ub]
     model_param['bounds'] = adjusted_bound
     return model_param
+
+def entries_to_remove(entries, the_dict):
+    for key in entries:
+        if key in the_dict.keys():
+            del the_dict[key]
+    return the_dict

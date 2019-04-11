@@ -1,6 +1,7 @@
 import json
 import numpy as np
 import bluepyopt.ephys as ephys
+from ateamopt.utils import utility
 import logging
 
 logger = logging.getLogger(__name__)
@@ -21,16 +22,13 @@ class Bpopt_Evaluator(object):
         self.param_path=param_path
         self.mech_path=mech_path
 
-        feature_definitions = json.load(open(feature_path))
+        feature_definitions = utility.load_json(feature_path)
         feature_set = []
         for feat_key,feat_val in feature_definitions.items():
             feature_set.extend(feat_val['soma'].keys())
-        self.AIS_check = True if 'check_AISInitiation' in list(set(feature_set)) else False
-
-        self.timed_evaluation = True
-        if 'timed_evaluation' in props:
-            self.timed_evaluation = props['timed_evaluation']
-
+        self.AIS_check = True if 'check_AISInitiation' in \
+                list(set(feature_set)) else False
+        self.timed_evaluation = props.get('timed_evaluation',True)
         self.axon_type = 'stub_axon'
         if props.get('do_replace_axon'):
             self.axon_type = 'bpopt_replaced_axon'

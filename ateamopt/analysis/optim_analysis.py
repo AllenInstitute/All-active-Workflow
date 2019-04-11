@@ -157,7 +157,7 @@ class Optim_Analyzer(object):
                             sim=nrn)
                     responses_release.update(response_release)
 
-            utility.save_pickle(response_release_filename, responses_release)
+            utility.save_pickle(response_release_filename, [responses_release])
 
     
     def create_bpopt_param_template(self,param_list):
@@ -291,7 +291,7 @@ class Optim_Analyzer(object):
         opt = self._opt # Optimizer object
 
         response = utility.load_pickle(response_filename)[0] # response with minimum training error
-        responses_release = utility.load_pickle(response_release_filename)
+        responses_release = utility.load_pickle(response_release_filename)[0]
         logger.debug('Retrieving Optimized and Released Responses')
 
 
@@ -436,7 +436,7 @@ class Optim_Analyzer(object):
         # objectives
         opt = self._opt # Optimizer object
         opt_response = utility.load_pickle(response_filename)[0]
-        responses_release =  utility.load_pickle(response_release_filename)
+        responses_release =  utility.load_pickle(response_release_filename)[0]
 
         opt_config = utility.load_json(opt_config_file)
         train_protocol_path = opt_config['protocols']
