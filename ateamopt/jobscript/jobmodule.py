@@ -20,7 +20,6 @@ class JobModule(object):
         with open(self.script_name, "r") as in_file:
             buf = in_file.readlines()
         
-        
             with open(self.script_name, "w") as out_file:
                 for line in buf:
                     match_eval = line == "%s\n"%match_line \
@@ -70,7 +69,7 @@ class ChainSubJob(JobModule):
             self.adjust_template('#SBATCH -p prod', '#SBATCH -q regular')
             self.adjust_template('#SBATCH -C cpu|nvme', '#SBATCH -C haswell')
             self.adjust_template('#SBATCH -A proj36','#SBATCH -L SCRATCH')
-            self.adjust_template('#SBATCH -n 256', '#SBATCH -N 8')
+#            self.adjust_template('#SBATCH -n 256', '#SBATCH -N 8')
             Path_append ='export PATH="/global/common/software/m2043/AIBS_Opt/software/x86_64/bin:$PATH"'
             self.adjust_template('source activate %s'%self.conda_env, Path_append,
                                       add = True)
@@ -115,7 +114,6 @@ class test_JobModule(JobModule):
         utility.create_filepath(self.cp_file)
         testjob_string = 'python %s -vv --checkpoint %s'%(self.optim_script,
                                                           self.cp_file)
-
         if self.parallel:
            testjob_string += ' --ipyparallel'
 
@@ -140,11 +138,6 @@ class Slurm_JobModule(JobModule):
                   conda_env='ateam_opt'):
 
         super(Slurm_JobModule,self).__init__(machine,script_name)
-
-#        if 'cori' in self.machine:
-#            self.conda_env = 'ateam'
-#        elif 'bbp' in self.machine:
-#            self.conda_env = 'CompNeuro'
         self.conda_env = conda_env
         self.script_template = utility.locate_template_file(script_template)
         self.submit_verb = 'sbatch'
@@ -157,7 +150,6 @@ class Slurm_JobModule(JobModule):
         with open(self.script_name, "w") as batchjob_script:
             batchjob_script.write(batchjob_string)
         
-        
         if 'cori' in self.machine:
             self.adjust_template('#SBATCH -p prod', '#SBATCH -q regular')
             self.adjust_template('#SBATCH -C cpu|nvme', '#SBATCH -C haswell')
@@ -166,9 +158,9 @@ class Slurm_JobModule(JobModule):
             Path_append ='export PATH="/global/common/software/m2043/AIBS_Opt/software/x86_64/bin:$PATH"'
             self.adjust_template('source activate %s'%self.conda_env, Path_append,
                                   add = True)
+            self.adjust_template('#SBATCH --mail-user','',partial_match = True)
 
     def submit_job(self):
-
         os.system('chmod +x %s'%self.script_name)
         process = Popen(['%s', '%s'%(self.submit_verb,self.script_name)],
                          stdout=PIPE, stderr=PIPE)

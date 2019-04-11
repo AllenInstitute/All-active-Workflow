@@ -6,6 +6,7 @@
 #SBATCH -C cpu|nvme
 #SBATCH -A proj36
 #SBATCH --mail-type=ALL
+#SBATCH --mail-user=anin@alleninstitute.org
 #SBATCH -J Stage0
 #SBATCH --signal=B:USR1@60
 
