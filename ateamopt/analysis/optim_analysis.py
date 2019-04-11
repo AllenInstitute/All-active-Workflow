@@ -937,8 +937,8 @@ class Optim_Analyzer(object):
     def postprocess(self,stim_file,response_filename, pdf_pages,
                     exp_fi_path, model_fi_path,exp_AP_shape_path,model_AP_shape_path,
                     model_type, ephys_dir= 'preprocessed/'):
-        stim_map_content = pd.read_csv(stim_file, sep='\s*,\s*',
-                                   header=0, encoding='ascii', engine='python')
+        with open(stim_file, 'r') as stim_map_file:
+            stim_map_content = stim_map_file.read()
         reject_stimtype_list = ['LongDCSupra','Ramp', 'ShortDC',
                                 'Noise','Short_Square_Triple']
         stim_map = defaultdict(dict)
