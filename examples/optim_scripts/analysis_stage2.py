@@ -173,9 +173,9 @@ def main():
     pdf_pages =  PdfPages(analysis_write_path)
     model_type = 'All-active'
     pdf_pages= analysis_handler.plot_grid_Response(resp_filename,
-                                        resp_release_filename,model_type,
+                                        resp_release_filename,
                                         stim_mapfile,
-                                        pdf_pages,resp_comparison = model_type)
+                                        pdf_pages)
     
     pdf_pages= analysis_handler.plot_feature_comp(resp_filename,
                          resp_release_filename, pdf_pages)
