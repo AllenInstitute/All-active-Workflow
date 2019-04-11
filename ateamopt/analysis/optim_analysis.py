@@ -273,8 +273,8 @@ class Optim_Analyzer(object):
 
     def plot_grid_Response(self,response_filename,
                       response_release_filename,
-                      resp_identifier,
                       stim_file,pdf_pages,
+                      resp_comparison = 'All-active',
                       save_model_response = False,
                       model_response_dir = 'model_response/',
                       ephys_dir= 'preprocessed/',
@@ -394,7 +394,7 @@ class Optim_Analyzer(object):
                                 responses_release_voltage,
                                 color='r',
                                 linewidth=.1,
-                                label = 'Released %s'%resp_identifier,
+                                label = 'Released %s'%resp_comparison,
                                 alpha = 0.4)
 
                     if index//n_col == n_row-1:

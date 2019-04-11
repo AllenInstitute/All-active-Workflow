@@ -175,7 +175,7 @@ def main():
     pdf_pages= analysis_handler.plot_grid_Response(resp_filename,
                                         resp_release_filename,model_type,
                                         stim_mapfile,
-                                        pdf_pages)
+                                        pdf_pages,resp_comparison = model_type)
     
     pdf_pages= analysis_handler.plot_feature_comp(resp_filename,
                          resp_release_filename, pdf_pages)
@@ -206,8 +206,8 @@ def main():
         model_type = 'Perisomatic'
         analysis_handler.get_release_responses(opt_peri,resp_peri_filename)
         pdf_pages= analysis_handler.plot_grid_Response(resp_filename,
-                                        resp_peri_filename,model_type,
-                                        stim_mapfile,pdf_pages)    
+                                        resp_peri_filename,
+                                        stim_mapfile,pdf_pages,resp_comparison = model_type)    
         model_fi_path = 'Validation_Responses/fI_peri_%s.pkl'%cell_id
         model_AP_shape_path = 'Validation_Responses/AP_shape_peri_%s.pkl'%cell_id
         pdf_pages = analysis_handler.postprocess(stim_mapfile,resp_peri_filename,pdf_pages,
