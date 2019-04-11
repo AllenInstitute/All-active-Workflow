@@ -168,17 +168,33 @@ def main():
     resp_release_filename = './resp_release.txt'
     analysis_handler.get_release_responses(opt_release,resp_release_filename)
 
-    
-
     stim_mapfile = 'preprocessed/StimMapReps.csv'
-    analysis_write_path = cell_id + '_Stage2.pdf'
+    analysis_write_path = '%s_Stage2.pdf'%cell_id
     pdf_pages =  PdfPages(analysis_write_path)
+    model_type = 'All-active'
     pdf_pages= analysis_handler.plot_grid_Response(resp_filename,
-                                        resp_release_filename,
+                                        resp_release_filename,model_type,
                                         stim_mapfile,
                                         pdf_pages)
+    
+    pdf_pages= analysis_handler.plot_feature_comp(resp_filename,
+                         resp_release_filename, pdf_pages)
+    pdf_pages = analysis_handler.plot_GA_evol(GA_evol_path,pdf_pages)
+    pdf_pages = analysis_handler.plot_param_diversity(hof_params_filename,
+                                 pdf_pages)
+    exp_fi_path = 'Validation_Responses/fI_exp_%s.pkl'%cell_id 
+    model_fi_path = 'Validation_Responses/fI_aa_%s.pkl'%cell_id
+    exp_AP_shape_path = 'Validation_Responses/AP_shape_exp_%s.pkl'%cell_id
+    model_AP_shape_path = 'Validation_Responses/AP_shape_aa_%s.pkl'%cell_id
+                    
+    pdf_pages = analysis_handler.postprocess(stim_mapfile,resp_filename,pdf_pages,\
+                         exp_fi_path, model_fi_path,exp_AP_shape_path,model_AP_shape_path,
+                         model_type)
+    
     # Perisomatic model
+    
     if perisomatic_model_id != '':
+        resp_peri_filename = './resp_peri.txt'
         peri_param_write_path = opt_config['peri_parameters']
         peri_mech_write_path = opt_config['peri_mechanism']
         evaluator_peri = Bpopt_Evaluator(all_protocols_write_path,
@@ -187,22 +203,17 @@ def main():
                                    peri_mech_write_path)
         opt_peri = bpopt.optimisations.DEAPOptimisation(
                             evaluator=evaluator_peri)
-        resp_peri_filename = './resp_peri.txt'
+        model_type = 'Perisomatic'
         analysis_handler.get_release_responses(opt_peri,resp_peri_filename)
         pdf_pages= analysis_handler.plot_grid_Response(resp_filename,
-                                        resp_peri_filename,
-                                        stim_mapfile,
-                                        pdf_pages)
-    
-    pdf_pages= analysis_handler.plot_feature_comp(resp_filename,
-                         resp_release_filename, pdf_pages)
-
-    pdf_pages = analysis_handler.plot_GA_evol(GA_evol_path,pdf_pages)
-    pdf_pages = analysis_handler.plot_param_diversity(hof_params_filename,
-                                 pdf_pages)
-    pdf_pages = analysis_handler.postprocess(stim_mapfile,resp_filename,
-                                 pdf_pages)
-
+                                        resp_peri_filename,model_type,
+                                        stim_mapfile,pdf_pages)    
+        model_fi_path = 'Validation_Responses/fI_peri_%s.pkl'%cell_id
+        model_AP_shape_path = 'Validation_Responses/AP_shape_peri_%s.pkl'%cell_id
+        pdf_pages = analysis_handler.postprocess(stim_mapfile,resp_peri_filename,pdf_pages,
+                             exp_fi_path, model_fi_path,exp_AP_shape_path,model_AP_shape_path,
+                             model_type)
+        
     spiketimes_exp_path ='Validation_Responses/spiketimes_exp_noise.pkl'
     spiketimes_hof_path = 'Validation_Responses/spiketimes_model_noise.pkl'
     exp_variance_hof_path = 'Validation_Responses/exp_variance_hof.pkl'

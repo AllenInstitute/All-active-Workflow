@@ -273,8 +273,8 @@ class Optim_Analyzer(object):
 
     def plot_grid_Response(self,response_filename,
                       response_release_filename,
-                      stim_file,
-                      pdf_pages,
+                      resp_identifier,
+                      stim_file,pdf_pages,
                       save_model_response = False,
                       model_response_dir = 'model_response/',
                       ephys_dir= 'preprocessed/',
@@ -394,10 +394,8 @@ class Optim_Analyzer(object):
                                 responses_release_voltage,
                                 color='r',
                                 linewidth=.1,
-                                label = 'Released',
+                                label = 'Released %s'%resp_identifier,
                                 alpha = 0.4)
-
-
 
                     if index//n_col == n_row-1:
                         ax_comp[index//n_col,index%n_col].set_xlabel('Time (ms)')
@@ -716,176 +714,230 @@ class Optim_Analyzer(object):
 
     @staticmethod
     def prepare_spike_shape(response_filename,stim_map,
-                        stim_name_select, ephys_dir= 'preprocessed/',
-                        prefix_pad = 2, posfix_pad = 5,
-                        res =0.05):
-
-        response = utility.load_pickle(response_filename)[0]
-        spike_features = ['peak_time']
-        sweep_filenames = stim_map[stim_name_select]['stimuli'][0]['sweep_filenames']
-        sweeps = []
-        for sweep_filename in sweep_filenames:
-            sweep_fullpath = os.path.join(
-                    ephys_dir,
-                    sweep_filename)
-            data = np.loadtxt(sweep_fullpath)
-            time = data[:, 0]
-            voltage = data[:, 1]
-
-            # Prepare sweep for eFEL
-            sweep = {}
-            sweep['T'] = time
-            sweep['V'] = voltage
-            sweep['stim_start'] = [stim_map[stim_name_select]['stimuli'][0]['delay']]
-            sweep['stim_end'] = [stim_map[stim_name_select]['stimuli'][0]['stim_end']]
-            sweeps.append(sweep)
-
-        # Extract experimental spike times
-        feature_results = efel.getFeatureValues(sweeps, spike_features)
+                        stim_name_select,exp_AP_shape_path,model_AP_shape_path,
+                        model_type,ephys_dir= 'preprocessed/',
+                        prefix_pad = 2, posfix_pad = 5,res =0.05):
+        
         AP_shape_time = np.arange(-prefix_pad,posfix_pad, res)
-        AP_shape_exp = np.zeros(AP_shape_time.size)
-        AP_shape_model = np.zeros(AP_shape_time.size)
-
-        # Experimental AP shape
-        num_spikes_exp = 0
-        for k,sweep_filename in enumerate(sweep_filenames):
-            sweep_fullpath = os.path.join(
-                ephys_dir,
-                sweep_filename)
-
-            data = np.loadtxt(sweep_fullpath)
-            time = data[:, 0]
-            voltage = data[:, 1]
-            spike_times_exp = feature_results[k]['peak_time']
-            AP_shape_exp = get_spike_shape(time,voltage,
-                    spike_times_exp,AP_shape_time,
-                    AP_shape_exp)
-            num_spikes_exp += len(spike_times_exp)
-        AP_shape_exp /= num_spikes_exp
-
-
-        # Calculate model spike times
-        model_sweeps = []
-        model_sweep = {}
-        name_loc = stim_name_select+'.soma.v'
-        resp_time = response[name_loc]['time'].values
-        resp_voltage = response[name_loc]['voltage'].values
-        model_sweep['T'] = resp_time
-        model_sweep['V'] = resp_voltage
-        model_sweep['stim_start'] = [stim_map[stim_name_select]['stimuli'][0]['delay']]
-        model_sweep['stim_end'] = [stim_map[stim_name_select]['stimuli'][0]['stim_end']]
-        model_sweeps.append(model_sweep)
-        feature_results_model = efel.getFeatureValues(model_sweeps, spike_features)
-
-        # Model AP shape
-        spike_times_model = feature_results_model[0]['peak_time']
-
-        AP_shape_model = get_spike_shape(time,voltage,
-                    spike_times_exp,AP_shape_time,
-                    AP_shape_exp)
-
-        num_spikes_model = len(spike_times_model)
-        AP_shape_model /= num_spikes_model
-
-        return AP_shape_time, AP_shape_exp, AP_shape_model
-
-    def prepare_fI_curve(response_filename, stim_map,reject_stimtype_list,
-                         ephys_dir= 'preprocessed/'):
-        feature_mean_exp = defaultdict()
-        stim_name_exp = defaultdict()
-
-        somatic_features = ['Spikecount']
-        spike_stim_keys_dict = {}
-
-        for stim_name in stim_map.keys():
-            stim_start = stim_map[stim_name]['stimuli'][0]['delay']
-            stim_end = stim_map[stim_name]['stimuli'][0]['stim_end']
+        
+        # check if experimental spike shape is already calculated
+        if not os.path.exists(exp_AP_shape_path):
+           spike_shape_exp = {}
+        else:
+            spike_shape_exp = utility.load_pickle(exp_AP_shape_path) 
+        
+        if stim_name_select not in spike_shape_exp.keys():
+            spike_features = ['peak_time']
+            sweep_filenames = stim_map[stim_name_select]['stimuli'][0]['sweep_filenames']
             sweeps = []
-            for sweep_filename in stim_map[stim_name]['stimuli'][0]['sweep_filenames']:
+            for sweep_filename in sweep_filenames:
                 sweep_fullpath = os.path.join(
-                    'preprocessed',
-                    sweep_filename)
-
+                        ephys_dir,
+                        sweep_filename)
                 data = np.loadtxt(sweep_fullpath)
-                time = data[:,0]
-                voltage = data[:,1]
-
+                time = data[:, 0]
+                voltage = data[:, 1]
+    
                 # Prepare sweep for eFEL
                 sweep = {}
                 sweep['T'] = time
                 sweep['V'] = voltage
-                sweep['stim_start'] = [stim_start]
-                sweep['stim_end'] = [stim_end]
-
+                sweep['stim_start'] = [stim_map[stim_name_select]['stimuli'][0]['delay']]
+                sweep['stim_end'] = [stim_map[stim_name_select]['stimuli'][0]['stim_end']]
                 sweeps.append(sweep)
-            feature_results = efel.getFeatureValues(sweeps, somatic_features)
-            for feature_name in somatic_features:
-                feature_values = [np.mean(trace_dict[feature_name])
-                                  for trace_dict in feature_results
-                                  if trace_dict[feature_name] is not None]
-
-            if feature_values:
-                feature_mean = np.mean(feature_values)
-
-            else:
-                feature_mean = 0
-            if feature_mean != 0:
-                spike_stim_keys_dict[stim_name] = stim_map[stim_name]['stimuli'][0]['amp']
-
-            stim_amp =stim_map[stim_name]['stimuli'][0]['amp']
-            stim_dur = (float(stim_end) - float(stim_start))/1e3  # in seconds
-            feature_mean_exp[stim_amp] = feature_mean/stim_dur
-            stim_name_exp[stim_amp] = stim_name
+    
+            # Extract experimental spike times
+            feature_results = efel.getFeatureValues(sweeps, spike_features)
+     
+            # Experimental AP shape
+            AP_shape_exp = np.zeros(AP_shape_time.size)
+            num_spikes_exp = 0
+            for k,sweep_filename in enumerate(sweep_filenames):
+                sweep_fullpath = os.path.join(
+                    ephys_dir,
+                    sweep_filename)
+    
+                data = np.loadtxt(sweep_fullpath)
+                time = data[:, 0]
+                voltage = data[:, 1]
+                spike_times_exp = feature_results[k]['peak_time']
+                AP_shape_exp = get_spike_shape(time,voltage,
+                        spike_times_exp,AP_shape_time,
+                        AP_shape_exp)
+                num_spikes_exp += len(spike_times_exp)
+            AP_shape_exp /= num_spikes_exp
+            spike_shape_exp[stim_name_select] = AP_shape_exp
+            spike_shape_exp['time'] = AP_shape_time
+            utility.create_filepath(exp_AP_shape_path)
+            utility.save_pickle(exp_AP_shape_path,spike_shape_exp)
+        else:
+            AP_shape_exp = spike_shape_exp[stim_name_select]
+        
+        # check if model spike shape is already calculated
+        if not os.path.exists(model_AP_shape_path):
+           spike_shape_model = {}
+        else:
+            spike_shape_model = utility.load_pickle(model_AP_shape_path) 
+        
+        if stim_name_select not in spike_shape_model.keys():
+            response = utility.load_pickle(response_filename)[0]
+            
+            # Calculate model spike times
+            model_sweeps = []
+            model_sweep = {}
+            name_loc = stim_name_select+'.soma.v'
+            resp_time = response[name_loc]['time'].values
+            resp_voltage = response[name_loc]['voltage'].values
+            model_sweep['T'] = resp_time
+            model_sweep['V'] = resp_voltage
+            model_sweep['stim_start'] = [stim_map[stim_name_select]['stimuli'][0]['delay']]
+            model_sweep['stim_end'] = [stim_map[stim_name_select]['stimuli'][0]['stim_end']]
+            model_sweeps.append(model_sweep)
+            feature_results_model = efel.getFeatureValues(model_sweeps, spike_features)
+    
+            # Model AP shape
+            AP_shape_model = np.zeros(AP_shape_time.size)
+            spike_times_model = feature_results_model[0]['peak_time']
+            AP_shape_model = get_spike_shape(time,voltage,
+                        spike_times_exp,AP_shape_time,
+                        AP_shape_exp)
+    
+            num_spikes_model = len(spike_times_model)
+            AP_shape_model /= num_spikes_model
+            spike_shape_model[stim_name_select] = AP_shape_model
+            spike_shape_model['time'] = AP_shape_time
+            utility.create_filepath(model_AP_shape_path)
+            utility.save_pickle(model_AP_shape_path,spike_shape_model)
+        else:
+            AP_shape_model= spike_shape_model[stim_name_select]
+        
+        return AP_shape_time, AP_shape_exp, AP_shape_model
+    
+    @staticmethod
+    def prepare_fI_curve(response_filename,stim_map,reject_stimtype_list,
+                        exp_fi_path, model_fi_path,model_type,ephys_dir= 'preprocessed/'):
+        
+        feature_mean_exp = defaultdict()
+        stim_name_exp = defaultdict()
+        somatic_features = ['Spikecount']
+        spike_stim_keys_dict = {}
+        
+        if not os.path.exists(exp_fi_path):
+            fI_curve_exp = {}
+            for stim_name in stim_map.keys():
+                stim_start = stim_map[stim_name]['stimuli'][0]['delay']
+                stim_end = stim_map[stim_name]['stimuli'][0]['stim_end']
+                sweeps = []
+                for sweep_filename in stim_map[stim_name]['stimuli'][0]['sweep_filenames']:
+                    sweep_fullpath = os.path.join(
+                        'preprocessed',
+                        sweep_filename)
+    
+                    data = np.loadtxt(sweep_fullpath)
+                    time = data[:,0]
+                    voltage = data[:,1]
+    
+                    # Prepare sweep for eFEL
+                    sweep = {}
+                    sweep['T'] = time
+                    sweep['V'] = voltage
+                    sweep['stim_start'] = [stim_start]
+                    sweep['stim_end'] = [stim_end]
+    
+                    sweeps.append(sweep)
+                feature_results = efel.getFeatureValues(sweeps, somatic_features)
+                for feature_name in somatic_features:
+                    feature_values = [np.mean(trace_dict[feature_name])
+                                      for trace_dict in feature_results
+                                      if trace_dict[feature_name] is not None]
+    
+                if feature_values:
+                    feature_mean = np.mean(feature_values)
+    
+                else:
+                    feature_mean = 0
+                if feature_mean != 0:
+                    spike_stim_keys_dict[stim_name] = stim_map[stim_name]['stimuli'][0]['amp']
+    
+                stim_amp =stim_map[stim_name]['stimuli'][0]['amp']
+                stim_dur = (float(stim_end) - float(stim_start))/1e3  # in seconds
+                feature_mean_exp[stim_amp] = feature_mean/stim_dur
+                stim_name_exp[stim_amp] = stim_name
+            
+            stim_exp = sorted(stim_name_exp.keys())
+            mean_freq_exp = [feature_mean_exp[amp] for amp in stim_exp]
+            fI_curve_exp['stim_exp'] = stim_exp
+            fI_curve_exp['freq_exp'] = mean_freq_exp
+            
+            select_stim_keys_list = sorted(spike_stim_keys_dict, key=spike_stim_keys_dict.__getitem__)
+            if len(select_stim_keys_list) > 2:
+                select_stim_keys =  [select_stim_keys_list[0], select_stim_keys_list[-2]]
+            fI_curve_exp['select_stim_keys'] = select_stim_keys
+            utility.create_filepath(exp_fi_path)
+            utility.save_pickle(exp_fi_path,fI_curve_exp)
+        else:
+            fI_curve_exp = utility.load_pickle(exp_fi_path)
+            stim_exp = fI_curve_exp['stim_exp']
+            mean_freq_exp = fI_curve_exp['freq_exp']
+            select_stim_keys = fI_curve_exp['select_stim_keys']
 
 
         # Calculating the spikerate for the model
-        response = utility.load_pickle(response_filename)[0]
-        feature_mean_model_dict = defaultdict()
-        stim_model_dict = defaultdict()
-
-        for key,val in response.items():
-            if 'soma' in key:
-                if not any(stim_type_iter in key for stim_type_iter in \
-                           reject_stimtype_list):
-                    stim_name = key.split('.')[0]
-                    if 'DB' in stim_name:
-                        continue
-                    resp_time = val['time'].values
-                    resp_voltage = val['voltage'].values
-                    stim_amp = stim_map[stim_name]['stimuli'][0]['amp']
-                    trace1 = {}
-                    trace1['T'] = resp_time
-                    trace1['V'] = resp_voltage
-                    trace1['stim_start'] = [stim_map[stim_name]['stimuli'][0]['delay']]
-                    trace1['stim_end'] = [stim_map[stim_name]['stimuli'][0]['stim_end']]
-                    model_traces = [trace1]
-                    feature_results_model = efel.getFeatureValues(model_traces, somatic_features)
-                    for feature_name in somatic_features:
-                        feature_values_model = [np.mean(trace_dict[feature_name])
-                                          for trace_dict in feature_results_model
-                                          if trace_dict[feature_name] is not None]
-
-                    if feature_values_model:
-                        feature_mean_model = feature_values_model[0]
-                    else:
-                        feature_mean_model = 0
-
-                    stim_start = stim_map[stim_name]['stimuli'][0]['delay']
-                    stim_end = stim_map[stim_name]['stimuli'][0]['stim_end']
-                    stim_dur = (float(stim_end) - float(stim_start))/1e3
-                    feature_mean_model_dict[stim_amp] = feature_mean_model/stim_dur
-                    stim_model_dict[stim_amp] = stim_name
-
-        select_stim_keys_list = sorted(spike_stim_keys_dict, key=spike_stim_keys_dict.__getitem__)
-        if len(select_stim_keys_list) > 2:
-            select_stim_keys =  [select_stim_keys_list[0], select_stim_keys_list[-2]]
-
-
-        return stim_name_exp,feature_mean_exp,stim_model_dict,\
-                        feature_mean_model_dict,select_stim_keys
+        
+        if not os.path.exists(model_fi_path):
+            response = utility.load_pickle(response_filename)[0]
+            feature_mean_model_dict = defaultdict()
+            stim_model_dict = defaultdict()
+            fI_curve_model={}
+            for key,val in response.items():
+                if 'soma' in key:
+                    if not any(stim_type_iter in key for stim_type_iter in \
+                               reject_stimtype_list):
+                        stim_name = key.split('.')[0]
+                        if 'DB' in stim_name:
+                            continue
+                        resp_time = val['time'].values
+                        resp_voltage = val['voltage'].values
+                        stim_amp = stim_map[stim_name]['stimuli'][0]['amp']
+                        trace1 = {}
+                        trace1['T'] = resp_time
+                        trace1['V'] = resp_voltage
+                        trace1['stim_start'] = [stim_map[stim_name]['stimuli'][0]['delay']]
+                        trace1['stim_end'] = [stim_map[stim_name]['stimuli'][0]['stim_end']]
+                        model_traces = [trace1]
+                        feature_results_model = efel.getFeatureValues(model_traces, somatic_features)
+                        for feature_name in somatic_features:
+                            feature_values_model = [np.mean(trace_dict[feature_name])
+                                              for trace_dict in feature_results_model
+                                              if trace_dict[feature_name] is not None]
+    
+                        if feature_values_model:
+                            feature_mean_model = feature_values_model[0]
+                        else:
+                            feature_mean_model = 0
+    
+                        stim_start = stim_map[stim_name]['stimuli'][0]['delay']
+                        stim_end = stim_map[stim_name]['stimuli'][0]['stim_end']
+                        stim_dur = (float(stim_end) - float(stim_start))/1e3
+                        feature_mean_model_dict[stim_amp] = feature_mean_model/stim_dur
+                        stim_model_dict[stim_amp] = stim_name
+    
+            stim_model = sorted(stim_model_dict.keys())
+            mean_freq_model = [feature_mean_model_dict[amp] for amp in stim_model]
+            fI_curve_model['stim_' + model_type] = stim_model
+            fI_curve_model['freq_' + model_type] = mean_freq_model
+            utility.create_filepath(model_fi_path)
+            utility.save_pickle(model_fi_path,fI_curve_model)
+        else:
+            fI_curve_model = utility.load_pickle(model_fi_path)
+            stim_model = fI_curve_model['stim_exp']
+            mean_freq_model = fI_curve_model['freq_exp']
+            
+        return stim_exp,mean_freq_exp,stim_model,mean_freq_model,select_stim_keys
 
     def postprocess(self,stim_file,response_filename, pdf_pages,
-                                 ephys_dir= 'preprocessed/'):
+                    exp_fi_path, model_fi_path,exp_AP_shape_path,model_AP_shape_path,
+                    model_type, ephys_dir= 'preprocessed/'):
         stim_map_content = pd.read_csv(stim_file, sep='\s*,\s*',
                                    header=0, encoding='ascii', engine='python')
         reject_stimtype_list = ['LongDCSupra','Ramp', 'ShortDC',
@@ -909,32 +961,13 @@ class Optim_Analyzer(object):
                     iter_list = [iter_dict]
                     stim_map[stim_name]['stimuli'] = iter_list
 
-        stim_name_exp,feature_mean_exp,stim_model_dict,\
-                        feature_mean_model_dict,select_stim_keys= \
+        stim_exp,mean_freq_exp,stim_model,mean_freq_model,select_stim_keys= \
                             self.prepare_fI_curve(response_filename,
-                            stim_map,reject_stimtype_list,ephys_dir=ephys_dir)
-
-        stim_exp = sorted(stim_name_exp.keys())
-        mean_freq_exp = [feature_mean_exp[amp] for amp in stim_exp]
-
-        stim_model = sorted(stim_model_dict.keys())
-        mean_freq_model = [feature_mean_model_dict[amp] for amp in stim_model]
-        max_freq = max([max(mean_freq_model), max(mean_freq_exp)])
-
+                            stim_map,reject_stimtype_list,\
+                            exp_fi_path,model_fi_path,model_type,ephys_dir=ephys_dir)
+        
         # Plot fi curve
         fig,ax= plt.subplots(1,figsize=(5,5),dpi =80)
-
-        for key,val in stim_model_dict.items():
-            if val in select_stim_keys:
-                if val == select_stim_keys[0]:
-                    shift = (max_freq+feature_mean_model_dict[key])/2
-                else:
-                    shift = -feature_mean_model_dict[key]/2
-                ax.annotate(val,xy=(key,feature_mean_model_dict[key]),
-                            xytext =(key,feature_mean_model_dict[key]+shift),
-                            rotation=90,fontsize = 10,
-                            arrowprops=dict(facecolor='red',
-                            shrink=0.01,alpha =.5))
         ax.scatter(stim_exp, mean_freq_exp,color = 'black',
                    s=50, alpha = .8, label='Experiment')
         ax.plot(stim_exp, mean_freq_exp,color = 'black',lw =.1, alpha = .1)
@@ -953,12 +986,13 @@ class Optim_Analyzer(object):
                              dpi=80, sharey = True,squeeze = False)
         for kk,stim_name in enumerate(select_stim_keys):
             AP_shape_time, AP_shape_exp, AP_shape_model =\
-                self.prepare_spike_shape(response_filename,stim_map,
-                                         stim_name,ephys_dir=ephys_dir)
+                self.prepare_spike_shape(response_filename,stim_map,stim_name,\
+                                 exp_AP_shape_path,model_AP_shape_path,model_type,\
+                                 ephys_dir=ephys_dir)
             ax[kk].plot(AP_shape_time, AP_shape_exp,lw = 2,
                           color = 'black',label = 'Experiment')
             ax[kk].plot(AP_shape_time, AP_shape_model,lw = 2,
-                          color = 'blue',label = 'Model')
+                          color = 'blue',label = '%s'%model_type)
             ax[kk].legend(prop={'size': 10})
             ax[kk].set_title(stim_name,fontsize = 12)
 
