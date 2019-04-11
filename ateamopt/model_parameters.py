@@ -308,7 +308,7 @@ class AllActive_Model_Parameters(object):
         peri_params_write_path = base_dir+ self.cell_id + '/peri_parameters.json'
         peri_mech_write_path = base_dir+ self.cell_id + '/peri_mechanism.json'
         utility.save_json(peri_params_write_path,peri_params_release)
-        utility.save_json(peri_params_write_path,peri_mechs_release)
+        utility.save_json(peri_mech_write_path,peri_mechs_release)
         return peri_params_write_path, peri_mech_write_path
 
 
