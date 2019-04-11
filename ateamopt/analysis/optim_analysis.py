@@ -159,7 +159,6 @@ class Optim_Analyzer(object):
 
             utility.save_pickle(response_release_filename, responses_release)
 
-#    def get_peri
     
     def create_bpopt_param_template(self,param_list):
         opt = self._opt
