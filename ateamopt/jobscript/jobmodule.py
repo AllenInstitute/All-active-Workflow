@@ -156,14 +156,16 @@ class Slurm_JobModule(JobModule):
         batchjob_string = batchjob_string.replace('conda_env',self.conda_env)
         with open(self.script_name, "w") as batchjob_script:
             batchjob_script.write(batchjob_string)
-
-        self.adjust_template('#SBATCH -p prod', '#SBATCH -q regular')
-        self.adjust_template('#SBATCH -C cpu|nvme', '#SBATCH -C haswell')
-        self.adjust_template('#SBATCH -A proj36','#SBATCH -L SCRATCH')
-        self.adjust_template('#SBATCH -n 256', '#SBATCH -N 8')
-        Path_append ='export PATH="/global/common/software/m2043/AIBS_Opt/software/x86_64/bin:$PATH"'
-        self.adjust_template('source activate %s'%self.conda_env, Path_append,
-                              add = True)
+        
+        
+        if 'cori' in self.machine:
+            self.adjust_template('#SBATCH -p prod', '#SBATCH -q regular')
+            self.adjust_template('#SBATCH -C cpu|nvme', '#SBATCH -C haswell')
+            self.adjust_template('#SBATCH -A proj36','#SBATCH -L SCRATCH')
+            self.adjust_template('#SBATCH -n 256', '#SBATCH -N 8')
+            Path_append ='export PATH="/global/common/software/m2043/AIBS_Opt/software/x86_64/bin:$PATH"'
+            self.adjust_template('source activate %s'%self.conda_env, Path_append,
+                                  add = True)
 
     def submit_job(self):
 
