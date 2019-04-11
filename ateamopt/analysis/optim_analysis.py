@@ -929,8 +929,8 @@ class Optim_Analyzer(object):
             utility.save_pickle(model_fi_path,fI_curve_model)
         else:
             fI_curve_model = utility.load_pickle(model_fi_path)
-            stim_model = fI_curve_model['stim_exp']
-            mean_freq_model = fI_curve_model['freq_exp']
+            stim_model = fI_curve_model['stim_' + model_type]
+            mean_freq_model = fI_curve_model['freq_' + model_type]
             
         return stim_exp,mean_freq_exp,stim_model,mean_freq_model,select_stim_keys
 
@@ -967,11 +967,11 @@ class Optim_Analyzer(object):
         
         # Plot fi curve
         fig,ax= plt.subplots(1,figsize=(5,5),dpi =80)
-        ax.scatter(stim_exp, mean_freq_exp,color = 'black',
+        ax.scatter(stim_exp, mean_freq_exp,color = 'k',
                    s=50, alpha = .8, label='Experiment')
-        ax.plot(stim_exp, mean_freq_exp,color = 'black',lw =.1, alpha = .1)
-        ax.scatter(stim_model, mean_freq_model,color = 'blue',
-                   s=100,alpha = .9, marker = '*',label='Model')
+        ax.plot(stim_exp, mean_freq_exp,color = 'k',lw =.1, alpha = .1)
+        ax.scatter(stim_model, mean_freq_model,color = 'b',
+                   s=100,alpha = .9, marker = '*',label='%s'%model_type)
         ax.plot(stim_model, mean_freq_model,color = 'blue',lw = .1, alpha = .1)
         ax.set_xlabel('Stimulation Amplitude (nA)',fontsize = 10)
         ax.set_ylabel('Spikes/sec',fontsize = 10)
@@ -989,9 +989,9 @@ class Optim_Analyzer(object):
                                  exp_AP_shape_path,model_AP_shape_path,model_type,\
                                  ephys_dir=ephys_dir)
             ax[0,kk].plot(AP_shape_time, AP_shape_exp,lw = 2,
-                          color = 'black',label = 'Experiment')
+                          color = 'k',label = 'Experiment')
             ax[0,kk].plot(AP_shape_time, AP_shape_model,lw = 2,
-                          color = 'blue',label = '%s'%model_type)
+                          color = 'b',label = '%s'%model_type)
             ax[0,kk].legend(prop={'size': 10})
             ax[0,kk].set_title(stim_name,fontsize = 12)
 
