@@ -988,12 +988,12 @@ class Optim_Analyzer(object):
                 self.prepare_spike_shape(response_filename,stim_map,stim_name,\
                                  exp_AP_shape_path,model_AP_shape_path,model_type,\
                                  ephys_dir=ephys_dir)
-            ax[kk].plot(AP_shape_time, AP_shape_exp,lw = 2,
+            ax[0,kk].plot(AP_shape_time, AP_shape_exp,lw = 2,
                           color = 'black',label = 'Experiment')
-            ax[kk].plot(AP_shape_time, AP_shape_model,lw = 2,
+            ax[0,kk].plot(AP_shape_time, AP_shape_model,lw = 2,
                           color = 'blue',label = '%s'%model_type)
-            ax[kk].legend(prop={'size': 10})
-            ax[kk].set_title(stim_name,fontsize = 12)
+            ax[0,kk].legend(prop={'size': 10})
+            ax[0,kk].set_title(stim_name,fontsize = 12)
 
         pdf_pages.savefig(fig)
         plt.close(fig)
