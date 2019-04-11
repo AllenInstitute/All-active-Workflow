@@ -9,17 +9,17 @@ from ateamopt.jobscript.jobmodule import test_JobModule,\
 import shutil
 import logging
 
-logger = logging.getLogger(__name__)
-
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger()
 
 def main():
 
     parent_dir = os.path.abspath(os.path.join('.', os.pardir))
+    script_repo_dirname = 'Script_Repo'
+    script_repo_dir = os.path.join(parent_dir, script_repo_dirname)
     path_to_cell_metadata = glob.glob(parent_dir+'/cell_metadata*.json')[0]
     cell_metadata=utility.load_json(path_to_cell_metadata)
-
     acceptable_stimtypes = ['Long Square']
-
     cell_id = cell_metadata['Cell_id']
 
     # Extract data and get the features for the stage
@@ -35,12 +35,19 @@ def main():
     # Create the parameter bounds for the optimization
     model_params_handler = AllActive_Model_Parameters(cell_id)
     morph_path = model_params_handler.swc_path
-    param_bounds_path = 'parameters/param_bounds_stage0.json'
+
+    param_bounds_file = 'param_bounds_stage0.json'
+    param_bounds_repo = os.path.abspath(os.path.join(script_repo_dir,param_bounds_file))
+    param_bounds_repo = param_bounds_repo \
+            if os.path.exists(param_bounds_repo) else None
+    param_bounds_default_template = utility.locate_template_file(os.path.join('parameters',\
+                                            param_bounds_file))
+    param_bounds_path = param_bounds_repo or param_bounds_default_template
     model_params,model_params_release= model_params_handler.get_opt_params(param_bounds_path)
     param_write_path,release_param_write_path,release_params=\
                         model_params_handler.write_params_opt(model_params,model_params_release)
     mech_write_path,mech_release_write_path = model_params_handler.write_mechanisms_opt(model_params,\
-                                        model_params_release,param_bounds_path)
+                        model_params_release,param_bounds_path)
 
     # Config file with all the necessary paths to feed into the optimization
     model_params_handler.write_opt_config_file(morph_path,param_write_path,

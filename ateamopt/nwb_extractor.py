@@ -377,7 +377,9 @@ class NWB_Extractor(object):
         features_meanstd = defaultdict(
             lambda: defaultdict(
                 lambda: defaultdict(dict)))
-
+        features_meanstd_lite = defaultdict(
+            lambda: defaultdict(
+                lambda: defaultdict(dict)))
         # if additional dendritic recordings
         if 'location' in kwargs:
             record_locations = kwargs['locations']
@@ -389,9 +391,9 @@ class NWB_Extractor(object):
 
         cell_stim_map= stim_map.copy()
         training_stim_map = dict()
-
+        spiketimes_noise =  defaultdict(list)
+        
         for stim_name in stim_map.keys():
-            
             if 'feature_reject_stim_type' in kwargs:
                 if any(reject_feat_stim in stim_name for reject_feat_stim in \
                                           kwargs['feature_reject_stim_type']):
@@ -422,9 +424,15 @@ class NWB_Extractor(object):
                 sweep['stim_end;location_AIS'] = [stim_map[stim_name]['stimuli'][0]['stim_end']]
                 sweeps.append(sweep)
 
-            # Do the actual feature extraction
-            feature_results = efel.getFeatureValues(
-                sweeps, stim_features)
+            
+            if 'Noise' in stim_name:
+                feature_results = efel.getFeatureValues(sweeps, ['peak_time'])
+                for feature_result in feature_results:
+                    spiketimes_noise[stim_name].append(feature_result['peak_time'])
+                continue
+            
+            # eFEL feature extraction
+            feature_results = efel.getFeatureValues(sweeps, stim_features)
 
             for feature_name in stim_features:
                 # For one feature, a list with values for every sweep
@@ -454,17 +462,27 @@ class NWB_Extractor(object):
 
                 features_meanstd[stim_name]['soma'][
                     feature_name] = [mean , std]
+                
+                # Remove depolarization block and check initiation from all features list
+                if feature_name not in ['depol_block','check_AISInitiation']:
+                    features_meanstd_lite[stim_name]['soma'][
+                                feature_name] = [mean , std]
             if stim_name in features_meanstd.keys():
                 training_stim_map[stim_name] = cell_stim_map[stim_name]
 
-
+        if kwargs.get('spiketimes_exp_path'):
+            spiketimes_exp_path = kwargs['spiketimes_exp_path']
+            if len(spiketimes_noise.keys()) > 0:
+                utility.create_filepath(spiketimes_exp_path)
+                utility.save_pickle(spiketimes_exp_path,spiketimes_noise)
+        
         features_meanstd_filtered,untrained_features_dict,training_stim_map_filtered,\
-                all_stim_filtered = filter_rule_func(features_meanstd,training_stim_map,
+                all_stim_filtered = filter_rule_func(features_meanstd.copy(),training_stim_map,
                                                      cell_stim_map,*args)    
 
         utility.save_json(features_write_path,features_meanstd_filtered)
         utility.save_json(untrained_features_write_path,untrained_features_dict)
-        utility.save_json(all_features_write_path,features_meanstd)
+        utility.save_json(all_features_write_path,features_meanstd_lite)
         utility.save_json(protocols_write_path,training_stim_map_filtered)
         utility.save_json(all_protocols_write_path,all_stim_filtered)
 

@@ -65,8 +65,7 @@ class AllActive_Model_Parameters(object):
     def get_opt_params(self,param_bounds_path,adjust_param_rule = None):
         
         section_map = utility.bpopt_section_map
-        param_bounds_file = utility.locate_template_file(param_bounds_path)
-        params_dict = utility.load_json(param_bounds_file)
+        params_dict = utility.load_json(param_bounds_path)
         _, _,_,all_params_dict,\
                 ena_sect,ek_sect = self.group_params(params_dict)
                 
@@ -129,7 +128,6 @@ class AllActive_Model_Parameters(object):
         
         model_params_opt.append({"param_name": "celsius","type": "global","value": self.temperature})     
         model_params_opt.append({"param_name": "v_init","type": "global","value": self.v_init})  
-        
         model_params_release = self.get_release_params(section_map,rev_potential)
         
         return model_params_opt, model_params_release
@@ -190,9 +188,10 @@ class AllActive_Model_Parameters(object):
         
         return model_params_release
     
-    def write_params_opt(self,model_params,model_params_release):
+    def write_params_opt(self,model_params,model_params_release,
+                         base_dir = 'config/'):
         
-        param_write_path = 'config/'+ self.cell_id + '/parameters.json'
+        param_write_path = base_dir+ self.cell_id + '/parameters.json'
         utility.create_filepath(param_write_path)
         utility.save_json(param_write_path,model_params)
         
@@ -205,18 +204,18 @@ class AllActive_Model_Parameters(object):
                     release_params[param_name + '.' + param_dict_release['sectionlist']] = param_dict_release['value']
             
             # Previous parameter file in bpopt format for running simulation
-            release_param_write_path = 'config/'+ self.cell_id + '/release_parameters.json'    
+            release_param_write_path = base_dir+ self.cell_id + '/release_parameters.json'    
             utility.save_json(release_param_write_path,model_params_release) 
         else:
             release_param_write_path = None        
         
-        
         return param_write_path,release_param_write_path,release_params
 
 
-    def write_mechanisms_opt(self,model_params,model_params_release,param_bounds_path):
-        param_bounds_file = utility.locate_template_file(param_bounds_path)
-        params_dict = utility.load_json(param_bounds_file)
+    def write_mechanisms_opt(self,model_params,model_params_release,
+                             param_bounds_path,base_dir = 'config/'):
+#        param_bounds_file = utility.locate_template_file(param_bounds_path)
+        params_dict = utility.load_json(param_bounds_path)
         active_params, Ih_params, _,_,_,_=self.group_params(params_dict)
         model_mechs = defaultdict(list)
         model_mechs['all'].append('pas')
@@ -225,7 +224,7 @@ class AllActive_Model_Parameters(object):
             if param_dict['param_name'] in active_params+Ih_params:
                 if param_dict['mech'] not in model_mechs[param_dict['sectionlist']]:
                     model_mechs[param_dict['sectionlist']].append(param_dict['mech']) 
-        mechanism_write_path = 'config/'+ self.cell_id + '/mechanism.json'
+        mechanism_write_path = base_dir+ self.cell_id + '/mechanism.json'
         utility.create_filepath(mechanism_write_path)
         utility.save_json(mechanism_write_path,model_mechs)
         
@@ -237,21 +236,91 @@ class AllActive_Model_Parameters(object):
                     if param_dict_release['mech'] not in model_mechs_release[param_dict_release['sectionlist']]:
                         model_mechs_release[param_dict_release['sectionlist']].append(param_dict_release['mech']) 
          
-            mechanism_release_write_path = 'config/'+ self.cell_id + '/mechanism_release.json'    
+            mechanism_release_write_path = base_dir+ self.cell_id + '/mechanism_release.json'    
             utility.save_json(mechanism_release_write_path,model_mechs_release)
         else:
             model_mechs_release = None
             mechanism_release_write_path = None
         
         return mechanism_write_path,mechanism_release_write_path
+    
+    def aibs_peri_to_bpopt(self,peri_param_path,base_dir='config/'):
+        peri_params = utility.load_json(peri_param_path)
+                        
+        peri_params_release = list()
+        peri_mechs_release = defaultdict(list)
+        peri_mechs_release['all'].append('pas')
+        
+        rev_potential =  utility.rev_potential  
+        section_map = utility.bpopt_section_map
+        
+        for key, values in peri_params.items():            
+            if key == 'genome':
+                for j in range(len(values)):
+                     iter_dict_release = {'param_name':peri_params[key][j]['name']}
+                     iter_dict_release['sectionlist'] = section_map[peri_params[key][j]['section']]
+                     iter_dict_release['type'] = 'section'
+                     iter_dict_release['value'] = float(peri_params[key][j]['value'])
+                     iter_dict_release['dist_type'] = 'uniform'
+                     if peri_params[key][j]['mechanism'] != '':
+                            iter_dict_release['mech'] = peri_params[key][j]['mechanism']
+                            iter_dict_release['type'] = 'range'
+                     peri_params_release.append(iter_dict_release)
+                         
+            elif key == 'passive':
+                 for key_pas,val_pas in values[0].items():
+                     if key_pas == 'cm':
+                         for pas_param in val_pas:
+                             iter_dict_release ={'param_name':'cm',
+                                                 'sectionlist' : section_map[pas_param['section']],
+                                                 'value' : pas_param['cm'],
+                                                 'dist_type' : 'uniform',
+                                                 'type' : 'section'}
+                             peri_params_release.append(iter_dict_release)
+                             
+                     else:
+                          iter_dict_release ={'param_name':'Ra' \
+                                              if key_pas== 'ra' else key_pas,
+                                                 'sectionlist' : 'all',
+                                                 'value' : val_pas,
+                                                 'dist_type' : 'uniform',
+                                                 'type' : 'section'}
+                          peri_params_release.append(iter_dict_release)
+                             
 
+        for rev in rev_potential:
+            iter_dict_release =  {'param_name':rev, 'sectionlist':'somatic', 
+                                  'dist_type': 'uniform', 'type':'section'}
+            if rev == 'ena':
+                iter_dict_release['value'] = rev_potential[rev]
+            elif rev == 'ek':
+                iter_dict_release['value'] = rev_potential[rev]
+            peri_params_release.append(iter_dict_release) 
+        
+        peri_params_release.append({"param_name": "celsius","type": "global","value": 34})     
+        peri_params_release.append({"param_name": "v_init","type": "global",
+                                     "value": peri_params['conditions'][0]["v_init"]})
+                
+        for param_dict in peri_params_release:
+            if 'mech' in param_dict.keys():
+                if param_dict['mech'] not in peri_mechs_release[param_dict['sectionlist']]:
+                    peri_mechs_release[param_dict['sectionlist']].append(param_dict['mech'])         
+        
+        peri_params_write_path = base_dir+ self.cell_id + '/peri_parameters.json'
+        peri_mech_write_path = base_dir+ self.cell_id + '/peri_mechanism.json'
+        utility.save_json(peri_params_write_path,peri_params_release)
+        utility.save_json(peri_params_write_path,peri_mechs_release)
+        return peri_params_write_path, peri_mech_write_path
+    
+    
     def write_opt_config_file(self,morph_path,param_write_path,
                               mech_write_path,mech_release_write_path,
                               features_write_path,untrained_features_write_path,
                               all_features_write_path,
                               protocols_write_path,all_protocols_write_path,
                               release_params,release_param_write_path,
-                              opt_config_filename = 'config_file.json'):
+                              opt_config_filename = 'config_file.json',
+                              **kwargs):
         
         path_dict =  dict()
         path_dict['morphology'] = morph_path
@@ -265,5 +334,7 @@ class AllActive_Model_Parameters(object):
         path_dict['all_protocols'] = all_protocols_write_path
         path_dict['release_params_bpopt'] = release_params
         path_dict['released_model'] = release_param_write_path
+        for config_key,path in kwargs.items():
+            path_dict[config_key] = path
         
         utility.save_json(opt_config_filename,path_dict)

@@ -6,8 +6,8 @@ import bluepyopt as bpopt
 from matplotlib.backends.backend_pdf import PdfPages
 
 import logging
-logger = logging.getLogger(__name__)
-
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger()
 
 def main():
 

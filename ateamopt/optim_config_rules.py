@@ -16,10 +16,14 @@ def filter_feat_proto_active(features_dict,protocols_dict,all_protocols_dict,
     features_dict = correct_voltage_feat_std(features_dict)
     spiking_proto_dict = OrderedDict()
     non_spiking_proto_dict =  OrderedDict()
+    training_stimtype_reject = ['LongDCSupra','Ramp','Short_Square_Triple','Noise']
     for feat_key,feat_val in features_dict.items():
+        if any(reject_stim in feat_key for reject_stim in training_stimtype_reject):
+            continue
         stim_amp = protocols_dict[feat_key]['stimuli'][0]['amp']
         if feat_val['soma']['Spikecount'][0] > 0:
             spiking_proto_dict[feat_key] = stim_amp
+            del feat_val['soma']['Spikecount']
         else:
             non_spiking_proto_dict[feat_key] = stim_amp
 

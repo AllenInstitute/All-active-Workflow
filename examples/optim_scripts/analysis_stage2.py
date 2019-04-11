@@ -6,9 +6,10 @@ import bluepyopt as bpopt
 from matplotlib.backends.backend_pdf import PdfPages
 import numpy as np
 import argparse
+from ateamopt.analysis import analysis_module
 import logging
-logger = logging.getLogger(__name__)
-
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger()
 
 def analyzer_map(parallel=True):
     '''returns configured bluepyopt.optimisations.DEAPOptimisation'''
@@ -64,6 +65,7 @@ def main():
     path_to_cell_metadata = glob.glob(parent_dir+'/cell_metadata*.json')[0]
     cell_metadata=utility.load_json(path_to_cell_metadata)
     cell_id = cell_metadata['Cell_id']
+    perisomatic_model_id = cell_metadata['Perisomatic_id']
 
     opt_config_filename = args.config_path
     opt_config = utility.load_json(opt_config_filename)
@@ -103,7 +105,7 @@ def main():
     hof_params_filename = 'analysis_params/hof_model_params.pkl'
     hof_responses_filename = 'analysis_params/hof_response_all.pkl'
     obj_list_train_filename = 'analysis_params/hof_obj_train.pkl'
-    obj_list_gen_filename = 'analysis_params/hof_obj.pkl'
+    obj_list_all_filename = 'analysis_params/hof_obj_all.pkl'
     obj_list_untrain_filename = 'analysis_params/hof_obj_untrain.pkl'
     seed_indices_filename = 'analysis_params/seed_indices.pkl'
 
@@ -136,7 +138,7 @@ def main():
     hof_model_params_sorted = analysis_handler.save_hof_output_params(hof_model_params,                                   hof_params_filename)
     utility.save_pickle(hof_responses_filename, hof_response_sorted)
     utility.save_pickle(obj_list_train_filename, obj_list_train_sorted)
-    utility.save_pickle(obj_list_gen_filename, obj_list_gen_sorted)
+    utility.save_pickle(obj_list_all_filename, obj_list_gen_sorted)
     utility.save_pickle(obj_list_untrain_filename, obj_list_untrain_sorted)
     utility.save_pickle(seed_indices_filename, seed_indices_sorted)
 
@@ -166,6 +168,8 @@ def main():
     resp_release_filename = './resp_release.txt'
     analysis_handler.get_release_responses(opt_release,resp_release_filename)
 
+    
+
     stim_mapfile = 'preprocessed/StimMapReps.csv'
     analysis_write_path = cell_id + '_Stage2.pdf'
     pdf_pages =  PdfPages(analysis_write_path)
@@ -173,7 +177,23 @@ def main():
                                         resp_release_filename,
                                         stim_mapfile,
                                         pdf_pages)
-
+    # Perisomatic model
+    if perisomatic_model_id != '':
+        peri_param_write_path = opt_config['peri_parameters']
+        peri_mech_write_path = opt_config['peri_mechanism']
+        evaluator_peri = Bpopt_Evaluator(all_protocols_write_path,
+                                   features_write_path,
+                                   morph_path, peri_param_write_path,
+                                   peri_mech_write_path)
+        opt_peri = bpopt.optimisations.DEAPOptimisation(
+                            evaluator=evaluator_peri)
+        resp_peri_filename = './resp_peri.txt'
+        analysis_handler.get_release_responses(opt_peri,resp_peri_filename)
+        pdf_pages= analysis_handler.plot_grid_Response(resp_filename,
+                                        resp_peri_filename,
+                                        stim_mapfile,
+                                        pdf_pages)
+    
     pdf_pages= analysis_handler.plot_feature_comp(resp_filename,
                          resp_release_filename, pdf_pages)
 
@@ -182,7 +202,22 @@ def main():
                                  pdf_pages)
     pdf_pages = analysis_handler.postprocess(stim_mapfile,resp_filename,
                                  pdf_pages)
-    pdf_pages.close()
 
+    spiketimes_exp_path ='Validation_Responses/spiketimes_exp_noise.pkl'
+    spiketimes_hof_path = 'Validation_Responses/spiketimes_model_noise.pkl'
+    exp_variance_hof_path = 'Validation_Responses/exp_variance_hof.pkl'
+    model_perf_filename = 'Validation_Responses/fitness_metrics_'+cell_id+'.csv'
+    pdf_pages = analysis_handler.hof_statistics(stim_mapfile, pdf_pages,
+                       obj_list_all_filename, hof_responses_filename,
+                       obj_list_train_filename,obj_list_untrain_filename,
+                       seed_indices_filename,spiketimes_exp_path,spiketimes_hof_path,
+                       exp_variance_hof_path,cell_metadata,model_perf_filename)
+    pdf_pages.close()
+    time_by_gen_filename = 'time_info.txt'
+    if os.path.exists(time_by_gen_filename):
+        time_metrics_filename = 'time_metrics_%s.csv'%cell_id
+        analysis_module.save_optimization_time(time_by_gen_filename,
+                        time_metrics_filename,cell_metadata)
+    
 if __name__ == '__main__':
     main()

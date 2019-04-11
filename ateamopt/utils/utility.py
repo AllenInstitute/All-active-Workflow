@@ -145,11 +145,19 @@ def remove_entries_dict(dict_, entries):
     return dict_
 
 def locate_template_file(rel_file_path):
-    file_path = pkg_resources.resource_filename(templ.__name__, rel_file_path)
+    try:
+        file_path = pkg_resources.resource_filename(templ.__name__, 
+                                                    rel_file_path)
+    except:
+        file_path = None
     return file_path
 
 def locate_script_file(rel_file_path):
-    file_path = pkg_resources.resource_filename(pyscripts.__name__, rel_file_path)
+    try:
+        file_path = pkg_resources.resource_filename(pyscripts.__name__,
+                                                    rel_file_path)
+    except:
+        file_path = None
     return file_path
 
 
