@@ -81,7 +81,7 @@ def filter_feat_proto_active(features_dict,protocols_dict,all_protocols_dict,
         u_val['soma'] = entries_to_remove(['depol_block',\
                        'check_AISInitiation','Spikecount'],u_val['soma'])
             
-    for f_key,f_val in features_dict_filtered[spiking_proto_sorted[0]]['soma']:
+    for f_key,f_val in features_dict_filtered[spiking_proto_sorted[0]]['soma'].items():
         if f_key not in ['mean_frequency', 'depol_block',\
                        'check_AISInitiation']:
             features_dict_filtered[spiking_proto_sorted[0]]['soma'].pop(f_key)
