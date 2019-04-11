@@ -197,10 +197,11 @@ def main():
         resp_peri_filename = './resp_peri.txt'
         peri_param_write_path = opt_config['peri_parameters']
         peri_mech_write_path = opt_config['peri_mechanism']
-        evaluator_peri = Bpopt_Evaluator(all_protocols_write_path,
+        eval_handler_peri = Bpopt_Evaluator(all_protocols_write_path,
                                    features_write_path,
                                    morph_path, peri_param_write_path,
                                    peri_mech_write_path)
+        evaluator_peri = eval_handler_peri.create_evaluator()
         opt_peri = bpopt.optimisations.DEAPOptimisation(
                             evaluator=evaluator_peri)
         model_type = 'Perisomatic'
