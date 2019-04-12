@@ -718,6 +718,7 @@ class Optim_Analyzer(object):
                         prefix_pad = 2, posfix_pad = 5,res =0.05):
         
         AP_shape_time = np.arange(-prefix_pad,posfix_pad, res)
+        spike_features = ['peak_time']
         
         # check if experimental spike shape is already calculated
         if not os.path.exists(exp_AP_shape_path):
@@ -726,7 +727,7 @@ class Optim_Analyzer(object):
             spike_shape_exp = utility.load_pickle(exp_AP_shape_path) 
         
         if stim_name_select not in spike_shape_exp.keys():
-            spike_features = ['peak_time']
+            
             sweep_filenames = stim_map[stim_name_select]['stimuli'][0]['sweep_filenames']
             sweeps = []
             for sweep_filename in sweep_filenames:
@@ -797,9 +798,9 @@ class Optim_Analyzer(object):
             # Model AP shape
             AP_shape_model = np.zeros(AP_shape_time.size)
             spike_times_model = feature_results_model[0]['peak_time']
-            AP_shape_model = get_spike_shape(time,voltage,
-                        spike_times_exp,AP_shape_time,
-                        AP_shape_exp)
+            AP_shape_model = get_spike_shape(resp_time,resp_voltage,
+                        spike_times_model,AP_shape_time,
+                        AP_shape_model)
     
             num_spikes_model = len(spike_times_model)
             AP_shape_model /= num_spikes_model
