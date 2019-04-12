@@ -18,7 +18,6 @@ PARENT_DIR=$(<pwd.txt)
 CELL_ID=$(<cell_id.txt)
 IPYTHONDIR=.ipython
 
-
 export STAGE_DIR=$PARENT_DIR/Stage2
 export SCRIPT_REPO=$PARENT_DIR/Script_Repo
 

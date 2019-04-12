@@ -18,16 +18,15 @@ PWD=$(pwd)
 PARENT_DIR=$(<pwd.txt)
 CELL_ID=$(<cell_id.txt)
 
-LOGS=$PWD/logs
-mkdir -p $LOGS
-
-export IPYTHONDIR=${PWD}/.ipython
-export IPYTHON_PROFILE=benchmark.$PBS_JOBID
+export IPYTHONDIR=$PWD/.ipython
+file $IPYTHONDIR
+export IPYTHON_PROFILE=pbs.$PBS_JOBID
 
 ipcontroller --init --ip='*' --sqlitedb --ping=30000 --profile=${IPYTHON_PROFILE} &
-sleep 10
-srun --output="${LOGS}/engine_%j_%2t.out" ipengine --timeout=3000 --profile=${IPYTHON_PROFILE} &
-sleep 10
+sleep 30
+file $IPYTHONDIR/$IPYTHON_PROFILE
+mpiexec -n 40 ipengine --timeout=3000 --profile=${IPYTHON_PROFILE} &
+sleep 30
 
 python analysis_stage2.py -vv --checkpoint  checkpoints_final  --ipyparallel
 
