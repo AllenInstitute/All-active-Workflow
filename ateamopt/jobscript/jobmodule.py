@@ -81,7 +81,7 @@ class ChainSubJob(JobModule):
         elif 'hpc-login' in self.machine:
             self.adjust_template('cp -r $SCRIPT_REPO/modfiles $STAGE_DIR/',
                              'cp -r $SCRIPT_REPO/x86_64 $STAGE_DIR/',add = True)
-            self.adjust_template('\tnrnivmodl modfiles/',
+            self.adjust_template('nrnivmodl modfiles/',
                      '\techo "Loading compiled modfiles"',partial_match = True)
 
 

@@ -6,6 +6,7 @@ from collections import defaultdict
 import efel
 import math
 from ateamopt.utils import utility
+from ateamopt.optim_config_rules import correct_voltage_feat_std
 import logging
 logger = logging.getLogger(__name__)
 
@@ -479,7 +480,7 @@ class NWB_Extractor(object):
         features_meanstd_filtered,untrained_features_dict,training_stim_map_filtered,\
                 all_stim_filtered = filter_rule_func(features_meanstd.copy(),training_stim_map,
                                                      cell_stim_map,*args)    
-
+        features_meanstd_lite = correct_voltage_feat_std(features_meanstd_lite)        
         utility.save_json(features_write_path,features_meanstd_filtered)
         utility.save_json(untrained_features_write_path,untrained_features_dict)
         utility.save_json(all_features_write_path,features_meanstd_lite)
