@@ -137,8 +137,8 @@ def filter_feat_proto_passive(features_dict,protocols_dict,all_protocols_dict,
     return features_dict_filtered,untrained_features_dict,\
                  protocols_dict_filtered,all_protocols_dict
 
-def correct_voltage_feat_std(features_dict):
-    feature_correct_list = ['voltage_base', 'steady_state_voltage']
+def correct_voltage_feat_std(features_dict, 
+                     feature_correct_list=['voltage_base', 'steady_state_voltage']):
     feature_stat = defaultdict(list)
     feature_key = []
     for feat_name in feature_correct_list:
