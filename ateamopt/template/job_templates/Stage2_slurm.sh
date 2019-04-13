@@ -66,7 +66,7 @@ python Optim_Main.py             \
     --max_ngen=${MAX_NGEN}             \
     --seed=${seed}                     \
     --ipyparallel                      \
-    --start                         \
+    --$JOB_STATUS                         \
     --checkpoint "${CHECKPOINTS_DIR}/seed${seed}.pkl" &
 
 pid=$!

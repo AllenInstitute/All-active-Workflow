@@ -80,12 +80,16 @@ def filter_feat_proto_active(features_dict,protocols_dict,all_protocols_dict,
     for u_key,u_val in untrained_features_dict.items():
         u_val['soma'] = entries_to_remove(['depol_block',\
                        'check_AISInitiation','Spikecount'],u_val['soma'])
-            
+    
+    # Remove everything other than basic features for the first spiking proto
+    f_key_list = []        
     for f_key,f_val in features_dict_filtered[spiking_proto_sorted[0]]['soma'].items():
         if f_key not in ['mean_frequency', 'depol_block',\
                        'check_AISInitiation']:
-            features_dict_filtered[spiking_proto_sorted[0]]['soma'].pop(f_key)
-    
+            f_key_list.append(f_key) 
+    features_dict_filtered[spiking_proto_sorted[0]]['soma'] =  entries_to_remove(\
+                 f_key_list,features_dict_filtered[spiking_proto_sorted[0]]['soma'])         
+            
     if add_DB_check:
         max_proto_key = spiking_proto_sorted[-1]
         max_amp = max([proto['amp'] for proto in protocols_dict[max_proto_key]['stimuli']])

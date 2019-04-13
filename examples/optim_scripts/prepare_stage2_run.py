@@ -24,6 +24,7 @@ def main():
                         'Short Square - Triple','Noise 1','Noise 2']
     cell_id = cell_metadata['Cell_id']
     perisomatic_model_id = cell_metadata['Perisomatic_id']
+    dend_type = cell_metadata['Dendrite_type']
     species = cell_metadata['Species']
     wasabi_bucket = 's3://aibs.snmo.01/'
     wasabi_bucket += '%s/%s'%(species.replace(' ',''),cell_id)
@@ -32,7 +33,17 @@ def main():
     nwb_handler = NWB_Extractor(cell_id)
     ephys_data_path,stimmap_filename = nwb_handler.save_cell_data\
                                     (acceptable_stimtypes)
-    feature_path = 'parameters/feature_set_stage2.json'
+    feature_file = 'feature_set_stage2_spiny.json' \
+                if dend_type == 'spiny' else \
+                    'feature_set_stage2_aspiny.json'
+    
+    feature_set_repo = os.path.abspath(os.path.join(script_repo_dir,feature_file))
+    feature_set_repo = feature_set_repo \
+            if os.path.exists(feature_set_repo) else None
+    feature_default_template = utility.locate_template_file(os.path.join('parameters',\
+                        'feature_set_stage2.json')) # default includes check_AIS_initiation
+    feature_path = feature_set_repo or feature_default_template
+    
     filter_rule_func = filter_feat_proto_active
     select_dict = {'spike_proto': 2,
                    'nospike_proto' :0}
@@ -52,12 +63,17 @@ def main():
     # Create the parameter bounds for the optimization
     model_params_handler = AllActive_Model_Parameters(cell_id)
     morph_path = model_params_handler.swc_path
-    param_bounds_file = 'param_bounds_stage2.json'
+    
+    if species == 'Mus musculus':
+        param_bounds_file = 'param_bounds_stage2_mouse_spiny.json' \
+            if dend_type == 'spiny' else \
+                'param_bounds_stage2_mouse_aspiny.json'
+    
     param_bounds_repo = os.path.abspath(os.path.join(script_repo_dir,param_bounds_file))
     param_bounds_repo = param_bounds_repo \
             if os.path.exists(param_bounds_repo) else None
     param_bounds_default_template = utility.locate_template_file(os.path.join('parameters',\
-                                            param_bounds_file))
+                    'param_bounds_stage2.json')) #default parameters: Mouse spiny
     param_bounds_path = param_bounds_repo or param_bounds_default_template
     param_rule_func = adjust_param_bounds
     model_params,model_params_release= model_params_handler.get_opt_params\
