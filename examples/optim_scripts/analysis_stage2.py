@@ -32,12 +32,12 @@ def analyzer_map(parallel=True):
     return map_function
 
 def get_opt_obj(protocols_path,features_path,morph_path, param_path,
-                mech_path,args):
+                mech_path,map_function):
     eval_handler = Bpopt_Evaluator(protocols_path, features_path,
                                    morph_path, param_path,
                                    mech_path,timed_evaluation = False)
     evaluator = eval_handler.create_evaluator()
-    map_function = analyzer_map(args.ipyparallel)
+    
     opt = bpopt.optimisations.DEAPOptimisation(
             evaluator=evaluator,map_function=map_function)
     return opt
@@ -80,15 +80,16 @@ def main():
     release_param_write_path = opt_config['released_model']
     mech_release_write_path = opt_config['mechanism_release']
 
+    map_function = analyzer_map(args.ipyparallel)
     opt_train = get_opt_obj(all_protocols_write_path, features_write_path,
                                    morph_path, param_write_path,
-                                   mech_write_path,args)
+                                   mech_write_path,map_function)
     opt_gen = get_opt_obj(all_protocols_write_path, all_feature_path,
                                    morph_path, param_write_path,
-                                   mech_write_path,args)
+                                   mech_write_path,map_function)
     opt_untrain = get_opt_obj(all_protocols_write_path,untrained_feature_path,
                                    morph_path, param_write_path,
-                                   mech_write_path,args)
+                                   mech_write_path,map_function)
 
     analysis_handler = Optim_Analyzer(opt_train,args.cp_dir)
     best_model = analysis_handler.get_best_model() # Model with least training error
