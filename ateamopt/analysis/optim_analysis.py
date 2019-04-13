@@ -1126,20 +1126,27 @@ class Optim_Analyzer(object):
                                                'Feature_Average',
                                                'Feature_Average_Generalization']]
 
-        validation_df_shortened = validation_df_shortened.dropna(axis='columns')
-        seed_index = validation_df.pop('Seed')
-        lut = dict(zip(seed_index.unique(), "rbgy"))
-        row_colors = seed_index.map(lut)
-        validation_arr = validation_df_shortened.values
-        sns.set(style="darkgrid", font_scale=.95)
-        g=sns.clustermap(validation_df_shortened,col_cluster = False,
-                       standard_scale=1)
-        g=sns.clustermap(validation_df_shortened, annot = validation_arr[np.array(g.dendrogram_row.reordered_ind)],
-                    col_cluster = False, row_colors=row_colors, standard_scale=1)
-        g.fig.suptitle('Model Selection',fontsize = 14)
-        pdf_pages.savefig(g.fig)
-        plt.close(g.fig)
-
+        # Clustermap of the metrics on the hall-of-fame indices
+        try:
+            validation_df_shortened = validation_df_shortened.dropna(axis='columns')
+            seed_index = validation_df.pop('Seed')
+            lut = dict(zip(seed_index.unique(), "rbgy"))
+            row_colors = seed_index.map(lut)
+            validation_arr = validation_df_shortened.values
+            sns.set(style="darkgrid", font_scale=.95)
+            g=sns.clustermap(validation_df_shortened,col_cluster = False,
+                           standard_scale=1)
+            g=sns.clustermap(validation_df_shortened, annot = validation_arr[np.array(g.dendrogram_row.reordered_ind)],
+                        col_cluster = False, row_colors=row_colors, standard_scale=1)
+            g.fig.suptitle('Model Selection',fontsize = 14)
+            pdf_pages.savefig(g.fig)
+            plt.close(g.fig)
+        except Exception as e:
+            logger.debug(e)
+       
+        exp_variance_hof_df_path = exp_variance_hof_path.replace('pkl','csv')
+        validation_df.to_csv(exp_variance_hof_df_path)
+        
         if noise_bool:
             g = sns.lmplot(x="Feature_Average", y="Explained_Variance", data=validation_df)
             pdf_pages.savefig(g.fig)

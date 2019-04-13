@@ -371,8 +371,8 @@ class NWB_Extractor(object):
         all_protocols_write_path = 'config/'+cell_name+'/all_protocols.json'
 
         utility.create_filepath(all_protocols_write_path)
-        feature_file = utility.locate_template_file(feature_set_filename)
-        feature_map = utility.load_json(feature_file)
+#        feature_file = utility.locate_template_file(feature_set_filename)
+        feature_map = utility.load_json(feature_set_filename)
         stim_features = feature_map['features'] # Features to extract
 
         features_meanstd = defaultdict(

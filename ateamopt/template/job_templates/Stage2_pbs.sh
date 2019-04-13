@@ -15,7 +15,7 @@ set -ex
 source activate conda_env
 
 # Relaunch batch job if not finished
-qsub batch_job.sh –W depend=afternotok:$PBS_JOBID
+qsub -W depend=afternotok:$PBS_JOBID batch_job.sh
 
 OFFSPRING_SIZE=512
 MAX_NGEN=200
@@ -36,13 +36,21 @@ sleep 30
 CHECKPOINTS_DIR="checkpoints"
 mkdir -p ${CHECKPOINTS_DIR}
 
+# Check the job status : Start or continue
+if [ "$(ls -A $CHECKPOINTS_DIR)" ]; then
+    JOB_STATUS=continu
+else
+    JOB_STATUS=start
+fi
+
+
 python Optim_Main.py             \
     -vv                                \
     --offspring_size=${OFFSPRING_SIZE} \
     --max_ngen=${MAX_NGEN}             \
     --seed=${seed}                     \
     --ipyparallel                      \
-    --start                        \
+    --$JOB_STATUS                        \
     --checkpoint "${CHECKPOINTS_DIR}/seed${seed}.pkl" &
 
 pid=$!
