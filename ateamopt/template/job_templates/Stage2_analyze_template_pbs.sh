@@ -28,7 +28,7 @@ file $IPYTHONDIR/$IPYTHON_PROFILE
 mpiexec -n 40 ipengine --timeout=3000 --profile=${IPYTHON_PROFILE} &
 sleep 30
 
-python analysis_stage2.py -vv --checkpoint  checkpoints_final  --ipyparallel
+python analysis_stage2.py -vv --cp_dir  checkpoints_final  --ipyparallel
 
 
 # rm -rf $IPYTHONDIR

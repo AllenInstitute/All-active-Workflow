@@ -19,9 +19,6 @@ done
 
 # trap function to relaunch the optimization
 func_trap() {
-new_cp=checkpoints.${SLURM_JOBID}
-mv checkpoints $new_cp
-mv checkpoints_backup checkpoints
 sbatch batch_job.sh
 }
 
