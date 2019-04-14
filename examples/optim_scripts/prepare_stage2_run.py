@@ -144,7 +144,8 @@ def main():
                         script_name = 'analyze_results.sh',conda_env=conda_env)
         analysis_job.script_generator()
         s3_transfer_cmd = 'aws s3 cp %s %s --recursive --profile wasabi\n'%(parent_dir,wasabi_bucket)
-        analysis_job.adjust_template('rm -rf $IPYTHONDIR',s3_transfer_cmd,add=True)
+#        analysis_job.adjust_template('python analysis_stage2.py',s3_transfer_cmd,
+#                                     add=True,partial_match=True)
 
 if __name__ == '__main__':
     main()

@@ -30,5 +30,3 @@ sleep 30
 
 python analysis_stage2.py -vv --cp_dir  checkpoints_final  --ipyparallel
 
-
-# rm -rf $IPYTHONDIR
