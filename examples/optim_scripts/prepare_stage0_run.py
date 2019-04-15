@@ -25,7 +25,8 @@ def main():
     # Extract data and get the features for the stage
     nwb_handler = NWB_Extractor(cell_id)
     ephys_data_path,stimmap_filename = nwb_handler.save_cell_data(acceptable_stimtypes)
-    feature_path = 'parameters/feature_set_stage0.json'
+    feature_path = utility.locate_template_file(os.path.join('parameters',\
+                        'feature_set_stage0.json'))
     filter_rule_func = filter_feat_proto_passive
     features_write_path,untrained_features_write_path,all_features_write_path,\
         protocols_write_path,all_protocols_write_path = \
