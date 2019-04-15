@@ -503,3 +503,6 @@ class NWB_Extractor(object):
         utility.save_json(all_features_write_path,all_features)
         utility.save_json(protocols_write_path,train_protocols)
         utility.save_json(all_protocols_write_path,all_protocols)
+        
+        return features_write_path,untrained_features_write_path,all_features_write_path,\
+                protocols_write_path,all_protocols_write_path
