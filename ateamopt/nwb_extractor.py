@@ -211,7 +211,8 @@ class NWB_Extractor(object):
                     ': '))
 
 
-    def save_cell_data(self,acceptable_stimtypes,non_standard_nwb = False):
+    def save_cell_data(self,acceptable_stimtypes,non_standard_nwb = False,
+                       ephys_dir='preprocessed'):
 
         bpopt_stimtype_map = utility.bpopt_stimtype_map
         distinct_id_map = utility.aibs_stimname_map
@@ -219,7 +220,7 @@ class NWB_Extractor(object):
 
         stim_map = defaultdict(list)
         stim_sweep_map = {}
-        output_dir = os.getcwd() +'/preprocessed'
+        output_dir = os.path.join(os.getcwd(),ephys_dir)
         utility.create_dirpath(output_dir)
 
         for sweep_number in nwb_file.get_sweep_numbers():
@@ -294,8 +295,8 @@ class NWB_Extractor(object):
                 stim_sweep_map[trace_name] = sweep_number
 
         logger.debug('Writing stimmap.csv ...')
-
-        stim_reps_sweep_map,stimmap_filename = self.write_stimmap_csv(stim_map, output_dir, stim_sweep_map)
+        stim_reps_sweep_map,stimmap_filename = self.write_stimmap_csv(stim_map, 
+                                                  output_dir, stim_sweep_map)
 
         self.write_provenance(
             output_dir,
@@ -364,14 +365,7 @@ class NWB_Extractor(object):
                            filter_rule_func,*args,**kwargs):
 
         cell_name = self.cell_id
-        features_write_path = 'config/'+ cell_name +'/features.json'
-        untrained_features_write_path = 'config/'+ cell_name +'/untrained_features.json'
-        all_features_write_path = 'config/'+ cell_name +'/all_features.json'
-        protocols_write_path = 'config/'+cell_name+'/protocols.json'
-        all_protocols_write_path = 'config/'+cell_name+'/all_protocols.json'
-
-        utility.create_filepath(all_protocols_write_path)
-#        feature_file = utility.locate_template_file(feature_set_filename)
+        
         feature_map = utility.load_json(feature_set_filename)
         stim_features = feature_map['features'] # Features to extract
 
@@ -481,14 +475,31 @@ class NWB_Extractor(object):
                 all_stim_filtered = filter_rule_func(features_meanstd.copy(),training_stim_map,
                                                      cell_stim_map,*args)    
         features_meanstd_lite = correct_voltage_feat_std(features_meanstd_lite)        
-        utility.save_json(features_write_path,features_meanstd_filtered)
-        utility.save_json(untrained_features_write_path,untrained_features_dict)
-        utility.save_json(all_features_write_path,features_meanstd_lite)
-        utility.save_json(protocols_write_path,training_stim_map_filtered)
-        utility.save_json(all_protocols_write_path,all_stim_filtered)
-
-        return features_write_path,untrained_features_write_path,\
-                all_features_write_path, protocols_write_path,\
-                all_protocols_write_path
+       
+        return features_meanstd_filtered,untrained_features_dict,\
+                features_meanstd_lite, training_stim_map_filtered,\
+                all_stim_filtered
 
 
+    def write_ephys_features(self,train_features,test_features,all_features,
+                             train_protocols,all_protocols,
+                             base_dir = 'config/',**kwargs):
+        cell_name = self.cell_id
+        features_write_path = kwargs.get('features_write_path') or \
+                base_dir+cell_name+'/features.json'
+        untrained_features_write_path = kwargs.get('untrained_features_write_path') \
+            or base_dir+cell_name+'/untrained_features.json'
+        all_features_write_path = kwargs.get('all_features_write_path') \
+            or base_dir+cell_name+'/all_features.json'
+        protocols_write_path = kwargs.get('protocols_write_path') \
+            or base_dir+cell_name+'/protocols.json'    
+        all_protocols_write_path = kwargs.get('all_protocols_write_path') \
+            or base_dir+cell_name+'/all_protocols.json'    
+
+        utility.create_filepath(all_protocols_write_path)
+        
+        utility.save_json(features_write_path,train_features)
+        utility.save_json(untrained_features_write_path,test_features)
+        utility.save_json(all_features_write_path,all_features)
+        utility.save_json(protocols_write_path,train_protocols)
+        utility.save_json(all_protocols_write_path,all_protocols)

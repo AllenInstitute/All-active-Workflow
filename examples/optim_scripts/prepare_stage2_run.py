@@ -52,14 +52,16 @@ def main():
     # Don't get features from these stim_types
     feature_reject_stim_type = ['Ramp','Short_Square_Triple']
     spiketimes_exp_path = 'Validation_Responses/spiketimes_exp_noise.pkl'
-    features_write_path,untrained_features_write_path,all_features_write_path,\
-        protocols_write_path,all_protocols_write_path = \
+    train_features,test_features,all_features,train_protocols,all_protocols = \
         nwb_handler.get_ephys_features(feature_path,ephys_data_path,
                    stimmap_filename,filter_rule_func,select_dict,
                    add_fi_kink,feature_reject_stim_type= feature_reject_stim_type,
                    spiketimes_exp_path=spiketimes_exp_path)
-
-
+        
+    features_write_path,untrained_features_write_path,all_features_write_path,\
+        protocols_write_path,all_protocols_write_path = \
+        nwb_handler.write_ephys_features(train_features,test_features,\
+                             all_features,train_protocols,all_protocols)
     # Create the parameter bounds for the optimization
     model_params_handler = AllActive_Model_Parameters(cell_id)
     morph_path = model_params_handler.swc_path
@@ -80,8 +82,11 @@ def main():
                                 (param_bounds_path,param_rule_func)
     param_write_path,release_param_write_path,release_params=\
                         model_params_handler.write_params_opt(model_params,model_params_release)
-    mech_write_path,mech_release_write_path = model_params_handler.write_mechanisms_opt(model_params,\
-                                    model_params_release,param_bounds_path)
+    model_mechs,model_mechs_release = model_params_handler.get_opt_mechanism(model_params,\
+                        model_params_release,param_bounds_path)
+    mech_write_path,mech_release_write_path = model_params_handler.write_mechanisms_opt(model_mechs,\
+                        model_mechs_release)
+    
     props = {}
 
     # Perisomatic model
