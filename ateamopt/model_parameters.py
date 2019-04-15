@@ -189,12 +189,15 @@ class AllActive_Model_Parameters(object):
         return model_params_release
 
     def write_params_opt(self,model_params,model_params_release,
-                         base_dir = 'config/'):
-
-        param_write_path = base_dir+ self.cell_id + '/parameters.json'
+                         base_dir = 'config/',**kwargs):
+        
+        param_write_path =  kwargs.get('param_write_path') or \
+                base_dir+ self.cell_id + '/parameters.json'
+        release_param_write_path = kwargs.get('release_param_write_path') or \
+            base_dir+ self.cell_id + '/release_parameters.json'
+        
         utility.create_filepath(param_write_path)
         utility.save_json(param_write_path,model_params)
-
 
         release_params = dict() # for comparison with optimized values (strictly for values)
         if model_params_release:
@@ -203,18 +206,15 @@ class AllActive_Model_Parameters(object):
                 if param_name not in ['ena','ek','v_init','celsius']:
                     release_params[param_name + '.' + param_dict_release['sectionlist']] = param_dict_release['value']
 
-            # Previous parameter file in bpopt format for running simulation
-            release_param_write_path = base_dir+ self.cell_id + '/release_parameters.json'
+            # Released parameter file in bpopt format for running simulation
             utility.save_json(release_param_write_path,model_params_release)
         else:
             release_param_write_path = None
 
         return param_write_path,release_param_write_path,release_params
 
-
-    def write_mechanisms_opt(self,model_params,model_params_release,
-                             param_bounds_path,base_dir = 'config/'):
-#        param_bounds_file = utility.locate_template_file(param_bounds_path)
+    def get_opt_mechanism(self,model_params,model_params_release,
+                             param_bounds_path):
         params_dict = utility.load_json(param_bounds_path)
         active_params, Ih_params, _,_,_,_=self.group_params(params_dict)
         model_mechs = defaultdict(list)
@@ -224,10 +224,7 @@ class AllActive_Model_Parameters(object):
             if param_dict['param_name'] in active_params+Ih_params:
                 if param_dict['mech'] not in model_mechs[param_dict['sectionlist']]:
                     model_mechs[param_dict['sectionlist']].append(param_dict['mech'])
-        mechanism_write_path = base_dir+ self.cell_id + '/mechanism.json'
-        utility.create_filepath(mechanism_write_path)
-        utility.save_json(mechanism_write_path,model_mechs)
-
+        
         if model_params_release:
             model_mechs_release = {'somatic' : ['pas'], 'axonal':['pas'], 'apical':['pas'],
                                'basal': ['pas']}
@@ -235,8 +232,23 @@ class AllActive_Model_Parameters(object):
                 if 'mech' in param_dict_release.keys():
                     if param_dict_release['mech'] not in model_mechs_release[param_dict_release['sectionlist']]:
                         model_mechs_release[param_dict_release['sectionlist']].append(param_dict_release['mech'])
+        else:
+            model_mechs_release = None
+            
+        return model_mechs,model_mechs_release
 
-            mechanism_release_write_path = base_dir+ self.cell_id + '/mechanism_release.json'
+    def write_mechanisms_opt(self,model_mechs,model_mechs_release,
+                             base_dir = 'config/',**kwargs):
+        
+        mechanism_write_path =  kwargs.get('mechanism_write_path') or \
+            base_dir+ self.cell_id + '/mechanism.json'
+        mechanism_release_write_path = kwargs.get('mechanism_release_write_path') \
+            or base_dir+ self.cell_id + '/mechanism_release.json'
+
+        utility.create_filepath(mechanism_write_path)
+        utility.save_json(mechanism_write_path,model_mechs)
+
+        if model_mechs_release:
             utility.save_json(mechanism_release_write_path,model_mechs_release)
         else:
             model_mechs_release = None

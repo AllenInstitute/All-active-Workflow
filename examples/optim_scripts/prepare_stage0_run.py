@@ -28,11 +28,15 @@ def main():
     feature_path = utility.locate_template_file(os.path.join('parameters',\
                         'feature_set_stage0.json'))
     filter_rule_func = filter_feat_proto_passive
-    features_write_path,untrained_features_write_path,all_features_write_path,\
-        protocols_write_path,all_protocols_write_path = \
+    
+    train_features,test_features,all_features,train_protocols,all_protocols = \
         nwb_handler.get_ephys_features(feature_path,ephys_data_path,
                                        stimmap_filename,filter_rule_func)
-
+    features_write_path,untrained_features_write_path,all_features_write_path,\
+        protocols_write_path,all_protocols_write_path = \
+        nwb_handler.write_ephys_features(train_features,test_features,\
+                             all_features,train_protocols,all_protocols)
+    
     # Create the parameter bounds for the optimization
     model_params_handler = AllActive_Model_Parameters(cell_id)
     morph_path = model_params_handler.swc_path
@@ -47,8 +51,11 @@ def main():
     model_params,model_params_release= model_params_handler.get_opt_params(param_bounds_path)
     param_write_path,release_param_write_path,release_params=\
                         model_params_handler.write_params_opt(model_params,model_params_release)
-    mech_write_path,mech_release_write_path = model_params_handler.write_mechanisms_opt(model_params,\
+    
+    model_mechs,model_mechs_release = model_params_handler.get_opt_mechanism(model_params,\
                         model_params_release,param_bounds_path)
+    mech_write_path,mech_release_write_path = model_params_handler.write_mechanisms_opt(model_mechs,\
+                        model_mechs_release)
 
     # Config file with all the necessary paths to feed into the optimization
     model_params_handler.write_opt_config_file(morph_path,param_write_path,
