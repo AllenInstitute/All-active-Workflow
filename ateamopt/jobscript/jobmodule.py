@@ -19,18 +19,18 @@ class JobModule(object):
                         partial_match = False):
         with open(self.script_name, "r") as in_file:
             buf = in_file.readlines()
-        
+
             with open(self.script_name, "w") as out_file:
                 for line in buf:
                     match_eval = line == "%s\n"%match_line \
                         if not partial_match else match_line in line
-                            
+
                     if match_eval:
                         if add:
                             line +=  "%s\n"%replace_line
                         else:
                             line = "%s\n"%replace_line
-              
+
                     out_file.write(line)
 
 class ChainSubJob(JobModule):
@@ -69,7 +69,6 @@ class ChainSubJob(JobModule):
             self.adjust_template('#SBATCH -p prod', '#SBATCH -q regular')
             self.adjust_template('#SBATCH -C cpu|nvme', '#SBATCH -C haswell')
             self.adjust_template('#SBATCH -A proj36','#SBATCH -L SCRATCH')
-#            self.adjust_template('#SBATCH -n 256', '#SBATCH -N 8')
             Path_append ='export PATH="/global/common/software/m2043/AIBS_Opt/software/x86_64/bin:$PATH"'
             self.adjust_template('source activate %s'%self.conda_env, Path_append,
                                       add = True)
@@ -84,14 +83,17 @@ class ChainSubJob(JobModule):
             self.adjust_template('nrnivmodl modfiles/',
                      '\techo "Loading compiled modfiles"',partial_match = True)
 
-
+        elif submit_cmd == 'sh':
+            self.adjust_template('RES=$(sh batch_job.sh)', 'sh batch_job.sh')
+            self.adjust_template('echo ${RES##* }', '',partial_match = True)
 
     def run_job(self):
 
         os.system('chmod +x %s'%self.script_name)
-        process = Popen(['sh', '%s'%self.script_name], stdout=PIPE, stderr=PIPE)
-        stdout, stderr = process.communicate()
-        print(stderr)
+        # process = Popen(['sh', '%s'%self.script_name], stdout=PIPE, stderr=PIPE)
+        # stdout, stderr = process.communicate()
+        # logger.debug(stderr)
+        os.system('sh %s'%self.script_name)
 
 
 class test_JobModule(JobModule):
@@ -128,7 +130,7 @@ class test_JobModule(JobModule):
         os.system('chmod +x %s'%self.script_name)
         process = Popen(['sh', '%s'%self.script_name], stdout=PIPE, stderr=PIPE)
         stdout, stderr = process.communicate()
-        print(stderr)
+        logger.debug(stderr)
 
 
 
@@ -149,7 +151,7 @@ class Slurm_JobModule(JobModule):
         batchjob_string = batchjob_string.replace('conda_env',self.conda_env)
         with open(self.script_name, "w") as batchjob_script:
             batchjob_script.write(batchjob_string)
-        
+
         if 'cori' in self.machine:
             self.adjust_template('#SBATCH -p prod', '#SBATCH -q regular')
             self.adjust_template('#SBATCH -C cpu|nvme', '#SBATCH -C haswell')
@@ -165,7 +167,7 @@ class Slurm_JobModule(JobModule):
         process = Popen(['%s', '%s'%(self.submit_verb,self.script_name)],
                          stdout=PIPE, stderr=PIPE)
         stdout, stderr = process.communicate()
-        print(stderr)
+        logger.debug(stderr)
 
 
 class PBS_JobModule(JobModule):
@@ -192,4 +194,4 @@ class PBS_JobModule(JobModule):
         process = Popen(['%s', '%s'%(self.submit_verb,self.script_name)],
                          stdout=PIPE, stderr=PIPE)
         stdout, stderr = process.communicate()
-        print(stderr)
+        logger.debug(stderr)

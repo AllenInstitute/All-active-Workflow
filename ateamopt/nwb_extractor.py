@@ -12,14 +12,25 @@ logger = logging.getLogger(__name__)
 
 class NWB_Extractor(object):
 
-    def __init__(self, cell_id, junc_potential=-14,temp=34,**kwargs):
+    def __init__(self, cell_id, junc_potential=-14,temp=34,nwb_path=None,\
+                 nwb_search_pattern='cell_types',**kwargs):
 
         self.cell_id = cell_id
         self.junction_potential = junc_potential
         self.temperature = temp
-        nwb_dir =  utility.get_filepath_for_exten(exten = '.nwb')
-        self.nwb_path =[str_path for str_path in nwb_dir if 'cell_types' in str_path][0]
-
+        
+        self._nwb_path = nwb_path
+        if not nwb_path and nwb_search_pattern:
+            nwb_dir =  utility.get_filepath_for_exten(exten = '.nwb')
+            try:
+                self._nwb_path = [str_path for str_path in nwb_dir if \
+                                      nwb_search_pattern in str_path][0]
+            except:
+                pass
+        
+    @property
+    def nwb_path(self):
+        return self._nwb_path
 
     @staticmethod
     def calc_stimparams(time, stimulus_trace,trace_name):

@@ -42,6 +42,7 @@ def create_optim_job(args):
     if args.qos and 'cori' in machine:
        with open('qos.txt', 'w') as handle:
            handle.write(args.qos)
+    
     jobtemplate_path = 'job_templates/Stage0_chainjob_template.sh'
     chain_job = ChainSubJob(jobtemplate_path,machine,conda_env = args.conda_env)
     chain_job.script_generator()

@@ -8,43 +8,50 @@ logger = logging.getLogger(__name__)
 
 class AllActive_Model_Parameters(object):
 
-    def __init__(self,cell_id,temp=34,v_init=-80):
+    def __init__(self,cell_id,temp=34,v_init=-80,swc_path=None,\
+                 swc_search_pattern='cell_types',released_aa_model_pattern='fit_parameters',
+                 prev_model_pattern='fit_opt',model_param_extension = '.json'):
+        
         self.cell_id = cell_id
         self.v_init = v_init
         self.temperature = temp
         
+        self._swc_path = swc_path
+        if not swc_path and swc_search_pattern:
+            swc_dir =  utility.get_filepath_for_exten(exten = '.swc')
+            try:
+                self._swc_path = [str_path for str_path in swc_dir if \
+                                      swc_search_pattern in str_path][0]
+            except:
+                pass
+        
+        model_path_list = utility.get_filepath_for_exten(model_param_extension)
+        
+        # Parameter file for a released all-active model 
+        #(has to match name fit_parameters.json)
+        release_param_path_ = [str_path for str_path in model_path_list if \
+                                   released_aa_model_pattern in str_path]
+        try:
+            self.release_param_path = release_param_path_[0]
+        except:
+            self.release_param_path = None
+            
+        # Parameter file from previous stage
+        prev_stage_model_path_ = [str_path for str_path in model_path_list if \
+                                   prev_model_pattern in str_path]
+        try:
+            self.prev_stage_model_path = prev_stage_model_path_[0]
+        except:
+            self.prev_stage_model_path = None
+            
+        
+        self.no_apical = utility.check_swc_for_apical(self.swc_path) \
+                if self.swc_path else False    
         
     @property
     def swc_path(self):
-        swc_dir =  utility.get_filepath_for_exten(exten = '.swc')
-        try:
-            swc_path_= [str_path for str_path in swc_dir if 'cell_types' in str_path][0] 
-        except:
-            swc_path_ = None
-        return swc_path_
+        return self._swc_path
    
-    @property
-    def no_apical(self):
-        return utility.check_swc_for_apical(self.swc_path) \
-                if self.swc_path else None
-    
-    # Parameter file for a released all-active model 
-    #(has to match name fit_parameters.json)
-    @property
-    def release_param_path(self,exten = '.json'):
-        dir_list = utility.get_filepath_for_exten(exten)
-        release_param_path_ = [str_path for str_path in dir_list if 'fit_parameters' in str_path]
-        release_param_path_ = release_param_path_[0] if release_param_path_ else None
-        return release_param_path_
-
-     # Parameter file from previous stage
-    @property
-    def prev_stage_model_path(self,exten='.json'):
-        dir_list = utility.get_filepath_for_exten(exten)
-        prev_stage_model_path_ = [str_path for str_path in dir_list if 'fit_opt' in str_path]
-        prev_stage_model_path_ = prev_stage_model_path_[0] if \
-                prev_stage_model_path_ else None
-        return prev_stage_model_path_
 
     @staticmethod
     def group_params(params_dict):
