@@ -12,24 +12,39 @@ class AllActive_Model_Parameters(object):
         self.cell_id = cell_id
         self.v_init = v_init
         self.temperature = temp
+        
+        
+    @property
+    def swc_path(self):
         swc_dir =  utility.get_filepath_for_exten(exten = '.swc')
-        self.swc_path =[str_path for str_path in swc_dir if 'cell_types' in str_path][0]
-        self.no_apical = utility.check_swc_for_apical(self.swc_path)
-        self.get_released_model() # Parameter file for a released all-active model (has to match name fit_parameters.json)
-        self.get_previous_stage_model() # Parameter file from previous stage
-
-
-    def get_released_model(self,exten = '.json'):
+        try:
+            swc_path_= [str_path for str_path in swc_dir if 'cell_types' in str_path][0] 
+        except:
+            swc_path_ = None
+        return swc_path_
+   
+    @property
+    def no_apical(self):
+        return utility.check_swc_for_apical(self.swc_path) \
+                if self.swc_path else None
+    
+    # Parameter file for a released all-active model 
+    #(has to match name fit_parameters.json)
+    @property
+    def release_param_path(self,exten = '.json'):
         dir_list = utility.get_filepath_for_exten(exten)
-        release_param_path = [str_path for str_path in dir_list if 'fit_parameters' in str_path]
-        release_param_path = release_param_path[0] if release_param_path else None
-        self.release_param_path = release_param_path
+        release_param_path_ = [str_path for str_path in dir_list if 'fit_parameters' in str_path]
+        release_param_path_ = release_param_path_[0] if release_param_path_ else None
+        return release_param_path_
 
-    def get_previous_stage_model(self,exten='.json'):
+     # Parameter file from previous stage
+    @property
+    def prev_stage_model_path(self,exten='.json'):
         dir_list = utility.get_filepath_for_exten(exten)
-        prev_stage_model_path = [str_path for str_path in dir_list if 'fit_opt' in str_path]
-        prev_stage_model_path = prev_stage_model_path[0] if prev_stage_model_path else None
-        self.prev_stage_model_path = prev_stage_model_path
+        prev_stage_model_path_ = [str_path for str_path in dir_list if 'fit_opt' in str_path]
+        prev_stage_model_path_ = prev_stage_model_path_[0] if \
+                prev_stage_model_path_ else None
+        return prev_stage_model_path_
 
     @staticmethod
     def group_params(params_dict):
