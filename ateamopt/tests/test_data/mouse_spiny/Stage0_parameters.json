@@ -1,0 +1,82 @@
+[
+    {
+        "param_name": "g_pas", 
+        "bounds": [
+            1e-07, 
+            0.01
+        ], 
+        "dist_type": "uniform", 
+        "type": "section", 
+        "sectionlist": "all"
+    }, 
+    {
+        "param_name": "e_pas", 
+        "bounds": [
+            -110, 
+            -60
+        ], 
+        "dist_type": "uniform", 
+        "type": "section", 
+        "sectionlist": "all"
+    }, 
+    {
+        "param_name": "cm", 
+        "bounds": [
+            0.1, 
+            10
+        ], 
+        "dist_type": "uniform", 
+        "type": "section", 
+        "sectionlist": "somatic"
+    }, 
+    {
+        "param_name": "Ra", 
+        "bounds": [
+            50, 
+            200
+        ], 
+        "dist_type": "uniform", 
+        "type": "section", 
+        "sectionlist": "all"
+    }, 
+    {
+        "param_name": "cm", 
+        "bounds": [
+            0.1, 
+            10
+        ], 
+        "dist_type": "uniform", 
+        "type": "section", 
+        "sectionlist": "axonal"
+    }, 
+    {
+        "param_name": "cm", 
+        "bounds": [
+            0.1, 
+            10
+        ], 
+        "dist_type": "uniform", 
+        "type": "section", 
+        "sectionlist": "apical"
+    }, 
+    {
+        "param_name": "cm", 
+        "bounds": [
+            0.1, 
+            10
+        ], 
+        "dist_type": "uniform", 
+        "type": "section", 
+        "sectionlist": "basal"
+    }, 
+    {
+        "param_name": "celsius", 
+        "type": "global", 
+        "value": 34
+    }, 
+    {
+        "param_name": "v_init", 
+        "type": "global", 
+        "value": -80
+    }
+]
