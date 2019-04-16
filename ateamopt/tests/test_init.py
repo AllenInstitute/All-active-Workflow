@@ -4,7 +4,7 @@ from ateamopt.nwb_extractor import NWB_Extractor
 from ateamopt.model_parameters import AllActive_Model_Parameters
 from ateamopt.utils import utility
 from ateamopt.optim_config_rules import filter_feat_proto_passive
-
+import nose.tools as nt
 
 
 
@@ -21,6 +21,7 @@ def test_Stage0_parameters():
     
     # Mouse spiny
     cell_id = '483101699'
+    mouse_spiny_path = os.path.join(test_data_path,'mouse_spiny')
     
     # Create the parameter bounds for the optimization
     model_params_handler = AllActive_Model_Parameters(cell_id)
@@ -28,12 +29,23 @@ def test_Stage0_parameters():
     param_bounds_path = utility.locate_template_file(os.path.join('parameters',\
                                             param_bounds_file))
     model_params,model_params_release = model_params_handler.get_opt_params(param_bounds_path)
-
-
+    model_mechs,model_mechs_release = model_params_handler.get_opt_mechanism(model_params,\
+                        model_params_release,param_bounds_path)
+    
+    mouse_spiny_stage0_params = os.path.join(mouse_spiny_path,'parameters.json')
+    mouse_spiny_stage0_mechs = os.path.join(mouse_spiny_path,'mechanism.json')
+    model_params_true = utility.load_json(mouse_spiny_stage0_params)
+    model_mechs_true = utility.load_json(mouse_spiny_stage0_mechs)
+    
+    TestCase.assertDictEqual(model_params_true,model_params)
+    TestCase.assertDictEqual(model_mechs_true,model_mechs)
+    
+    
 def test_Stage0_features():
     
     # Mouse spiny
     cell_id = '483101699'
+    
     nwb_handler = NWB_Extractor(cell_id)
     acceptable_stimtypes = ['Long Square']
     ephys_data_path,stimmap_filename = \
@@ -45,6 +57,7 @@ def test_Stage0_features():
         protocols_write_path,all_protocols_write_path = \
         nwb_handler.get_ephys_features(feature_path,ephys_data_path,
                                        stimmap_filename,filter_rule_func)
+    
 
 def test_Stage0_mechanisms():
     pass

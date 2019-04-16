@@ -39,7 +39,7 @@ def main():
     analysis_handler = Optim_Analyzer(opt_train,cp_dir)
     best_model = analysis_handler.get_best_model()
 
-    aibs_params_modelname = 'fitted_params/fit_opt.json'
+    aibs_params_modelname = 'fitted_params/optim_param_%s.json'%cell_id
     analysis_handler.save_params_aibs_format(aibs_params_modelname,
                                     best_model[0])
 
