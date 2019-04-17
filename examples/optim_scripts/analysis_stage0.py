@@ -56,7 +56,8 @@ def main():
     GA_evol_path = 'analysis_params/GA_evolution_params.pkl'
     analysis_handler.save_GA_evolultion_info(GA_evol_path)
 
-    response_list = analysis_handler.get_model_responses(best_model)
+    hof_responses_filename = 'analysis_params/hof_response_all.pkl'
+    response_list = analysis_handler.get_model_responses(best_model,hof_responses_filename)
     resp_filename = './resp_opt.txt'
     analysis_handler.save_best_response(response_list[0], resp_filename)
 
