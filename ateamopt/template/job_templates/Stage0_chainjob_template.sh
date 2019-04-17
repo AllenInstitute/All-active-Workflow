@@ -22,11 +22,11 @@ if [ ! -d "$STAGE_DIR" ]; then
 
 	if [ -d "$all_active_model_dir" ]; then
 		all_active_model_file=$(find $all_active_model_dir -maxdepth 1 -name "*fit*.json")
-		mv $all_active_model_file $STAGE_DIR/cell_types/fit_parameters.json && rm -rf $all_active_model_dir
+		mv $all_active_model_file $STAGE_DIR/cell_types/fit_aa_parameters.json && rm -rf $all_active_model_dir
 	fi
 	if [ -d "$peri_model_dir" ]; then
 		peri_model_file=$(find $peri_model_dir -maxdepth 1 -name "*fit*.json")
-		mkdir -p $STAGE_DIR/$peri_model_dir && mv $peri_model_file $STAGE_DIR/$peri_model_dir/ && rm -rf $peri_model_dir
+		mkdir -p $STAGE_DIR/$peri_model_dir && mv $peri_model_file $STAGE_DIR/$peri_model_dir/fit_peri_parameters.json && rm -rf $peri_model_dir
 	fi
 
 else

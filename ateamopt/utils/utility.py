@@ -7,6 +7,9 @@ import ateamopt.template as templ
 import pickle
 import allensdk.core.swc as swc
 import ateamopt.scripts as pyscripts
+import logging
+
+logger = logging.getLogger(__name__)
 
 bpopt_section_map = {
                       'soma':'somatic',
@@ -108,9 +111,15 @@ def load_json(path):
     return json_data
 
 def load_pickle(path):
-    with open(path,'rb') as pickle_read:
-        pickle_data=pickle.load(pickle_read)
-        
+    try:
+        with open(path,'rb') as pickle_read:
+            pickle_data=pickle.load(pickle_read)
+    except:
+        with open(path, 'rb') as f:
+            u = pickle._Unpickler(f)
+            u.encoding = 'latin1'
+            pickle_data = u.load()
+        logger.debug('solving python 2-3 pickling incompatibility')
     return pickle_data
 
 

@@ -9,7 +9,8 @@ logger = logging.getLogger(__name__)
 class AllActive_Model_Parameters(object):
 
     def __init__(self,cell_id,temp=34,v_init=-80,swc_path=None,\
-                 swc_search_pattern='cell_types',released_aa_model_pattern='fit_parameters',
+                 swc_search_pattern='cell_types',
+                 released_aa_model_pattern='fit_aa_parameters',
                  prev_model_pattern='fit_opt',model_param_extension = '.json'):
         
         self.cell_id = cell_id

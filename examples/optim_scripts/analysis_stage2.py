@@ -111,17 +111,20 @@ def main():
     seed_indices_filename = 'analysis_params/seed_indices.pkl'
 
     # Response for the entire hall of fame not arranged
-    hof_response_list = analysis_handler.get_model_responses(hof_model_params)
+    hof_response_list = analysis_handler.get_model_responses(hof_model_params,
+                                                     hof_responses_filename)
 
     # Sort everything with respect to training error
     obj_list_train = analysis_handler.get_response_scores(hof_response_list)
+    
     analysis_handler._opt = opt_gen
     obj_list_gen = analysis_handler.get_response_scores(hof_response_list)
+    
     analysis_handler._opt = opt_untrain
     obj_list_untrain = analysis_handler.get_response_scores(hof_response_list)
+    
     analysis_handler._opt = opt_train
-
-    score_list_train = [np.sum(obj_dict_train.values()) \
+    score_list_train = [np.sum(list(obj_dict_train.values())) \
                         for obj_dict_train in obj_list_train]
 
     hof_response_sorted = analysis_handler.organize_models(hof_response_list,
@@ -136,7 +139,8 @@ def main():
                                                                 score_list_train)
 
     # Save the sorted hall of fame output in .pkl
-    hof_model_params_sorted = analysis_handler.save_hof_output_params(hof_model_params,                                   hof_params_filename)
+    hof_model_params_sorted = analysis_handler.save_hof_output_params(hof_model_params,\
+                                                              hof_params_filename)
     utility.save_pickle(hof_responses_filename, hof_response_sorted)
     utility.save_pickle(obj_list_train_filename, obj_list_train_sorted)
     utility.save_pickle(obj_list_all_filename, obj_list_gen_sorted)

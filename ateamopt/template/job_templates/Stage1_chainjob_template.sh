@@ -42,7 +42,7 @@ echo "Saving the Optimized parameters for the next stage"
 # rm -rf $IPYTHONDIR
 cp -r cell_types $STAGE_DIR/
 cp fitted_params/optim_param_$CELL_ID.json $STAGE_DIR/cell_types/fit_opt.json
-if [ -d "peri_model" ]; then mv peri_model/ $STAGE_DIR/; fi
+if [ -d "peri_model" ]; then cp -r peri_model $STAGE_DIR/; fi
 if [ -f qos.txt ]; then cp qos.txt $STAGE_DIR/ ; fi
 cp $SCRIPT_REPO/{prepare_stage1_run.py,analysis_stage1.py} $STAGE_DIR/
 cp -r $SCRIPT_REPO/modfiles $STAGE_DIR/

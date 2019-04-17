@@ -92,7 +92,7 @@ def main():
     # Perisomatic model
     if perisomatic_model_id != '':
         perisomatic_dir = 'peri_model'
-        peri_model_path = os.path.join(perisomatic_dir,'*fit*.json')
+        peri_model_path = os.path.join(perisomatic_dir,'*fit_peri*.json')
         peri_param_path = glob.glob(peri_model_path)[0]
         peri_params_write_path, peri_mech_write_path = \
                 model_params_handler.aibs_peri_to_bpopt(peri_param_path)
