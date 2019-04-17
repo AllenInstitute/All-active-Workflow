@@ -71,8 +71,7 @@ class Optim_Analyzer(object):
         return hof_params, seed_indices
 
 
-    def get_model_responses(self,hof_params,
-                          hof_responses_filename='analysis_params/hof_response_all.pkl'):
+    def get_model_responses(self,hof_params,hof_responses_filename):
         utility.create_filepath(hof_responses_filename)
 
         # Calculate responses for the hall-of-fame parameters

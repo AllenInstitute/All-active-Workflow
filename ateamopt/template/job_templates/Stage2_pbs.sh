@@ -18,7 +18,7 @@ source activate conda_env
 qsub -W depend=afternotok:$PBS_JOBID batch_job.sh
 
 OFFSPRING_SIZE=512
-MAX_NGEN=200
+MAX_NGEN=5
 seed=1
 
 
@@ -35,6 +35,8 @@ sleep 30
 
 CHECKPOINTS_DIR="checkpoints"
 mkdir -p ${CHECKPOINTS_DIR}
+mkdir -p checkpoints_final
+
 
 # Check the job status : Start or continue
 if [ "$(ls -A $CHECKPOINTS_DIR)" ]; then

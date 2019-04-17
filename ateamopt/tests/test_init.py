@@ -25,7 +25,7 @@ def convert_model_params_to_dict(model_params_opt):
 
 def convert_stim_feat_to_dict(stim_features):
     model_param_dict = {}
-    for model_param_ in model_params_opt:
+    for model_param_ in stim_features:
         if model_param_.get('bounds'):
             model_param_dict[model_param_['param_name']+'.'+ \
                  model_param_['sectionlist']]= model_param_['bounds'] 

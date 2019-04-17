@@ -47,6 +47,7 @@ sleep 10
 
 CHECKPOINTS_DIR="checkpoints"
 mkdir -p ${CHECKPOINTS_DIR}
+mkdir -p checkpoints_final
 
 
 # Check the job status : Start or continue
