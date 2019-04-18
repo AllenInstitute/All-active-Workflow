@@ -22,7 +22,7 @@ seed=1
 PWD=$(pwd)
 export IPYTHONDIR=$PWD/.ipython
 file $IPYTHONDIR
-export IPYTHON_PROFILE=pbs.$PBS_JOBID
+export IPYTHON_PROFILE=default
 
 ipcontroller --init --ip='*' --sqlitedb --ping=30000 --profile=${IPYTHON_PROFILE} &
 sleep 30
