@@ -17,7 +17,7 @@ from ateamopt.utils import utility
 from ateamopt.bpopt_evaluator import Bpopt_Evaluator
 
 
-logging.basicConfig(level=logging.DEBUG) 
+logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger()
 
 
@@ -28,7 +28,7 @@ def create_optimizer(args):
     if args.ipyparallel:
         from ipyparallel import Client
         rc = Client(profile=os.getenv('IPYTHON_PROFILE'))
-        
+
         logger.debug('Using ipyparallel with %d engines', len(rc))
         lview = rc.load_balanced_view()
 
@@ -37,38 +37,38 @@ def create_optimizer(args):
             ret = lview.map_sync(func, it)
             if args.start or args.continu:
                 logger.debug('Generation took %s', datetime.now() - start_time)
-            
+
             # Save timing information for each generation
             f =  open('time_info.txt','a')
             f.write('%s\n'%(datetime.now() - start_time))
             f.close()
-                        
+
             return ret
 
         map_function = mapper
     else:
         map_function = None
-               
-    seed = os.getenv('BLUEPYOPT_SEED', args.seed)    
-    
-    # load the configuration paths   
+
+    seed = os.getenv('BLUEPYOPT_SEED', args.seed)
+
+    # load the configuration paths
     path_data=utility.load_json(args.config_path)
-    
+
     morph_path = path_data['morphology']
     protocol_path = path_data['protocols']
     mech_path = path_data['mechanism']
     feature_path = path_data['features']
     param_path = path_data['parameters']
-    eval_handler = Bpopt_Evaluator(protocol_path, feature_path, morph_path, 
-                                    param_path, mech_path)
+    eval_handler = Bpopt_Evaluator(protocol_path, feature_path, morph_path,
+                                    param_path, mech_path, timeout = args.timeout)
     evaluator = eval_handler.create_evaluator()
-    
+
     opt = bpopt.optimisations.DEAPOptimisation(
             evaluator=evaluator,
             map_function=map_function,
             seed=seed)
     return opt
-    
+
 
 def get_parser():
     parser = argparse.ArgumentParser(
@@ -95,12 +95,13 @@ def get_parser():
                         help='Use ipyparallel')
     parser.add_argument('-v', '--verbose', action='count', dest='verbose',
                         default=0, help='-v for INFO, -vv for DEBUG')
-
+    parser.add_argument('--timeout', type=int, required=False, default=300,
+                        help='Simulation cut-off time in seconds')
     return parser
 
-    
-    
-def main(): 
+
+
+def main():
     """Main"""
     args = get_parser().parse_args()
 
@@ -118,7 +119,7 @@ def main():
                 offspring_size=args.offspring_size,
                 continue_cp=args.continu,
                 cp_filename=args.checkpoint)
-        
-    
+
+
 if __name__ == '__main__':
     main()

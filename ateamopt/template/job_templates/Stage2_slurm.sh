@@ -35,10 +35,11 @@ mkdir -p $LOGS
 
 OFFSPRING_SIZE=512
 MAX_NGEN=200
+timeout=120
 seed=1
 
 export IPYTHONDIR=${PWD}/.ipython
-export IPYTHON_PROFILE=default
+export IPYTHON_PROFILE=slurm.${SLURM_JOBID}
 
 ipcontroller --init --ip='*' --sqlitedb --ping=30000 --profile=${IPYTHON_PROFILE} &
 sleep 10
@@ -65,6 +66,7 @@ python Optim_Main.py             \
     --seed=${seed}                     \
     --ipyparallel                      \
     --$JOB_STATUS                         \
+    --timeout=$timeout              \
     --checkpoint "${CHECKPOINTS_DIR}/seed${seed}.pkl" &
 
 pid=$!

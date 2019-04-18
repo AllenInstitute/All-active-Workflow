@@ -20,7 +20,7 @@ CELL_ID=$(<cell_id.txt)
 
 export IPYTHONDIR=$PWD/.ipython
 file $IPYTHONDIR
-export IPYTHON_PROFILE=default
+export IPYTHON_PROFILE=pbs.$PBS_JOBID
 
 ipcontroller --init --ip='*' --sqlitedb --ping=30000 --profile=${IPYTHON_PROFILE} &
 sleep 30

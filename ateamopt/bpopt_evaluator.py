@@ -28,10 +28,12 @@ class Bpopt_Evaluator(object):
             feature_set.extend(feat_val['soma'].keys())
         self.AIS_check = True if 'check_AISInitiation' in \
                 list(set(feature_set)) else False
-        self.timed_evaluation = props.get('timed_evaluation',True)
+        self.timed_evaluation = props.pop('timed_evaluation',True)
         self.axon_type = 'stub_axon'
-        if props.get('do_replace_axon'):
+        if props.pop('do_replace_axon',None):
             self.axon_type = 'bpopt_replaced_axon'
+        
+        self.eval_props = props
 
     def define_mechanisms(self):
         """Define mechanisms"""
@@ -310,14 +312,19 @@ class Bpopt_Evaluator(object):
                        if not param.frozen]
 
         sim = ephys.simulators.NrnSimulator()
-
+        
         if self.timed_evaluation:
+            kwargs={}
+            for key,val in self.eval_props.items():
+                if val:
+                    kwargs[key] = val 
+                    
             return ephys.evaluators.CellEvaluatorTimed(
                 cell_model=cell,
                 param_names=param_names,
                 fitness_protocols=fitness_protocols,
                 fitness_calculator=fitness_calculator,
-                sim=sim)
+                sim=sim,**kwargs)
         else:
             return ephys.evaluators.CellEvaluator(
                 cell_model=cell,

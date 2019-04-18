@@ -18,14 +18,15 @@ source activate conda_env
 qsub -W depend=afternotok:$PBS_JOBID batch_job.sh
 
 OFFSPRING_SIZE=512
-MAX_NGEN=5
+MAX_NGEN=200
+timeout=120
 seed=1
 
 
 PWD=$(pwd)
 export IPYTHONDIR=$PWD/.ipython
 file $IPYTHONDIR
-export IPYTHON_PROFILE=default
+export IPYTHON_PROFILE=pbs.$PBS_JOBID
 
 ipcontroller --init --ip='*' --sqlitedb --ping=30000 --profile=${IPYTHON_PROFILE} &
 sleep 30
@@ -53,6 +54,7 @@ python Optim_Main.py             \
     --seed=${seed}                     \
     --ipyparallel                      \
     --$JOB_STATUS                        \
+    --timeout=$timeout              \
     --checkpoint "${CHECKPOINTS_DIR}/seed${seed}.pkl" &
 
 pid=$!
