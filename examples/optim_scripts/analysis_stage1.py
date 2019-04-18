@@ -29,7 +29,8 @@ def main():
 
     eval_handler = Bpopt_Evaluator(all_protocols_write_path, features_write_path,
                                    morph_path, param_write_path,
-                                   mech_write_path)
+                                   mech_write_path,
+                                   'timed_evaluation' = False)
     evaluator = eval_handler.create_evaluator()
 
     opt_train = bpopt.optimisations.DEAPOptimisation(
@@ -67,7 +68,8 @@ def main():
                                    morph_path, release_param_write_path,
                                    mech_release_write_path,
                                    do_replace_axon = False,
-                                   do_replace_axon_swc = True)
+                                   do_replace_axon_swc = True,
+                                   'timed_evaluation' = False)
         evaluator_release = eval_handler_release.create_evaluator()
         opt_release = bpopt.optimisations.DEAPOptimisation(
                             evaluator=evaluator_release)

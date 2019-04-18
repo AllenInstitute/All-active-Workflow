@@ -20,7 +20,7 @@ LOGS=$PWD/logs
 mkdir -p $LOGS
 
 export IPYTHONDIR=${PWD}/.ipython
-export IPYTHON_PROFILE=default
+export IPYTHON_PROFILE=slurm.${SLURM_JOBID}
 
 ipcontroller --init --ip='*' --sqlitedb --ping=30000 --profile=${IPYTHON_PROFILE} &
 sleep 10
