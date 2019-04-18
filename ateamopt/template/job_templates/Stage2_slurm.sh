@@ -38,7 +38,7 @@ MAX_NGEN=200
 seed=1
 
 export IPYTHONDIR=${PWD}/.ipython
-export IPYTHON_PROFILE=benchmark.${SLURM_JOBID}
+export IPYTHON_PROFILE=default
 
 ipcontroller --init --ip='*' --sqlitedb --ping=30000 --profile=${IPYTHON_PROFILE} &
 sleep 10
