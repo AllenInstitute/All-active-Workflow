@@ -7,7 +7,7 @@ logger = logging.getLogger(__name__)
 def cleanup_files(animation_func):
     def inner(*args,**kwargs):
         animation_func(*args,**kwargs)
-        files = args[0]
+        files = args[1]
         for f in files:
             os.remove(f)
     return inner
@@ -72,7 +72,7 @@ class Animation(object):
         output_ext = os.path.splitext(self.anim_path)[1]
         os.system(command[output_ext])
 
-
+#    @cleanup_files
     def make_gif(self,files,delay=100, repeat=True,**kwargs):
         """
         Uses imageMagick to produce an animated .gif from a list of
