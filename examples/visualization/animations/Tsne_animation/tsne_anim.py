@@ -25,6 +25,7 @@ def reformat_legend(axes,sorted_class,color_list):
                     all_labels.append(label_split)
                     all_handles.append(handle_)
                     all_colors.append(color_list[sorted_class.index(label_split)])
+
     
     dummy_handles = []
     for handle_,label_,color_ in zip(all_handles,all_labels,all_colors):
@@ -44,18 +45,17 @@ def tsne_embedding(param_df,hue="Cre_line",
     
     param_df = param_df.dropna(axis=1, how = 'all')
     
-    # Get the conductance parameters
+   # Get the conductance parameters
     if ignore_metadata_fields:
-        param_df_var = param_df.loc[:,[col_var for col_var in \
-                      list(param_df) if col_var not in ignore_metadata_fields]]
+        param_df_var = param_df.loc[:,[col_name for col_name in \
+                      list(param_df) if col_name not in ignore_metadata_fields]]
     elif include_metadata_fields:
-        param_df_var = param_df.loc[:,[col_var for col_var in \
-                      list(param_df) if col_var in include_metadata_fields]]
+        param_df_var = param_df.loc[:,[col_name for col_name in \
+                      list(param_df) if col_name in include_metadata_fields]]
         param_df_var = param_df_var.dropna(axis=1, how = 'any')
     if drop_apical:
         cols = [c for c in param_df_var.columns if 'apic' not in c]
         param_df_var = param_df_var[cols]
-    
     
     param_df_var = param_df_var.dropna(axis=0, how = 'any')
     
@@ -88,33 +88,22 @@ def tsne_embedding(param_df,hue="Cre_line",
                      for hue_ in sorted_hue_id]
     
     sns.set(style="darkgrid", font_scale=1)
-    if col_var:
-        g = sns.FacetGrid(param_df_tsne,
-                          col=col_var,col_order=sorted_col, 
-                          hue='hue_id',hue_order = sorted_hue_id,
-                          palette=color_df_list, hue_kws=dict(marker=marker_df_list),                      
-                          height=6, aspect=.7)
-        g = (g.map(plt.scatter, "x-tsne", "y-tsne", alpha=.8,s=80))
-        
-
-    else:
-        g = sns.FacetGrid(param_df_tsne,  
-              hue='hue_id',hue_order = sorted_hue_id,
-              palette=color_df_list, hue_kws=dict(marker=marker_df_list),
-                          height=7)
-        g = (g.map(plt.scatter, "x-tsne", "y-tsne", alpha=.8))
-#        plt.subplots_adjust(top=0.85)
-    
+    g = sns.FacetGrid(param_df_tsne,
+                      col=col_var,col_order=sorted_col, 
+                      hue='hue_id',hue_order = sorted_hue_id,
+                      palette=color_df_list, hue_kws=dict(marker=marker_df_list),                      
+                      height=9,aspect= 1.2)
+    g = (g.map(plt.scatter, "x-tsne", "y-tsne", alpha=.8,s=80))
+     
     axes = g.axes
+    
     dummy_handles,all_labels = reformat_legend(axes,sorted_class,color_list)
-        
     g.fig.legend(handles = dummy_handles, labels = all_labels,
-                     loc = 'center right', nrow = 8)
-    g.fig.tight_layout(rect=[0, 0.1, 1, 0.95])
+                     loc = 'center right')
+    g.fig.tight_layout(rect=[0, 0.1, .82, 0.95])
     
     figtitle += ' (# of cells =%s)'%len(sorted_cell_id)
     g.fig.suptitle(figtitle)
-#    plt.show()
     g.fig.savefig(figname, dpi= 80)
     plt.close(g.fig)
 
@@ -136,7 +125,7 @@ def main():
         utility.create_filepath(file_path)
         tsne_embedding(mouse_data_hof,hue="Cre_line", 
                 figname = file_path, 
-                col_var = None,
+                col_var = 'Species',
                 figtitle = 'Mouse spiny: Hall-of-fame index %s'%hof_ind,
                 ignore_metadata_fields = metadata_fields)
         
