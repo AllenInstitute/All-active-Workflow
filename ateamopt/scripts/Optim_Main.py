@@ -35,7 +35,7 @@ def create_optimizer(args):
         def mapper(func, it):
             start_time = datetime.now()
             ret = lview.map_sync(func, it)
-            if args.start or args.continu:
+            if args.start or args.continue:
                 logger.debug('Generation took %s', datetime.now() - start_time)
 
             # Save timing information for each generation
@@ -80,7 +80,9 @@ def get_parser():
     BLUEPYOPT_SEED: The seed used for initial randomization
         '''))
     parser.add_argument('--start', action="store_true")
-    parser.add_argument('--continu', action="store_true", default=False)
+    parser.add_argument('--continue', action="store_true", default=False)
+    parser.add_argument('--checkpoint', required=False, default=None,
+                        help='Checkpoint pickle to avoid recalculation')
     parser.add_argument('--checkpoint', required=False, default=None,
                         help='Checkpoint pickle to avoid recalculation')
     parser.add_argument('--config_path', required=False, default='config_file.json',
@@ -113,11 +115,11 @@ def main():
                                stream=sys.stdout)
     opt = create_optimizer(args)
 
-    if args.start or args.continu:
+    if args.start or args.continue:
         logger.debug('Doing start or continue')
         opt.run(max_ngen=args.max_ngen,
                 offspring_size=args.offspring_size,
-                continue_cp=args.continu,
+                continue_cp=args.continue,
                 cp_filename=args.checkpoint)
 
 

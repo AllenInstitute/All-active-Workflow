@@ -41,7 +41,7 @@ mkdir -p checkpoints_final
 
 # Check the job status : Start or continue
 if [ "$(ls -A $CHECKPOINTS_DIR)" ]; then
-    JOB_STATUS=continu
+    JOB_STATUS=continue
 else
     JOB_STATUS=start
 fi
