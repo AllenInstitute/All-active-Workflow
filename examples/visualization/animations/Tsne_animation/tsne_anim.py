@@ -98,43 +98,84 @@ def tsne_embedding(param_df,hue="Cre_line",
     axes = g.axes
     
     dummy_handles,all_labels = reformat_legend(axes,sorted_class,color_list)
-    g.fig.legend(handles = dummy_handles, labels = all_labels,
-                     loc = 'center right')
-    g.fig.tight_layout(rect=[0, 0.1, .82, 0.95])
+    if not drop_apical:
+        g.fig.legend(handles = dummy_handles, labels = all_labels,
+                         loc = 'center right',fontsize=12)
+        g.fig.tight_layout(rect=[0, 0.1, .82, 0.95])
+    else:
+        g.fig.legend(handles = dummy_handles, labels = all_labels,
+                 loc = 'lower center', ncol = 6)
+        g.fig.tight_layout(rect=[0, 0.1, 1, 0.95])
     
     figtitle += ' (# of cells =%s)'%len(sorted_cell_id)
     g.fig.suptitle(figtitle)
     g.fig.savefig(figname, dpi= 80)
     plt.close(g.fig)
 
-def main():
-    mouse_classification_data = 'Mouse_class_data.csv'
-    mouse_data_df = pd.read_csv(mouse_classification_data, 
-                            dtype={'Cell_id': str},index_col = 0)
-    metadata_fields = utility.load_json('metadata_fields.json')
-    max_hof_index = 40
-    filter_feat = 'Dendrite_type'; filter_val = 'spiny'
-    mouse_data_filtered = mouse_data_df.loc[mouse_data_df[filter_feat] == filter_val,]
-    files = []
-    for hof_ind in range(max_hof_index):
-        mouse_data_hof = mouse_data_filtered.loc[mouse_data_filtered['hof_index'] \
-                         <= hof_ind,]
-        anim_prefix = 'GA_figures'
-        fname = 'tsne_{}.jpeg'.format(hof_ind)
-        file_path = os.path.join(anim_prefix,fname)
-        utility.create_filepath(file_path)
-        tsne_embedding(mouse_data_hof,hue="Cre_line", 
-                figname = file_path, 
-                col_var = 'Species',
-                figtitle = 'Mouse spiny: Hall-of-fame index %s'%hof_ind,
-                ignore_metadata_fields = metadata_fields)
+def select_models_on_tolerance(df,tol_val):
+    best_models_df = df.loc[df.hof_index == 0,:]
+    cre_grouped = best_models_df.groupby('Cre_line')
+    cre_grouped_metrics = cre_grouped['Feature_Avg_Train'].agg(np.mean)
+    cre_grouped_metrics_dict = dict(cre_grouped_metrics)
+    
+    cre_grouped_metrics_tol = {key : (1+tol_val)*val for key,val in \
+                               cre_grouped_metrics_dict.items()}
+    df_tol = []
+    df_hof = df.loc[df.hof_index == 0,] # Atleast have representative per cell
+    for cre,fa_tol in cre_grouped_metrics_tol.items():
+        df_temp = df.loc[(df.Cre_line == cre) & (df.Feature_Avg_Train <= fa_tol),]
+        df_tol.append(df_temp)
         
-        files.append(file_path)
+    df_tol = pd.concat([pd.concat(df_tol),df_hof])
+    df_tol = df_tol.drop_duplicates()
+    return df_tol,cre_grouped_metrics_dict
+
+def broad_cre_class(cre_var):
+    if cre_var.startswith('Htr3a'):
+        return 'Htr3a'
+    elif cre_var.startswith('Pvalb'):
+        return 'Pvalb'
+    elif cre_var.startswith('Sst'):
+        return 'Sst'
+    else:
+        return cre_var
+
+#def main():
+mouse_classification_data = 'Mouse_class_data.csv'
+mouse_data_df = pd.read_csv(mouse_classification_data, 
+                        dtype={'Cell_id': str},index_col = 0)
+tol_level = .2
+mouse_data_df,cre_grouped_metrics = \
+            select_models_on_tolerance(mouse_data_df,tol_level)
+#    mouse_data_df['Cre_line'] = mouse_data_df['Cre_line'].apply(broad_cre_class)
+metadata_fields = utility.load_json('metadata_fields.json')
+max_hof_index = 40
+filter_feat = 'Dendrite_type'; filter_val = 'spiny'
+drop_apical = filter_val == 'aspiny'
+mouse_data_filtered = mouse_data_df.loc[mouse_data_df[filter_feat] == filter_val,]
+mouse_data_hof = mouse_data_filtered
+
+files = []
+#for hof_ind in range(max_hof_index):
+#    mouse_data_hof = mouse_data_filtered.loc[mouse_data_filtered['hof_index'] \
+#                     <= hof_ind,]
+#    anim_prefix = 'GA_figures_%s'%filter_val
+#    fname = 'tsne_{}.jpeg'.format(hof_ind)
+#    file_path = os.path.join(anim_prefix,fname)
+#    utility.create_filepath(file_path)
+tsne_embedding(mouse_data_hof,hue="Cre_line", 
+        figname = file_path, 
+        col_var = 'Species',
+        figtitle = 'Mouse %s: Hall-of-fame index %s'%(filter_val,hof_ind),
+        ignore_metadata_fields = metadata_fields,
+        drop_apical = drop_apical)
+
+#files.append(file_path)
+#
+#anim_handler = animation_module.Animation(movie_name = \
+#                                  'Tsne_anim_{}.gif'.format(filter_val))
+#anim_handler.make_gif(files)    
     
-    anim_handler = animation_module.Animation(movie_name = \
-                                      'Tsne_anim_{}.gif'.format(filter_val))
-    anim_handler.make_gif(files)    
     
-    
-if __name__ == '__main__':
-    main()
+#if __name__ == '__main__':
+#    main()

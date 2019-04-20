@@ -32,10 +32,14 @@ def filter_feat_proto_active(features_dict,protocols_dict,all_protocols_dict,
     
     
     # Ignoring spiking protocol which are followed by non-spiking stim protocol
-    max_nospiking_amp = max(non_spiking_proto_dict.values())            
+    max_nospiking_amp = max(non_spiking_proto_dict.values()) 
+    f_key_list = []           
     for spike_stim,spike_amp in spiking_proto_dict.items():
         if spike_amp < max_nospiking_amp:
-           del spiking_proto_dict[spike_stim] 
+           f_key_list.append(spike_stim)
+    spiking_proto_dict = entries_to_remove(f_key_list,spiking_proto_dict)       
+           
+           
     spiking_proto_sorted = sorted(spiking_proto_dict,
                            key=spiking_proto_dict.__getitem__)
     non_spiking_proto_sorted = sorted(non_spiking_proto_dict,
