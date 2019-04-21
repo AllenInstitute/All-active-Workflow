@@ -8,7 +8,7 @@
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=anin@alleninstitute.org
 #SBATCH -J Stage2
-#SBATCH --signal=B:USR1@120
+#SBATCH --signal=B:USR1@60
 
 run_dependent_script() {
 func="$1" ; shift
@@ -19,6 +19,7 @@ done
 
 # trap function to relaunch the optimization
 func_trap() {
+scancel ${SLURM_JOBID}
 sbatch batch_job.sh
 }
 
@@ -35,7 +36,7 @@ mkdir -p $LOGS
 
 OFFSPRING_SIZE=512
 MAX_NGEN=200
-timeout=120
+timeout=60
 seed=1
 
 export IPYTHONDIR=${PWD}/.ipython
@@ -43,17 +44,19 @@ export IPYTHON_PROFILE=slurm.${SLURM_JOBID}
 
 ipcontroller --init --ip='*' --sqlitedb --ping=30000 --profile=${IPYTHON_PROFILE} &
 sleep 10
-srun -n 256 --output="${LOGS}/engine_%j_%2t.out" ipengine --timeout=3000 --profile=${IPYTHON_PROFILE} &
+srun -n 256 ipengine --timeout=3000 --profile=${IPYTHON_PROFILE} &
 sleep 10
 
 CHECKPOINTS_DIR="checkpoints"
-mkdir -p ${CHECKPOINTS_DIR}
+CHECKPOINTS_BACKUP="checkpoints_backup"
+mkdir -p $CHECKPOINTS_DIR
+mkdir -p $CHECKPOINTS_BACKUP
 mkdir -p checkpoints_final
 
 
 # Check the job status : Start or continue
 if [ "$(ls -A $CHECKPOINTS_DIR)" ]; then
-    JOB_STATUS=continue
+    JOB_STATUS=continu
 else
     JOB_STATUS=start
 fi
@@ -67,7 +70,8 @@ python Optim_Main.py             \
     --ipyparallel                      \
     --$JOB_STATUS                         \
     --timeout=$timeout              \
-    --checkpoint "${CHECKPOINTS_DIR}/seed${seed}.pkl" &
+    --checkpoint "${CHECKPOINTS_DIR}/seed${seed}.pkl" \
+    --cp_backup "${CHECKPOINTS_BACKUP}/seed${seed}.pkl" &
 
 pid=$!
 wait $pid
