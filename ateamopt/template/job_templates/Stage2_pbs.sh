@@ -19,7 +19,7 @@ qsub -W depend=afternotok:$PBS_JOBID batch_job.sh
 
 OFFSPRING_SIZE=512
 MAX_NGEN=200
-timeout=120
+timeout=60
 seed=1
 
 
@@ -35,13 +35,14 @@ mpiexec -n 256 ipengine --timeout=3000 --profile=${IPYTHON_PROFILE} &
 sleep 30
 
 CHECKPOINTS_DIR="checkpoints"
-mkdir -p ${CHECKPOINTS_DIR}
+mkdir -p $CHECKPOINTS_DIR
+mkdir -p $CHECKPOINTS_BACKUP
 mkdir -p checkpoints_final
 
 
 # Check the job status : Start or continue
 if [ "$(ls -A $CHECKPOINTS_DIR)" ]; then
-    JOB_STATUS=continue
+    JOB_STATUS=continu
 else
     JOB_STATUS=start
 fi
@@ -55,7 +56,8 @@ python Optim_Main.py             \
     --ipyparallel                      \
     --$JOB_STATUS                        \
     --timeout=$timeout              \
-    --checkpoint "${CHECKPOINTS_DIR}/seed${seed}.pkl" &
+    --checkpoint "${CHECKPOINTS_DIR}/seed${seed}.pkl" \
+    --cp_backup "${CHECKPOINTS_BACKUP}/seed${seed}.pkl" &
 
 pid=$!
 wait $pid
