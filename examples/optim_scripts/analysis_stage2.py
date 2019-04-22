@@ -29,7 +29,7 @@ def analyzer_map(parallel=True):
     else:
         map_function = None
 
-    return map_function
+    return map_function,rc
 
 def get_opt_obj(protocols_path,features_path,morph_path, param_path,
                 mech_path,map_function):
@@ -80,7 +80,7 @@ def main():
     release_param_write_path = opt_config['released_model']
     mech_release_write_path = opt_config['mechanism_release']
 
-    map_function = analyzer_map(args.ipyparallel)
+    map_function,rc = analyzer_map(args.ipyparallel)
     opt_train = get_opt_obj(all_protocols_write_path, features_write_path,
                                    morph_path, param_write_path,
                                    mech_write_path,map_function)
@@ -237,6 +237,9 @@ def main():
         time_metrics_filename = 'time_metrics_%s.csv'%cell_id
         analysis_module.save_optimization_time(time_by_gen_filename,
                         time_metrics_filename,cell_metadata)
+    
+    # Shutdown ipython cluster    
+    rc.shutdown(hub=True)
     
 if __name__ == '__main__':
     main()
