@@ -1,10 +1,3 @@
-#!/usr/bin/env python2
-# -*- coding: utf-8 -*-
-"""
-Created on Mon Feb  5 15:40:38 2018
-
-@author: anin
-"""
 
 import bluepyopt as bpopt
 import argparse
@@ -100,7 +93,7 @@ def get_parser():
                         help='Use ipyparallel')
     parser.add_argument('-v', '--verbose', action='count', dest='verbose',
                         default=0, help='-v for INFO, -vv for DEBUG')
-    parser.add_argument('--timeout', type=int, required=False, default=300,
+    parser.add_argument('--timeout', type=int, required=False, default=900,
                         help='Simulation cut-off time in seconds')
     return parser
 
@@ -124,7 +117,8 @@ def main():
             opt.run(max_ngen=args.max_ngen,
                     offspring_size=args.offspring_size,
                     continue_cp=args.continu,
-                    cp_filename=args.checkpoint)
+                    cp_filename=args.checkpoint,
+                    cp_backup=args.cp_backup)
             
         except EOFError:
             logger.debug('Checkpoint file is corrupt! Looking for backup')
@@ -132,7 +126,8 @@ def main():
             opt.run(max_ngen=args.max_ngen,
                     offspring_size=args.offspring_size,
                     continue_cp=args.continu,
-                    cp_filename=args.checkpoint)
+                    cp_filename=args.checkpoint,
+                    cp_backup=args.cp_backup)
 
 
 if __name__ == '__main__':
