@@ -20,7 +20,6 @@ qsub -W depend=afternotok:$PBS_JOBID batch_job.sh
 OFFSPRING_SIZE=512
 MAX_NGEN=200
 #timeout=900
-seed=1
 
 
 PWD=$(pwd)
@@ -35,6 +34,8 @@ mpiexec -n 256 ipengine --timeout=3000 --profile=${IPYTHON_PROFILE} &
 sleep 30
 
 CHECKPOINTS_DIR="checkpoints"
+CHECKPOINTS_BACKUP="checkpoints_backup"
+
 mkdir -p $CHECKPOINTS_DIR
 mkdir -p $CHECKPOINTS_BACKUP
 mkdir -p checkpoints_final
@@ -60,7 +61,9 @@ for seed in {1..4}; do
         --checkpoint "${CHECKPOINTS_DIR}/seed${seed}.pkl" \
         --cp_backup "${CHECKPOINTS_BACKUP}/seed${seed}.pkl" &
     pids+="$! "
-wait $pid
+done
+
+wait $pids
 
 # If job finishes in time analyze result
 mv ${CHECKPOINTS_DIR}/* checkpoints_final/
