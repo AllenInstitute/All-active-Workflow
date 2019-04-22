@@ -36,7 +36,7 @@ mkdir -p $LOGS
 
 OFFSPRING_SIZE=512
 MAX_NGEN=200
-timeout=60
+# timeout=900
 seed=1
 
 export IPYTHONDIR=${PWD}/.ipython
@@ -44,7 +44,7 @@ export IPYTHON_PROFILE=slurm.${SLURM_JOBID}
 
 ipcontroller --init --ip='*' --sqlitedb --ping=30000 --profile=${IPYTHON_PROFILE} &
 sleep 10
-srun -n 256 ipengine --timeout=3000 --profile=${IPYTHON_PROFILE} &
+srun -n 256 --output="${LOGS}/engine_%j_%2t.out" ipengine --timeout=3000 --profile=${IPYTHON_PROFILE} &
 sleep 10
 
 CHECKPOINTS_DIR="checkpoints"
@@ -61,32 +61,34 @@ else
     JOB_STATUS=start
 fi
 
+pids=""
+for seed in {1..4}; do
+    python Optim_Main.py             \
+        -vv                                \
+        --offspring_size=${OFFSPRING_SIZE} \
+        --max_ngen=${MAX_NGEN}             \
+        --seed=${seed}                     \
+        --ipyparallel                      \
+        --$JOB_STATUS                         \
+        # --timeout=$timeout              \
+        --checkpoint "${CHECKPOINTS_DIR}/seed${seed}.pkl" \
+        --cp_backup "${CHECKPOINTS_BACKUP}/seed${seed}.pkl" &
+    pids+="$! "
+done
 
-python Optim_Main.py             \
-    -vv                                \
-    --offspring_size=${OFFSPRING_SIZE} \
-    --max_ngen=${MAX_NGEN}             \
-    --seed=${seed}                     \
-    --ipyparallel                      \
-    --$JOB_STATUS                         \
-    --timeout=$timeout              \
-    --checkpoint "${CHECKPOINTS_DIR}/seed${seed}.pkl" \
-    --cp_backup "${CHECKPOINTS_BACKUP}/seed${seed}.pkl" &
-
-pid=$!
-wait $pid
+wait $pids
 
 
 # If job finishes in time analyze result
-mv ${CHECKPOINTS_DIR}/seed${seed}.pkl checkpoints_final/
+mv ${CHECKPOINTS_DIR}/* checkpoints_final/
 
 
 # check if the job with 4th seed is finished
 
-if [[ $seed = 4 ]]; then
-    sbatch analyze_results.sh
-else
-    seed_new=$(($seed+1))
-    sed -i -e "s/seed=$seed/seed=$seed_new/g" batch_job.sh
-    sbatch batch_job.sh
-fi
+# if [[ $seed = 4 ]]; then
+sbatch analyze_results.sh
+# else
+#     seed_new=$(($seed+1))
+#     sed -i -e "s/seed=$seed/seed=$seed_new/g" batch_job.sh
+#     sbatch batch_job.sh
+# fi
