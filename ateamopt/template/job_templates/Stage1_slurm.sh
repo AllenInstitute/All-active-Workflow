@@ -36,6 +36,7 @@ mkdir -p $LOGS
 OFFSPRING_SIZE=512
 MAX_NGEN=50
 seed=1
+timeout=300
 
 export IPYTHONDIR=${PWD}/.ipython
 export IPYTHON_PROFILE=slurm.${SLURM_JOBID}
@@ -54,7 +55,8 @@ python Optim_Main.py             \
     --max_ngen=${MAX_NGEN}             \
     --seed=${seed}                     \
     --ipyparallel                      \
-    --start                         \
+    --start                            \
+    --timeout=$timeout                 \
     --checkpoint "${CHECKPOINTS_DIR}/seed${seed}.pkl" &
 
 pid=$!

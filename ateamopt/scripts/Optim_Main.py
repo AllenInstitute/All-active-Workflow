@@ -54,7 +54,8 @@ def create_optimizer(args):
     feature_path = path_data['features']
     param_path = path_data['parameters']
     eval_handler = Bpopt_Evaluator(protocol_path, feature_path, morph_path,
-                                    param_path, mech_path, timeout = args.timeout)
+                                    param_path, mech_path, timeout = args.timeout,
+                                    learn_eval_trend = args.learn_eval_trend)
     evaluator = eval_handler.create_evaluator()
 
     opt = bpopt.optimisations.DEAPOptimisation(
@@ -95,6 +96,8 @@ def get_parser():
                         default=0, help='-v for INFO, -vv for DEBUG')
     parser.add_argument('--timeout', type=int, required=False, default=900,
                         help='Simulation cut-off time in seconds')
+    parser.add_argument('--learn_eval_trend', action="store_true", default=False,
+                        help='Modify the timeout based on evaluation times of previous generation')
     return parser
 
 
