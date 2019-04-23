@@ -35,7 +35,6 @@ mkdir -p $LOGS
 
 OFFSPRING_SIZE=512
 MAX_NGEN=50
-timeout=10
 seed=1
 
 export IPYTHONDIR=${PWD}/.ipython
@@ -56,7 +55,6 @@ python Optim_Main.py             \
     --seed=${seed}                     \
     --ipyparallel                      \
     --start                         \
-    --timeout=$timeout              \
     --checkpoint "${CHECKPOINTS_DIR}/seed${seed}.pkl" &
 
 pid=$!

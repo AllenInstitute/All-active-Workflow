@@ -70,7 +70,6 @@ for seed in {1..4}; do
         --seed=${seed}                     \
         --ipyparallel                      \
         --$JOB_STATUS                         \
-        # --timeout=$timeout              \
         --checkpoint "${CHECKPOINTS_DIR}/seed${seed}.pkl" \
         --cp_backup "${CHECKPOINTS_BACKUP}/seed${seed}.pkl" &
     pids+="$! "
