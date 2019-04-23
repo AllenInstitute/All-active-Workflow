@@ -37,7 +37,6 @@ mkdir -p $LOGS
 OFFSPRING_SIZE=512
 MAX_NGEN=200
 # timeout=900
-seed=1
 
 export IPYTHONDIR=${PWD}/.ipython
 export IPYTHON_PROFILE=slurm.${SLURM_JOBID}

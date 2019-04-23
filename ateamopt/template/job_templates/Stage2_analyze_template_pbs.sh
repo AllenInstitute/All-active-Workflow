@@ -30,3 +30,10 @@ sleep 30
 
 python analysis_stage2.py -vv --cp_dir  checkpoints_final  --ipyparallel
 
+# Cleaning up
+
+rm -rf $IPYTHONDIR $LOGS
+rm -rf checkpoints_backup
+
+
+

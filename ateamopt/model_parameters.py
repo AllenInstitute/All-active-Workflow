@@ -12,11 +12,11 @@ class AllActive_Model_Parameters(object):
                  swc_search_pattern='cell_types',
                  released_aa_model_pattern='fit_aa_parameters',
                  prev_model_pattern='fit_opt',model_param_extension = '.json'):
-        
+
         self.cell_id = cell_id
         self.v_init = v_init
         self.temperature = temp
-        
+
         self._swc_path = swc_path
         if not swc_path and swc_search_pattern:
             swc_dir =  utility.get_filepath_for_exten(exten = '.swc')
@@ -25,18 +25,18 @@ class AllActive_Model_Parameters(object):
                                       swc_search_pattern in str_path][0]
             except:
                 pass
-        
+
         model_path_list = utility.get_filepath_for_exten(model_param_extension)
-        
-        # Parameter file for a released all-active model 
-        #(has to match name fit_parameters.json)
+
+        # Parameter file for a released all-active model
+        #(has to match name fit_aa_parameters.json)
         release_param_path_ = [str_path for str_path in model_path_list if \
                                    released_aa_model_pattern in str_path]
         try:
             self.release_param_path = release_param_path_[0]
         except:
             self.release_param_path = None
-            
+
         # Parameter file from previous stage
         prev_stage_model_path_ = [str_path for str_path in model_path_list if \
                                    prev_model_pattern in str_path]
@@ -44,15 +44,15 @@ class AllActive_Model_Parameters(object):
             self.prev_stage_model_path = prev_stage_model_path_[0]
         except:
             self.prev_stage_model_path = None
-            
-        
+
+
         self.no_apical = utility.check_swc_for_apical(self.swc_path) \
-                if self.swc_path else False    
-        
+                if self.swc_path else False
+
     @property
     def swc_path(self):
         return self._swc_path
-   
+
 
     @staticmethod
     def group_params(params_dict):
@@ -213,12 +213,12 @@ class AllActive_Model_Parameters(object):
 
     def write_params_opt(self,model_params,model_params_release,
                          base_dir = 'config/',**kwargs):
-        
+
         param_write_path =  kwargs.get('param_write_path') or \
                 base_dir+ self.cell_id + '/parameters.json'
         release_param_write_path = kwargs.get('release_param_write_path') or \
             base_dir+ self.cell_id + '/release_parameters.json'
-        
+
         utility.create_filepath(param_write_path)
         utility.save_json(param_write_path,model_params)
 
@@ -247,7 +247,7 @@ class AllActive_Model_Parameters(object):
             if param_dict['param_name'] in active_params+Ih_params:
                 if param_dict['mech'] not in model_mechs[param_dict['sectionlist']]:
                     model_mechs[param_dict['sectionlist']].append(param_dict['mech'])
-        
+
         if model_params_release:
             model_mechs_release = {'somatic' : ['pas'], 'axonal':['pas'], 'apical':['pas'],
                                'basal': ['pas']}
@@ -257,12 +257,12 @@ class AllActive_Model_Parameters(object):
                         model_mechs_release[param_dict_release['sectionlist']].append(param_dict_release['mech'])
         else:
             model_mechs_release = None
-            
+
         return model_mechs,model_mechs_release
 
     def write_mechanisms_opt(self,model_mechs,model_mechs_release,
                              base_dir = 'config/',**kwargs):
-        
+
         mechanism_write_path =  kwargs.get('mechanism_write_path') or \
             base_dir+ self.cell_id + '/mechanism.json'
         mechanism_release_write_path = kwargs.get('mechanism_release_write_path') \

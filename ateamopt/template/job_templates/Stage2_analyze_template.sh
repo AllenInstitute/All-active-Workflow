@@ -28,3 +28,11 @@ srun --output="${LOGS}/engine_%j_%2t.out" ipengine --timeout=3000 --profile=${IP
 sleep 10
 
 python analysis_stage2.py -vv --cp_dir  checkpoints_final  --ipyparallel
+
+# Cleaning up
+
+rm -rf $IPYTHONDIR $LOGS
+rm -rf checkpoints_backup
+
+
+
