@@ -56,7 +56,8 @@ for seed in {1..4}; do
         --max_ngen=${MAX_NGEN}             \
         --seed=${seed}                     \
         --ipyparallel                      \
-        --$JOB_STATUS                        \
+        --$JOB_STATUS                      \
+        --learn_eval_trend                 \
         --checkpoint "${CHECKPOINTS_DIR}/seed${seed}.pkl" \
         --cp_backup "${CHECKPOINTS_BACKUP}/seed${seed}.pkl" &
     pids+="$! "

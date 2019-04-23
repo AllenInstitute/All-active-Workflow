@@ -17,6 +17,7 @@ source activate conda_env
 OFFSPRING_SIZE=512
 MAX_NGEN=50
 seed=1
+timeout=300
 
 
 PWD=$(pwd)
@@ -39,7 +40,8 @@ python Optim_Main.py             \
     --max_ngen=${MAX_NGEN}             \
     --seed=${seed}                     \
     --ipyparallel                      \
-    --start                        \
+    --start                            \
+    --timeout=$timeout                 \
     --checkpoint "${CHECKPOINTS_DIR}/seed${seed}.pkl" &
 
 pid=$!
