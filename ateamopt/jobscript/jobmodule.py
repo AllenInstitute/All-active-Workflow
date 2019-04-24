@@ -195,3 +195,29 @@ class PBS_JobModule(JobModule):
                          stdout=PIPE, stderr=PIPE)
         stdout, stderr = process.communicate()
         logger.debug(stderr)
+
+class SGE_JobModule(JobModule):
+    def __init__(self, script_template, machine,script_name = 'batch_job.sh',
+                     conda_env='ateam_opt'):
+
+        super(PBS_JobModule,self).__init__(machine,script_name)
+        self.conda_env = conda_env
+        self.script_template = utility.locate_template_file(script_template)
+        self.submit_verb = 'qsub'
+
+
+    def script_generator(self):
+        with open(self.script_template,'r') as job_template:
+            batchjob_string = job_template.read()
+
+        batchjob_string = batchjob_string.replace('conda_env',self.conda_env)
+        with open(self.script_name, "w") as batchjob_script:
+            batchjob_script.write(batchjob_string)
+
+    def submit_job(self):
+
+        os.system('chmod +x %s'%self.script_name)
+        process = Popen(['%s', '%s'%(self.submit_verb,self.script_name)],
+                         stdout=PIPE, stderr=PIPE)
+        stdout, stderr = process.communicate()
+        logger.debug(stderr)

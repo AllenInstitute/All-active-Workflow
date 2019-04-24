@@ -10,7 +10,6 @@ from ateamopt.utils import utility
 import neurom as nm
 from neurom import morphmath as mm
 import numpy as np
-import os
 from neurom.core.types import tree_type_checker, NEURITES
 
 
@@ -50,7 +49,6 @@ class Allactive_Optim(object):
             nrn = nm.load_neuron(swc_filename)
 
             morph_stats = {}
-            cell_id = os.path.basename(os.getcwd())
 
             morph_stats['Cell_id'] = self.cell_id
             morph_stats['soma_suface'] = nm.get('soma_surface_areas', nrn)[0]
@@ -163,8 +161,8 @@ class Allactive_Optim(object):
                     for i,metadata_key in enumerate(opt_metric_dict[model_type]):
                         cell_metadata[metadata_key] = model_metadata_select[i]
 
-
-            cell_metadata['Machine'] =  socket.gethostname()
+            machine_name = socket.gethostname()
+            cell_metadata['Machine'] =  'aws' if machine_name == 'master' else machine_name
             if 'cori' in cell_metadata['Machine'] and 'premium_queue' in props:
                 filename= 'nersc_queue.txt'
                 content = 'premium'

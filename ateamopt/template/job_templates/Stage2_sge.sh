@@ -1,21 +1,20 @@
 #!/bin/sh
 
-#PBS -q celltypes
-#PBS -l walltime=24:00:00
-#PBS -l nodes=16:ppn=16
-#PBS -l mem=100g
-#PBS -N Stage2
-#PBS -r n
-#PBS -m n
-
-cd $PBS_O_WORKDIR
+#$ -pe orte 128
+#$ -N Stage2
+#$ -cwd
+#$ -V
+#$ -j y
+#$ -m bes
+#$ -M anin@alleninstitute.org
+#$ -S /bin/sh
 
 set -ex
 
-source activate conda_env
+# source activate conda_env
 
 # Relaunch batch job if not finished
-qsub -W depend=afternotok:$PBS_JOBID batch_job.sh
+#qsub -W depend=afternotok:$JOB_ID batch_job.sh
 
 OFFSPRING_SIZE=512
 MAX_NGEN=200
@@ -23,15 +22,16 @@ timeout=300
 
 
 PWD=$(pwd)
+LOGS=$PWD/logs
+mkdir -p $LOGS
+
 export IPYTHONDIR=$PWD/.ipython
-file $IPYTHONDIR
-export IPYTHON_PROFILE=pbs.$PBS_JOBID
+export IPYTHON_PROFILE=sge.$JOB_ID
 
 ipcontroller --init --ip='*' --sqlitedb --ping=30000 --profile=${IPYTHON_PROFILE} &
-sleep 30
-file $IPYTHONDIR/$IPYTHON_PROFILE
-mpiexec -n 256 ipengine --timeout=3000 --profile=${IPYTHON_PROFILE} &
-sleep 30
+sleep 10
+mpiexec -np 128 --output-filename $LOGS/engine ipengine --timeout=3000 --profile=${IPYTHON_PROFILE} &
+sleep 10
 
 CHECKPOINTS_DIR="checkpoints"
 CHECKPOINTS_BACKUP="checkpoints_backup"
@@ -68,11 +68,5 @@ wait $pids
 # If job finishes in time analyze result
 mv ${CHECKPOINTS_DIR}/* checkpoints_final/
 
-# check if the job with 4th seed is finished
-# if [[ $seed = 4 ]]; then
 qsub analyze_results.sh
-# else
-#     seed_new=$(($seed+1))
-#     sed -i -e "s/seed=$seed/seed=$seed_new/g" batch_job.sh
-#     qsub batch_job.sh
-# fi
+

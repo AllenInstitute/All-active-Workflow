@@ -35,7 +35,7 @@ mkdir -p $LOGS
 
 OFFSPRING_SIZE=512
 MAX_NGEN=200
-# timeout=900
+timeout=300
 
 export IPYTHONDIR=${PWD}/.ipython
 export IPYTHON_PROFILE=slurm.${SLURM_JOBID}
@@ -68,7 +68,7 @@ for seed in {1..4}; do
         --seed=${seed}                     \
         --ipyparallel                      \
         --$JOB_STATUS                      \
-        --learn_eval_trend                 \
+        --timeout=$timeout                 \
         --checkpoint "${CHECKPOINTS_DIR}/seed${seed}.pkl" \
         --cp_backup "${CHECKPOINTS_BACKUP}/seed${seed}.pkl" &
     pids+="$! "
