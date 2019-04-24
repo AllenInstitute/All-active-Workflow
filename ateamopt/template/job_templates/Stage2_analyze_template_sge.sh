@@ -22,7 +22,7 @@ export IPYTHON_PROFILE=sge.$JOB_ID
 
 ipcontroller --init --ip='*' --sqlitedb --ping=30000 --profile=${IPYTHON_PROFILE} &
 sleep 10
-mpiexec -np 40 ipengine --timeout=3000 --profile=${IPYTHON_PROFILE} &
+mpiexec -np 40 --output-filename $LOGS/engine ipengine --timeout=3000 --profile=${IPYTHON_PROFILE} &
 sleep 10
 
 python analysis_stage2.py -vv --cp_dir  checkpoints_final  --ipyparallel
