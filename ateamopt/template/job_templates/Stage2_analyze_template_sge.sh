@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 #$ -pe orte 40
 #$ -N analyze_Stage2
@@ -7,7 +7,7 @@
 #$ -j y
 #$ -m bes
 #$ -M anin@alleninstitute.org
-#$ -S /bin/sh
+#$ -S /bin/bash
 
 set -ex
 

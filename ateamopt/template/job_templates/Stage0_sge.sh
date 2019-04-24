@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 #$ -pe orte 256
 #$ -N Stage0
@@ -7,7 +7,7 @@
 #$ -j y
 #$ -m bes
 #$ -M anin@alleninstitute.org
-#$ -S /bin/sh
+#$ -S /bin/bash
 
 set -ex
 
@@ -48,4 +48,4 @@ pid=$!
 wait $pid
 
 # Launch the Stage 1 optimization
-sh chain_job.sh
+bash chain_job.sh
