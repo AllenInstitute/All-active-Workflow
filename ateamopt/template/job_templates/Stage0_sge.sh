@@ -48,4 +48,4 @@ pid=$!
 wait $pid
 
 # Launch the Stage 1 optimization
-sh chain_job.sh
+bash chain_job.sh
