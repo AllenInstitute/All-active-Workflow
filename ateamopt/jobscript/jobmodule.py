@@ -96,7 +96,7 @@ class ChainSubJob(JobModule):
         # process = Popen(['sh', '%s'%self.script_name], stdout=PIPE, stderr=PIPE)
         # stdout, stderr = process.communicate()
         # logger.debug(stderr)
-        os.system('sh %s'%self.script_name)
+        os.system('bash %s'%self.script_name)
 
 
 class test_JobModule(JobModule):
