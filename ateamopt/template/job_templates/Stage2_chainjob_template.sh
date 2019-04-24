@@ -52,8 +52,8 @@ cp -r $SCRIPT_REPO/modfiles $STAGE_DIR/
 cd $STAGE_DIR
 python prepare_stage2_run.py conda_env
 if [ -d modfiles ]; then nrnivmodl modfiles/ ; fi # Compile mechanisms
-STAGE="_STAGE2"
-JOBNAME=$CELL_ID$STAGE
+STAGE="STAGE2_"
+JOBNAME=$STAGE$CELL_ID
 sed -i -e "s/Stage2/$JOBNAME/g" batch_job.sh
 if [ -f qos.txt ]; then
     queue=$(<qos.txt)
