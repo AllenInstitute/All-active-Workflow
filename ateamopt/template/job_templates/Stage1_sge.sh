@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#$ -pe orte 256
+#$ -pe orte 128
 #$ -N Stage1
 #$ -cwd
 #$ -V
@@ -11,7 +11,7 @@
 
 set -ex
 
-#source activate conda_env
+source activate conda_env
 
 OFFSPRING_SIZE=512
 MAX_NGEN=50
