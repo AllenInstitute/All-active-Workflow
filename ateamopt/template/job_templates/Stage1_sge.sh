@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 #$ -pe orte 256
 #$ -N Stage1
@@ -7,7 +7,7 @@
 #$ -j y
 #$ -m bes
 #$ -M anin@alleninstitute.org
-#$ -S /bin/sh
+#$ -S /bin/bash
 
 set -ex
 

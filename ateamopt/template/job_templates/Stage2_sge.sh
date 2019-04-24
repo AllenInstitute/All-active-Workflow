@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 #$ -pe orte 128
 #$ -N Stage2
@@ -7,11 +7,11 @@
 #$ -j y
 #$ -m bes
 #$ -M anin@alleninstitute.org
-#$ -S /bin/sh
+#$ -S /bin/bash
 
 set -ex
 
-# source activate conda_env
+source activate conda_env
 
 # Relaunch batch job if not finished
 #qsub -W depend=afternotok:$JOB_ID batch_job.sh
