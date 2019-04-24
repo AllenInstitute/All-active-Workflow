@@ -82,7 +82,10 @@ class ChainSubJob(JobModule):
                              'cp -r $SCRIPT_REPO/x86_64 $STAGE_DIR/',add = True)
             self.adjust_template('nrnivmodl modfiles/',
                      '\techo "Loading compiled modfiles"',partial_match = True)
-
+            
+        elif 'aws' in self.machine:     
+            self.adjust_template('source activate','conda activate %s'%self.conda_env,
+                                 partial_match = True)
         elif submit_cmd == 'sh':
             self.adjust_template('RES=$(sh batch_job.sh)', 'sh batch_job.sh')
             self.adjust_template('echo ${RES##* }', '',partial_match = True)
