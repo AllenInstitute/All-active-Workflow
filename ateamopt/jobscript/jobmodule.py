@@ -124,7 +124,7 @@ class test_JobModule(JobModule):
 
         testjob_string += ' --offspring_size=%s --max_ngen=%s --%s\n'%(self.offspring,
                                                     self.max_ngen,self.job_status)
-        testjob_string += 'sh %s\n'%chain_job
+        testjob_string += 'bash %s\n'%chain_job
         with open(self.script_name, "w") as shell_script:
             shell_script.write(testjob_string)
 
