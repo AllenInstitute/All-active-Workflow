@@ -203,7 +203,7 @@ class SGE_JobModule(JobModule):
     def __init__(self, script_template, machine,script_name = 'batch_job.sh',
                      conda_env='ateam_opt'):
 
-        super(PBS_JobModule,self).__init__(machine,script_name)
+        super(SGE_JobModule,self).__init__(machine,script_name)
         self.conda_env = conda_env
         self.script_template = utility.locate_template_file(script_template)
         self.submit_verb = 'qsub'
