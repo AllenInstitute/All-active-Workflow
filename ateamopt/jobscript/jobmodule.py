@@ -50,7 +50,7 @@ class ChainSubJob(JobModule):
 
         subjob_string = subjob_string.replace('conda_env',self.conda_env)
 
-        if 'hpc-login' in self.machine:
+        if any(substring in self.machine for substring in ['aws', 'hpc-login']):
             submit_cmd = 'qsub'
             subjob_string = subjob_string.replace('submit_cmd',submit_cmd)
         elif any(substring in self.machine for substring in ['cori', 'bbp']):
