@@ -5,7 +5,7 @@ from ateamopt.model_parameters import AllActive_Model_Parameters
 from ateamopt.utils import utility
 from ateamopt.optim_config_rules import filter_feat_proto_passive
 from ateamopt.jobscript.jobmodule import test_JobModule,\
-            PBS_JobModule,Slurm_JobModule,ChainSubJob
+            PBS_JobModule,Slurm_JobModule,SGE_JobModule,ChainSubJob
 import shutil
 import logging
 
@@ -89,6 +89,13 @@ def main():
         batch_job = Slurm_JobModule(jobtemplate_path,machine,conda_env=conda_env)
         batch_job.script_generator()
         chain_jobtemplate_path = 'job_templates/Stage1_chainjob_template.sh'
+    
+    elif 'aws' in machine:
+        jobtemplate_path = 'job_templates/Stage0_sge.sh'
+        batch_job = SGE_JobModule(jobtemplate_path,machine,conda_env=conda_env)
+        batch_job.script_generator()
+        chain_jobtemplate_path = 'job_templates/Stage1_chainjob_template_pbs.sh'
+    
     else:
         cp_dir = 'checkpoints'
         testJob = test_JobModule(machine,'batch_job.sh','%s/seed1.pkl'%cp_dir,
