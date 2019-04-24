@@ -41,8 +41,8 @@ if [ -d modfiles ]; then # Compile mechanisms
     nrnivmodl modfiles/
 fi
 
-STAGE="_STAGE2"
-JOBNAME=$CELL_ID$STAGE
+STAGE="STAGE2_"
+JOBNAME=$STAGE$CELL_ID
 sed -i -e "s/Stage2/$JOBNAME/g" batch_job.sh
 if [ -f qos.txt ]; then
     queue=$(<qos.txt)

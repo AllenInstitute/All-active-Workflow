@@ -42,10 +42,10 @@ if [ -f qos.txt ]; then cp qos.txt $STAGE_DIR/ ; fi # Specific to Cori
 cd $STAGE_DIR
 
 python prepare_stage0_run.py conda_env
-STAGE="_STAGE0"
-STAGE_NEXT="_STAGE1"
-JOBNAME=$CELL_ID$STAGE
-LAUNCH_JOBNAME=$CELL_ID$STAGE_NEXT
+STAGE="STAGE0_"
+STAGE_NEXT="STAGE1_"
+JOBNAME=$STAGE$CELL_ID
+LAUNCH_JOBNAME=$STAGE_NEXT$CELL_ID
 sed -i -e "s/Stage0/$JOBNAME/g" batch_job.sh
 if [ -f qos.txt ]; then
 	queue=$(<qos.txt)
