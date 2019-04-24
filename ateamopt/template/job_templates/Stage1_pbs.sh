@@ -34,13 +34,20 @@ sleep 30
 CHECKPOINTS_DIR="checkpoints"
 mkdir -p ${CHECKPOINTS_DIR}
 
+# Check the job status : Start or continue
+if [ "$(ls -A $CHECKPOINTS_DIR)" ]; then
+    JOB_STATUS=continu
+else
+    JOB_STATUS=start
+fi
+
 python Optim_Main.py             \
     -vv                                \
     --offspring_size=${OFFSPRING_SIZE} \
     --max_ngen=${MAX_NGEN}             \
     --seed=${seed}                     \
     --ipyparallel                      \
-    --start                            \
+    --$JOB_STATUS                      \
     --timeout=$timeout                 \
     --checkpoint "${CHECKPOINTS_DIR}/seed${seed}.pkl" &
 

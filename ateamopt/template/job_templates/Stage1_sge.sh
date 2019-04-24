@@ -16,7 +16,7 @@ source activate conda_env
 OFFSPRING_SIZE=512
 MAX_NGEN=50
 seed=1
-timeout=300
+timeout=600
 
 
 PWD=$(pwd)
