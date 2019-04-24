@@ -82,7 +82,10 @@ class ChainSubJob(JobModule):
                              'cp -r $SCRIPT_REPO/x86_64 $STAGE_DIR/',add = True)
             self.adjust_template('nrnivmodl modfiles/',
                      '\techo "Loading compiled modfiles"',partial_match = True)
-
+            
+#        elif 'aws' in self.machine:     
+#            self.adjust_template('source activate','conda activate %s'%self.conda_env,
+#                                 partial_match = True)
         elif submit_cmd == 'sh':
             self.adjust_template('RES=$(sh batch_job.sh)', 'sh batch_job.sh')
             self.adjust_template('echo ${RES##* }', '',partial_match = True)
@@ -93,7 +96,7 @@ class ChainSubJob(JobModule):
         # process = Popen(['sh', '%s'%self.script_name], stdout=PIPE, stderr=PIPE)
         # stdout, stderr = process.communicate()
         # logger.debug(stderr)
-        os.system('sh %s'%self.script_name)
+        os.system('bash %s'%self.script_name)
 
 
 class test_JobModule(JobModule):
@@ -121,7 +124,7 @@ class test_JobModule(JobModule):
 
         testjob_string += ' --offspring_size=%s --max_ngen=%s --%s\n'%(self.offspring,
                                                     self.max_ngen,self.job_status)
-        testjob_string += 'sh %s\n'%chain_job
+        testjob_string += 'bash %s\n'%chain_job
         with open(self.script_name, "w") as shell_script:
             shell_script.write(testjob_string)
 
