@@ -14,18 +14,20 @@ set -ex
 
 source activate conda_env
 
+PWD=$(pwd)
+LOGS=$PWD/logs
+mkdir -p $LOGS
+
 OFFSPRING_SIZE=512
 MAX_NGEN=50
 seed=1
 timeout=300
 
-
-PWD=$(pwd)
 export IPYTHONDIR=$PWD/.ipython
 file $IPYTHONDIR
 export IPYTHON_PROFILE=pbs.$PBS_JOBID
 
-ipcontroller --init --ip='*' --sqlitedb --ping=30000 --profile=${IPYTHON_PROFILE} &
+ipcontroller --init --ip='*' --nodb --ping=30000 --profile=${IPYTHON_PROFILE} &
 sleep 30
 file $IPYTHONDIR/$IPYTHON_PROFILE
 mpiexec -n 256 ipengine --timeout=3000 --profile=${IPYTHON_PROFILE} &

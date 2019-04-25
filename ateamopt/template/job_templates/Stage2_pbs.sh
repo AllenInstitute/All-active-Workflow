@@ -27,7 +27,7 @@ export IPYTHONDIR=$PWD/.ipython
 file $IPYTHONDIR
 export IPYTHON_PROFILE=pbs.$PBS_JOBID
 
-ipcontroller --init --ip='*' --sqlitedb --ping=30000 --profile=${IPYTHON_PROFILE} &
+ipcontroller --init --ip='*' --nodb --ping=30000 --profile=${IPYTHON_PROFILE} &
 sleep 30
 file $IPYTHONDIR/$IPYTHON_PROFILE
 mpiexec -n 256 ipengine --timeout=3000 --profile=${IPYTHON_PROFILE} &

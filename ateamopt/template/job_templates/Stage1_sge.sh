@@ -18,7 +18,6 @@ MAX_NGEN=50
 seed=1
 timeout=600
 
-
 PWD=$(pwd)
 LOGS=$PWD/logs
 mkdir -p $LOGS
@@ -26,7 +25,7 @@ mkdir -p $LOGS
 export IPYTHONDIR=$PWD/.ipython
 export IPYTHON_PROFILE=sge.$JOB_ID
 
-ipcontroller --init --ip='*' --sqlitedb --ping=30000 --profile=${IPYTHON_PROFILE} &
+ipcontroller --init --ip='*' --nodb --ping=30000 --profile=${IPYTHON_PROFILE} &
 sleep 10
 mpiexec -np 128 --output-filename $LOGS/engine ipengine --timeout=3000 --profile=${IPYTHON_PROFILE} &
 sleep 10
