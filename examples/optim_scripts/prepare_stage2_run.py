@@ -146,7 +146,7 @@ def main():
         testJob.script_generator()
         analysis_cmd = 'python analysis_stage2.py -vv --cp_dir  checkpoints \n'
 #        analysis_cmd += 'aws s3 cp %s %s --recursive --profile wasabi\n'%(parent_dir,wasabi_bucket)
-        testJob.adjust_template('sh chain_job.sh',analysis_cmd)
+        testJob.adjust_template('bash chain_job.sh',analysis_cmd)
 
 
     # Create Analysis job for final stage
