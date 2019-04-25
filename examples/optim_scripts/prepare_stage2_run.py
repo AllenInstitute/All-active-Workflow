@@ -150,7 +150,7 @@ def main():
 
 
     # Create Analysis job for final stage
-    if any(substring in machine for substring in ['cori', 'bbp','hpc-login']):
+    if any(substring in machine for substring in ['cori','bbp','hpc-login','aws']):
         analysis_job = ChainSubJob(analysis_jobtemplate_path,machine,\
                         script_name = 'analyze_results.sh',conda_env=conda_env)
         analysis_job.script_generator()
