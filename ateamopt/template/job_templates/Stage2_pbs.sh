@@ -5,6 +5,7 @@
 #PBS -l nodes=16:ppn=16
 #PBS -l mem=100g
 #PBS -N Stage2
+#PBS -e /dev/null
 #PBS -r n
 #PBS -m n
 
