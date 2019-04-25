@@ -5,6 +5,7 @@
 #PBS -l nodes=4:ppn=10
 #PBS -l mem=100g
 #PBS -N analyze_Stage2
+#PBS -e /dev/null
 #PBS -r n
 #PBS -m n
 
