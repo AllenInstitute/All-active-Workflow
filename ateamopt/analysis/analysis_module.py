@@ -36,7 +36,8 @@ def calculate_spike_time_metrics(expt_trains, model_train, total_length, dt, sig
         binary_expt_trains = []
         for et in expt_trains:
             bt = np.zeros(total_length)
-            bt[et] = 1
+            if len(et) > 0:
+                bt[et] = 1
             binary_expt_trains.append(bt)
         convolved_expt_trains = [signal.fftconvolve(gauss_func, bt_) for bt_ in binary_expt_trains]
         avg_convolved_expt_train = np.mean(convolved_expt_trains, axis=0)
