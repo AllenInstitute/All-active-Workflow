@@ -5,6 +5,7 @@
 #PBS -l nodes=16:ppn=16
 #PBS -l mem=100g
 #PBS -N Stage0
+#PBS -e /dev/null
 #PBS -r n
 #PBS -m n
 
@@ -25,6 +26,7 @@ LOGS=$PWD/logs
 mkdir -p $LOGS
 
 export IPYTHONDIR=$PWD/.ipython
+ipython profile create
 file $IPYTHONDIR
 export IPYTHON_PROFILE=pbs.$PBS_JOBID
 
