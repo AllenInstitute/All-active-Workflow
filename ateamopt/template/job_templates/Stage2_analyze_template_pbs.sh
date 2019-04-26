@@ -23,6 +23,7 @@ PARENT_DIR=$(<pwd.txt)
 CELL_ID=$(<cell_id.txt)
 
 export IPYTHONDIR=$PWD/.ipython
+ipython profile create
 file $IPYTHONDIR
 export IPYTHON_PROFILE=pbs.$PBS_JOBID
 
