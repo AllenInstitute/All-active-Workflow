@@ -6,6 +6,7 @@
 #SBATCH -C cpu|nvme
 #SBATCH -A proj36
 #SBATCH --mail-type=ALL
+#SBATCH --mail-user=anin@alleninstitute.org
 #SBATCH -J analyze_Stage2
 
 set -ex
@@ -28,11 +29,13 @@ srun --output="${LOGS}/engine_%j_%2t.out" ipengine --timeout=3000 --profile=${IP
 sleep 10
 
 python analysis_stage2.py -vv --cp_dir  checkpoints_final  --ipyparallel
+# pid="$! "
+# wait $pid
 
 # Cleaning up
 
-rm -rf $IPYTHONDIR $LOGS
-rm -rf checkpoints_backup
+# rm -rf $IPYTHONDIR $LOGS
+# rm -rf checkpoints_backup
 
 
 
