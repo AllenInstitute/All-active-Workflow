@@ -25,6 +25,7 @@ timeout=300
 
 PWD=$(pwd)
 export IPYTHONDIR=$PWD/.ipython
+ipython profile create
 file $IPYTHONDIR
 export IPYTHON_PROFILE=pbs.$PBS_JOBID
 
