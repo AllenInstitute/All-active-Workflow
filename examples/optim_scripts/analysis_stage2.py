@@ -29,7 +29,7 @@ def analyzer_map(parallel=True):
     else:
         map_function = None
 
-    return map_function,rc
+    return map_function
 
 def get_opt_obj(protocols_path,features_path,morph_path, param_path,
                 mech_path,map_function):
@@ -37,7 +37,7 @@ def get_opt_obj(protocols_path,features_path,morph_path, param_path,
                                    morph_path, param_path,
                                    mech_path,timed_evaluation = False)
     evaluator = eval_handler.create_evaluator()
-    
+
     opt = bpopt.optimisations.DEAPOptimisation(
             evaluator=evaluator,map_function=map_function)
     return opt
@@ -80,7 +80,7 @@ def main():
     release_param_write_path = opt_config['released_model']
     mech_release_write_path = opt_config['mechanism_release']
 
-    map_function,rc = analyzer_map(args.ipyparallel)
+    map_function = analyzer_map(args.ipyparallel)
     opt_train = get_opt_obj(all_protocols_write_path, features_write_path,
                                    morph_path, param_write_path,
                                    mech_write_path,map_function)
@@ -116,13 +116,13 @@ def main():
 
     # Sort everything with respect to training error
     obj_list_train = analysis_handler.get_response_scores(hof_response_list)
-    
+
     analysis_handler._opt = opt_gen
     obj_list_gen = analysis_handler.get_response_scores(hof_response_list)
-    
+
     analysis_handler._opt = opt_untrain
     obj_list_untrain = analysis_handler.get_response_scores(hof_response_list)
-    
+
     analysis_handler._opt = opt_train
     score_list_train = [np.sum(list(obj_dict_train.values())) \
                         for obj_dict_train in obj_list_train]
@@ -182,23 +182,23 @@ def main():
                                         resp_release_filename,
                                         stim_mapfile,
                                         pdf_pages)
-    
+
     pdf_pages= analysis_handler.plot_feature_comp(resp_filename,
                          resp_release_filename, pdf_pages)
     pdf_pages = analysis_handler.plot_GA_evol(GA_evol_path,pdf_pages)
     pdf_pages = analysis_handler.plot_param_diversity(hof_params_filename,
                                  pdf_pages)
-    exp_fi_path = 'Validation_Responses/fI_exp_%s.pkl'%cell_id 
+    exp_fi_path = 'Validation_Responses/fI_exp_%s.pkl'%cell_id
     model_fi_path = 'Validation_Responses/fI_aa_%s.pkl'%cell_id
     exp_AP_shape_path = 'Validation_Responses/AP_shape_exp_%s.pkl'%cell_id
     model_AP_shape_path = 'Validation_Responses/AP_shape_aa_%s.pkl'%cell_id
-                    
+
     pdf_pages = analysis_handler.postprocess(stim_mapfile,resp_filename,pdf_pages,\
                          exp_fi_path, model_fi_path,exp_AP_shape_path,model_AP_shape_path,
                          model_type)
-    
+
     # Perisomatic model
-    
+
     if perisomatic_model_id != '':
         resp_peri_filename = './resp_peri.txt'
         peri_param_write_path = opt_config['peri_parameters']
@@ -215,13 +215,13 @@ def main():
         analysis_handler.get_release_responses(opt_peri,resp_peri_filename)
         pdf_pages= analysis_handler.plot_grid_Response(resp_filename,
                                         resp_peri_filename,
-                                        stim_mapfile,pdf_pages,resp_comparison = model_type)    
+                                        stim_mapfile,pdf_pages,resp_comparison = model_type)
         model_fi_path = 'Validation_Responses/fI_peri_%s.pkl'%cell_id
         model_AP_shape_path = 'Validation_Responses/AP_shape_peri_%s.pkl'%cell_id
         pdf_pages = analysis_handler.postprocess(stim_mapfile,resp_peri_filename,pdf_pages,
                              exp_fi_path, model_fi_path,exp_AP_shape_path,model_AP_shape_path,
                              model_type)
-        
+
     spiketimes_exp_path ='Validation_Responses/spiketimes_exp_noise.pkl'
     spiketimes_hof_path = 'Validation_Responses/spiketimes_model_noise.pkl'
     exp_variance_hof_path = 'Validation_Responses/exp_variance_hof.pkl'
@@ -237,9 +237,9 @@ def main():
         time_metrics_filename = 'time_metrics_%s.csv'%cell_id
         analysis_module.save_optimization_time(time_by_gen_filename,
                         time_metrics_filename,cell_metadata)
-    
-    # Shutdown ipython cluster    
-    rc.shutdown(hub=True)
-    
+
+    # Shutdown ipython cluster
+    # rc.shutdown(hub=True)
+
 if __name__ == '__main__':
     main()
