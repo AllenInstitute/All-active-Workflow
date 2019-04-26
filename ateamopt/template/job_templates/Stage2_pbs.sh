@@ -7,7 +7,7 @@
 #PBS -N Stage2
 #PBS -e /dev/null
 #PBS -r n
-#PBS -m n
+#PBS -m bea
 
 cd $PBS_O_WORKDIR
 
