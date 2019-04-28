@@ -122,8 +122,8 @@ def main():
                     continue_cp=args.continu,
                     cp_filename=args.checkpoint,
                     cp_backup=args.cp_backup)
-            
-        except EOFError:
+
+        except:
             logger.debug('Checkpoint file is corrupt! Looking for backup')
             shutil.move(args.cp_backup,args.checkpoint)
             opt.run(max_ngen=args.max_ngen,
