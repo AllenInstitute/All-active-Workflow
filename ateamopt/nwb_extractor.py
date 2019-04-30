@@ -53,9 +53,11 @@ class NWB_Extractor(object):
             stim_stop = time[nonzero_indices[-1]]
             if 'DC' in trace_name:
                 hold_curr = np.mean(stimulus_trace[nonzero_indices[-1]+1000:\
-                                                   nonzero_indices[-1] + 20000])*1e12
+                                       nonzero_indices[-1] + 20000])*1e12
             else:
                 hold_curr = 0
+                
+            if np.isnan(hold_curr):hold_curr=0
             stim_amp_start = stimulus_trace[nonzero_indices[0]] * 1e12 - hold_curr
             stim_amp_end = stimulus_trace[nonzero_indices[-1]] * 1e12 - hold_curr
 
@@ -109,6 +111,8 @@ class NWB_Extractor(object):
                 hold_curr = np.mean(stimulus_trace[end_ind+1000:end_ind + 20000])*1e12
             else:
                 hold_curr = 0
+                
+            if np.isnan(hold_curr):hold_curr=0
             stim_amp = np.mean(stimulus_trace[start_ind:end_ind] ) * 1e12 - hold_curr
             stim_amp_start=stim_amp
             stim_amp_end=stim_amp
