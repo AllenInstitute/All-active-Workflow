@@ -126,6 +126,33 @@ def filter_feat_proto_active(features_dict,protocols_dict,all_protocols_dict,
          protocols_dict_filtered,all_protocols_dict
 
 
+def filter_feat_proto_active_simple(features_dict,protocols_dict):
+    features_dict = correct_voltage_feat_std(features_dict)
+    spiking_proto_dict = OrderedDict()
+    training_stimtype_reject = ['LongDCSupra','Ramp','Short_Square_Triple','Noise']
+    feature_reject = ['voltage_base','steady_state_voltage','time_to_first_spike',
+                      'ISI_CV','AHP_depth','depol_block']
+    
+    for feat_key,feat_val in features_dict.items():
+        if any(reject_stim in feat_key for reject_stim in training_stimtype_reject):
+            continue
+        stim_amp = protocols_dict[feat_key]['stimuli'][0]['amp']
+        if feat_val['soma']['Spikecount'][0] > 0:
+            spiking_proto_dict[feat_key] = stim_amp
+            
+    spiking_proto_sorted = sorted(spiking_proto_dict,
+                           key=spiking_proto_dict.__getitem__)
+    spiking_proto_select = spiking_proto_sorted[-1]
+    features_dict_filtered = {key:val for key,val in features_dict.items() \
+                              if key == spiking_proto_select}
+    protocols_dict_filtered = {key:val for key,val in protocols_dict.items() \
+                              if key == spiking_proto_select}
+    
+    features_dict_filtered[spiking_proto_select]['soma'] =  entries_to_remove(\
+                 feature_reject,features_dict_filtered[spiking_proto_select]['soma'])  
+    
+    return features_dict_filtered,protocols_dict_filtered
+
 def filter_feat_proto_passive(features_dict,protocols_dict,all_protocols_dict,
                                   *args):
 
