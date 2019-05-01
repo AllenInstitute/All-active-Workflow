@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#$ -pe orte 128
+#$ -pe orte 256
 #$ -N Stage2
 #$ -cwd
 #$ -V
@@ -18,7 +18,7 @@ source activate conda_env
 
 OFFSPRING_SIZE=512
 MAX_NGEN=200
-timeout=600
+timeout=300
 
 
 PWD=$(pwd)
@@ -30,7 +30,7 @@ export IPYTHON_PROFILE=sge.$JOB_ID
 
 ipcontroller --init --ip='*' --nodb --ping=30000 --profile=${IPYTHON_PROFILE} &
 sleep 10
-mpiexec -np 128 --output-filename $LOGS/engine ipengine --timeout=3000 --profile=${IPYTHON_PROFILE} &
+mpiexec -np 256 --output-filename $LOGS/engine ipengine --timeout=3000 --profile=${IPYTHON_PROFILE} &
 sleep 10
 
 CHECKPOINTS_DIR="checkpoints"

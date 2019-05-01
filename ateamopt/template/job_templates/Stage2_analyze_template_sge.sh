@@ -29,13 +29,8 @@ mpiexec -np 40 --output-filename $LOGS/engine ipengine --timeout=3000 --profile=
 sleep 10
 
 python analysis_stage2.py -vv --cp_dir  checkpoints_final  --ipyparallel
-# pid="$! "
-# wait $pid
 
-# Cleaning up
 
-# rm -rf $IPYTHONDIR $LOGS
-# rm -rf checkpoints_backup
 
 
 
