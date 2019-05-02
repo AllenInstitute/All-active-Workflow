@@ -98,7 +98,7 @@ class Allactive_Optim(object):
                 logger.debug('Cell not part of online product')
 
             ctc = CellTypesCache(manifest_file='cell_types/manifest.json')
-            cells = ctc.get_cells(require_reconstruction=True)
+            cells = ctc.get_cells()
             metadata_list = list(filter(lambda x: x['id'] == cell_id, cells))
 
 

@@ -14,6 +14,7 @@ for line in $(<bbp_log);
         mkdir -p $CELL_ID
         scp -r $bbp_path/Stage2/*.pdf $CELL_ID/
         scp -r $bbp_path/Stage2/fitted_params $CELL_ID/
+        scp -r $bbp_path/Stage2/config $CELL_ID/
         scp -r $bbp_path/Stage2/Validation_Responses/exp* $CELL_ID/
         scp -r $bbp_path/Stage2/Validation_Responses/fitness* $CELL_ID/
         scp -r $bbp_path/cell_metadata* $CELL_ID/
