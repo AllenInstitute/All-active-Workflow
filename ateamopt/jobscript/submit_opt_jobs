@@ -2,8 +2,6 @@
 
 set -ex
 
-max_jobs=1
-
 while getopts ":f:r:c:m:" opt; do
   case ${opt} in
     f )
@@ -28,6 +26,10 @@ while getopts ":f:r:c:m:" opt; do
 done
 shift $((OPTIND -1))
 
+# max_jobs=${max_jobs:=1}
+# script_repo=${script_repo:='/allen/aibs/mat/anin/software/All-active-Workflow/examples/optim_scripts/'}
+# conda=${conda:='ateam_opt'}
+
 
 index=0
 pids=""
@@ -36,12 +38,14 @@ pids=""
     read  # Extra read to ignore header
     while IFS=, read -r cell_id
     do
-        echo "Launching optimization for $cell_id"
-        nohup launch_optimjob --cell_id $cell_id --ext_scripts $script_repo --conda_env $conda > out$index.log 2> err$index.log &
-        pids+="$! "
-        index=$(($index+1))
-        if [[ $index = $max_jobs ]]; then
-            break
+        if [ ! -d $cell_id ]; then
+          echo "Launching optimization for $cell_id"
+          nohup launch_optimjob --cell_id $cell_id --ext_scripts $script_repo --conda_env $conda > out$index.log 2> err$index.log &
+          pids+="$! "
+          index=$(($index+1))
+          if [[ $index = $max_jobs ]]; then
+              break
+          fi
         fi
     done
 }< $csv_file
