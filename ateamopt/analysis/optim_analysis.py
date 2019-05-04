@@ -252,8 +252,13 @@ class Optim_Analyzer(object):
 
         for param,val in param_dict.items():
             param_name,sect = param.split('.')
-            param_match = list(filter(lambda x:x['param_name'] == param_name and x['sectionlist'] == sect,
-                           bpopt_sim_params))[0]
+            try:
+                param_match = list(filter(lambda x:x['param_name'] == param_name \
+                              and x['sectionlist'] == bpopt_section_map[sect],
+                               bpopt_sim_params))[0]
+            except: # for discrepancies between all sections and expanded sections
+                param_match = list(filter(lambda x:x['param_name'] == param_name,\
+                                          bpopt_sim_params))[0]
             if 'mech' in param_match:
                 mech = param_match['mech']
             else:
