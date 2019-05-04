@@ -1,11 +1,12 @@
 #!/bin/sh
 
 #PBS -q celltypes
-#PBS -l walltime=4:00:00
+#PBS -l walltime=5:00:00
 #PBS -l nodes=16:ppn=16
 #PBS -l mem=100g
 #PBS -N Stage0
 #PBS -e /dev/null
+#PBS -o /dev/null
 #PBS -r n
 #PBS -m bea
 

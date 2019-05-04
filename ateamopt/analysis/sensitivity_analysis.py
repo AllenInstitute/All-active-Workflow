@@ -1,31 +1,38 @@
 import uncertainpy as un
-import json
-import bluepyopt as bpopt
 import numpy as np
-import bluepyopt.ephys as ephys
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from ateamopt.utils import utility
-import copy
-import errno
-import os
 import pandas as pd
+import os
+import math
+import seaborn as sns
 
 
-class Sensititvity_Analysis(object):
+class SA_helper(object):
     
-    def __init__(self, optim_param_path, sens_param_path, config_file,stim_name):
+    def __init__(self, optim_param_path, sens_param_path,
+                 param_mod_range,config_file):
         self.config = utility.load_json(config_file)
-        self.sens_param_path = sens_param_path
-        self.stim_name = stim_name
-        self.optim_param_path = optim_param_path
+        self.sens_parameters = utility.load_json(sens_param_path)
+        self.optim_param = utility.load_json(optim_param_path)
+        self.param_range = param_mod_range
     
-    
-    def load_config(self):
-        morph_path = self.config['morphology']
-        protocol_path = self.config['protocols']
-        mech_path = self.config['mechanism']
-        feature_path = self.config['features']
-        param_path = self.config['parameters']
+    def load_config(self,model_basepath=None):
+        morph_path = os.path.normpath(self.config['morphology'])
+        protocol_path = os.path.normpath(self.config['all_protocols'])
+        mech_path = os.path.normpath(self.config['mechanism'])
+        feature_path = os.path.normpath(self.config['features'])
+        param_path = os.path.normpath(self.config['parameters'])
+        
+        if model_basepath:
+           morph_path = os.path.join(model_basepath,morph_path)
+           protocol_path = os.path.join(model_basepath,protocol_path)
+           mech_path = os.path.join(model_basepath,mech_path)
+           feature_path = os.path.join(model_basepath,feature_path)
+           param_path = os.path.join(model_basepath,param_path)
+           
         return morph_path,protocol_path,mech_path,feature_path,param_path
 
     
@@ -36,29 +43,41 @@ class Sensititvity_Analysis(object):
                 param_dict_uc['%s_%s'%(key,sect)] = '%s.%s'%(key,sect)
         return param_dict_uc
     
-    def create_sa_bound(self,bpopt_param_path, max_bound = .5):
+    def create_sa_bound(self,bpopt_param_bounds_path,sens_param_bounds_path,
+                        max_bound = .5):
         
         # For parameter sensitivity create a new set of bounds because the permutations may 
         # fall outside the original bounds
-
-        param_bound = utility.load_json(bpopt_param_path)
-        optim_param = utility.load_json(self.optim_param_path)
-       
+        
+        max_bound = max(max_bound,self.param_range+.1)
+        
+        bpopt_section_map = utility.bpopt_section_map
+        param_bounds = utility.load_json(bpopt_param_bounds_path)
+        optim_param = self.optim_param
+        
+        optim_param_bpopt_format = {}
+        for key,val in optim_param.items():
+            key_param,key_sect = key.split('.')
+            try:
+                key_sect = bpopt_section_map[key_sect]
+            except:
+                print('Already in bluepyopt format')
+            optim_param_bpopt_format[key_param+'.'+key_sect]=val
+            
         param_sens_list = list()
-        for i,param_dict in enumerate(param_bound):
+        for i,param_dict in enumerate(param_bounds):
             bound = param_dict.get('bounds')
             if bound:
                 name_loc = param_dict['param_name'] + '.' + param_dict['sectionlist']
-                lb = min(param_dict['bounds'][0], optim_param[name_loc]-\
-                         max_bound*abs(optim_param[name_loc]))
-                ub = max(param_dict['bounds'][1], optim_param[name_loc]+\
-                         max_bound*abs(optim_param[name_loc]))
+                lb = min(param_dict['bounds'][0], optim_param_bpopt_format[name_loc]-\
+                         max_bound*abs(optim_param_bpopt_format[name_loc]))
+                ub = max(param_dict['bounds'][1], optim_param_bpopt_format[name_loc]+\
+                         max_bound*abs(optim_param_bpopt_format[name_loc]))
                 param_dict['bounds'] = [lb,ub]
             param_sens_list.append(param_dict)
         
-        utility.save_json(self.sens_param_path,param_sens_list)
-            
-        return optim_param
+        utility.save_json(sens_param_bounds_path,param_sens_list)
+        return optim_param_bpopt_format
     
     @staticmethod
     def plot_sobol_analysis(cell_data,features_to_run,
@@ -70,29 +89,35 @@ class Sensititvity_Analysis(object):
         x_labels = cell_data.uncertain_parameters
         x = np.arange(len(x_labels))  
         
-        utility.create_filepath(analysis_path)
-        plt.style.use('ggplot')
-        fig, axes = plt.subplots(1,nr_plots,figsize=(12,4),dpi = 80, 
-                                 sharey = True)
+        n_cols = 3
+        n_rows = int(math.ceil(nr_plots/float(n_cols)))
         
-        cmap = plt.get_cmap('seismic')
-        colors = cmap(np.linspace(0, 1, len(x)))
+        utility.create_filepath(analysis_path)
+        sns.set()
+        fig, axes = plt.subplots(n_rows,n_cols,figsize=(12,8),dpi = 80, 
+                             sharex= 'all',sharey = 'row',squeeze=False)
+        
+        # Turn off blank axis
+        fig_empty_index = range(nr_plots,n_rows*n_cols)
+        if len(fig_empty_index) != 0:
+            for ind in fig_empty_index:
+                axes[ind//n_cols,ind%n_cols].axis('off')
+        
+        current_palette = sns.color_palette()
+        colors = sns.color_palette(current_palette,len(x))
         
         for i in range(nr_plots):
             feature = features_to_run[i]
             if feature == 'nrnsim_bpopt': # Voltage feature
                 continue
            
-            axes[i].bar(x, cell_data[feature].sobol_first_average, 
+            axes[i//n_cols,i%n_cols].bar(x, cell_data[feature].sobol_first_average, 
                 bar_width,align='center',alpha=opacity,color=colors)
-           
-            axes[i].set_xticklabels(x_labels, rotation=45,ha = 'right',
-                    fontsize=8)
-            axes[i].set_xticks(x)
-            axes[i].grid(axis = 'x')
             
-            
-            axes[i].set_title(feature,fontsize=9)
+            axes[i//n_cols,i%n_cols].set_xticks(x)
+            axes[i//n_cols,i%n_cols].set_xticklabels(x_labels, rotation=45,
+                        fontsize=8)
+            axes[i//n_cols,i%n_cols].set_title(feature,fontsize=9)
         fig.suptitle('Average First Order Sobol Indices',fontsize=12)        
         fig.tight_layout(rect=[0, 0.03, .95, 0.95])
         fig.savefig(analysis_path, bbox_inches = 'tight')
@@ -123,24 +148,5 @@ class Sensititvity_Analysis(object):
         
         return sens_datadf
     
-    def nrnsim_bpopt(**kwargs):
-        
-        opt = kwargs.pop('opt')
-        fitness_protocols = opt.evaluator.fitness_protocols
-        nrn = ephys.simulators.NrnSimulator()
-        sensitivity_params  = copy.deepcopy(kwargs.pop('optim_param'))
-        for key,val in kwargs.items():
-            sensitivity_params[param_dict_uc[key]] = val
-            
-        sensitivity_response = fitness_protocols[self.stim_name].run(\
-                    cell_model=opt.evaluator.cell_model,
-                    param_values=sensitivity_params,
-                    sim=nrn)
-        name_loc = self.stim_name + '.soma.v'
-        time = sensitivity_response[name_loc]['time']
-        value = sensitivity_response[name_loc]['voltage']
-        info = {'stimulus_start':stim_protocols[self.stim_name]['stimuli'][0]['delay'], 
-                'stimulus_end':stim_protocols[self.stim_name]['stimuli'][0]['stim_end']}
-        
-        return time, value, info
+    
     
