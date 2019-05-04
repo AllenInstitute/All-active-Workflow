@@ -203,7 +203,7 @@ class Optim_Analyzer(object):
 
         sect_reject_list = ['all']
         if no_apical:sect_reject_list.append('apic')
-        temp_sect_map_inv = [sect for sect in bpopt_section_map_inv \
+        temp_sect_map_inv = [sect for sect in bpopt_section_map.keys() \
                              if sect not in sect_reject_list]
 
         erev_list = []
@@ -217,7 +217,7 @@ class Optim_Analyzer(object):
 
             if bool(temp_dict):
                 temp_dict['section'] = sect_
-                erev_list.append(temp_dict)
+                erev_list.append(temp_dict.copy())
 
 
         aibs_format_params['conditions'].append({'celsius' : next(item['value'] \
