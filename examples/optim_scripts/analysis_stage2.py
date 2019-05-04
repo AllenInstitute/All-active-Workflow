@@ -149,7 +149,9 @@ def main():
 
     # Save the entire hall of fame parameters
     for i,hof_param in enumerate(hof_model_params_sorted):
-        utility.save_json('fitted_params/hof_param_%s_%s.json'%(cell_id,i),hof_param)
+        aibs_params_modelname = 'fitted_params/hof_param_%s_%s.json'%(cell_id,i)
+        analysis_handler.save_params_aibs_format(aibs_params_modelname,
+                                    hof_param,expand_params = True)
 
     GA_evol_path = 'analysis_params/GA_evolution_params.pkl'
     analysis_handler.save_GA_evolultion_info(GA_evol_path)
