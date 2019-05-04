@@ -252,9 +252,9 @@ class Optim_Analyzer(object):
 
         for param,val in param_dict.items():
             param_name,sect = param.split('.')
-            param_match = list(filter(lambda x:x['param_name'] == param_name,
+            param_match = list(filter(lambda x:x['param_name'] == param_name and x['sectionlist'] == sect,
                            bpopt_sim_params))[0]
-            if 'mechanism' in param_match:
+            if 'mech' in param_match:
                 mech = param_match['mech']
             else:
                 mech = ''
