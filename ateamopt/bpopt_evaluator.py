@@ -3,6 +3,7 @@ import numpy as np
 import bluepyopt.ephys as ephys
 from ateamopt.utils import utility
 import logging
+import os
 
 logger = logging.getLogger(__name__)
 
@@ -10,7 +11,8 @@ logger = logging.getLogger(__name__)
 class Bpopt_Evaluator(object):
 
     def __init__(self, protocol_path,feature_path,
-                 morph_path, param_path, mech_path,**props):
+                 morph_path, param_path, mech_path,ephys_dir='preprocessed',
+                 **props):
         """
         do_replace_axon : stub axon (60 micron, uniform 1 micron dia)
         do_replace_axon_swc : bluepyopt axon replace code, diameter taken
@@ -21,6 +23,7 @@ class Bpopt_Evaluator(object):
         self.feature_path = feature_path
         self.param_path=param_path
         self.mech_path=mech_path
+        self.ephys_dir = ephys_dir
 
         feature_definitions = utility.load_json(feature_path)
         feature_set = []
@@ -151,7 +154,7 @@ class Bpopt_Evaluator(object):
 
     def define_protocols(self):
         """Define protocols"""
-
+        ephys_dir = self.ephys_dir
         protocol_definitions = json.load(open(self.protocol_path))
 
         protocols = {}
@@ -225,7 +228,8 @@ class Bpopt_Evaluator(object):
                         total_duration=stimulus_definition['totduration']))
                     recordings = [somav_recording]
                 elif stimulus_definition['type'] in ['TriBlip','Noise']:
-                    sweep_file = 'preprocessed/'+stimulus_definition['sweep_filenames'][0]
+                    sweep_file = os.path.join(ephys_dir,
+                                      stimulus_definition['sweep_filenames'][0])
                     stim_play_time = np.loadtxt(sweep_file)[:,0]
                     stim_play_current = np.loadtxt(sweep_file)[:,2]
                     stimuli.append(ephys.stimuli.NrnCurrentPlayStimulus(

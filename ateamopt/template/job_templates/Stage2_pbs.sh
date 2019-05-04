@@ -6,6 +6,7 @@
 #PBS -l mem=100g
 #PBS -N Stage2
 #PBS -e /dev/null
+#PBS -o /dev/null
 #PBS -r n
 #PBS -m bea
 
