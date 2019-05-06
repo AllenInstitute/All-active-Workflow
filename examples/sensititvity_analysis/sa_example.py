@@ -58,9 +58,7 @@ def main():
                              'gbar_NaTa_t' : ['axonal'],
                              'gbar_Nap_Et2' : ['axonal','somatic'],
                              'gbar_Kv3_1' : ['axonal','somatic'],
-                             'gbar_K_Tst' :  ['axonal','somatic'],
-                             'gbar_K_Pst' : ['axonal','somatic'],
-                             'gbar_SK' : ['axonal','somatic']
+                             'gbar_K_Tst' :  ['axonal','somatic']
                              }
         utility.save_json(sens_params_path,select_parameters)                         
     
