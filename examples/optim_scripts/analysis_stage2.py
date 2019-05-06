@@ -140,7 +140,7 @@ def main():
 
     # Save the sorted hall of fame output in .pkl
     hof_model_params_sorted = analysis_handler.save_hof_output_params(hof_model_params,\
-                                                  hof_params_filename,score_list_train)
+                                              hof_params_filename,score_list_train)
     utility.save_pickle(hof_responses_filename, hof_response_sorted)
     utility.save_pickle(obj_list_train_filename, obj_list_train_sorted)
     utility.save_pickle(obj_list_all_filename, obj_list_gen_sorted)
