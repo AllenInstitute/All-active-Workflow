@@ -695,7 +695,11 @@ class Optim_Analyzer(object):
 
     def convert_aibs_param_to_dict(self,aibs_param_file,repeat_params = []):
         aibs_params = utility.load_json(aibs_param_file)
-        model_param_dict = {}
+        
+        # param_files are of the format 'hof_param_cellid_hofindex.json'
+        cell_id = aibs_param_file.split('_')[-2]
+        hof_index = aibs_param_file.split('_')[-1].split('.')[0]
+        model_param_dict = {'Cell_id':cell_id, 'hof_index': int(hof_index)}
         section_map = utility.bpopt_section_map
 
         written_repeat_params = []
@@ -876,6 +880,10 @@ class Optim_Analyzer(object):
             select_stim_keys_list = sorted(spike_stim_keys_dict, key=spike_stim_keys_dict.__getitem__)
             if len(select_stim_keys_list) > 2:
                 select_stim_keys =  [select_stim_keys_list[0], select_stim_keys_list[-2]]
+            elif len(select_stim_keys_list) == 2:
+                select_stim_keys =  [select_stim_keys_list[0], select_stim_keys_list[1]]
+            else:
+                select_stim_keys = None
             fI_curve_exp['select_stim_keys'] = select_stim_keys
             utility.create_filepath(exp_fi_path)
             utility.save_pickle(exp_fi_path,fI_curve_exp)
@@ -986,22 +994,23 @@ class Optim_Analyzer(object):
         plt.close(fig)
 
         # Plot spike shape
-        fig,ax= plt.subplots(1,len(select_stim_keys),figsize=(8,5),
-                             dpi=80, sharey = True,squeeze = False)
-        for kk,stim_name in enumerate(select_stim_keys):
-            AP_shape_time, AP_shape_exp, AP_shape_model =\
-                self.prepare_spike_shape(response_filename,stim_map,stim_name,\
-                                 exp_AP_shape_path,model_AP_shape_path,model_type,\
-                                 ephys_dir=ephys_dir)
-            ax[0,kk].plot(AP_shape_time, AP_shape_exp,lw = 2,
-                          color = 'k',label = 'Experiment')
-            ax[0,kk].plot(AP_shape_time, AP_shape_model,lw = 2,
-                          color = 'b',label = '%s'%model_type)
-            ax[0,kk].legend(prop={'size': 10})
-            ax[0,kk].set_title(stim_name,fontsize = 12)
+        if select_stim_keys:
+            fig,ax= plt.subplots(1,len(select_stim_keys),figsize=(8,5),
+                                 dpi=80, sharey = True,squeeze = False)
+            for kk,stim_name in enumerate(select_stim_keys):
+                AP_shape_time, AP_shape_exp, AP_shape_model =\
+                    self.prepare_spike_shape(response_filename,stim_map,stim_name,\
+                                     exp_AP_shape_path,model_AP_shape_path,model_type,\
+                                     ephys_dir=ephys_dir)
+                ax[0,kk].plot(AP_shape_time, AP_shape_exp,lw = 2,
+                              color = 'k',label = 'Experiment')
+                ax[0,kk].plot(AP_shape_time, AP_shape_model,lw = 2,
+                              color = 'b',label = '%s'%model_type)
+                ax[0,kk].legend(prop={'size': 10})
+                ax[0,kk].set_title(stim_name,fontsize = 12)
 
-        pdf_pages.savefig(fig)
-        plt.close(fig)
+            pdf_pages.savefig(fig)
+            plt.close(fig)
         return pdf_pages
 
     def hof_statistics(self, stim_file, pdf_pages, hof_obj_all_filename,
