@@ -110,42 +110,61 @@ def main():
     obj_list_untrain_filename = 'analysis_params/hof_obj_untrain.pkl'
     seed_indices_filename = 'analysis_params/seed_indices.pkl'
 
+    score_list_unordered_filename = 'analysis_params/score_list_unordered.pkl'
+    
     # Response for the entire hall of fame not arranged
     hof_response_list = analysis_handler.get_model_responses(hof_model_params,
                                                      hof_responses_filename)
-
-    # Sort everything with respect to training error
     obj_list_train = analysis_handler.get_response_scores(hof_response_list)
+    
+    # Sort everything with respect to training error
+    
+    
+    if not os.path.exists(score_list_unordered_filename):
+        score_list_train = [np.sum(list(obj_dict_train.values())) \
+                        for obj_dict_train in obj_list_train]
+        utility.create_filepath(score_list_unordered_filename)
+        utility.save_pickle(score_list_unordered_filename, score_list_train)
+    else:
+        score_list_train = utility.load_pickle(score_list_unordered_filename)    
+    
+    if not os.path.exists(seed_indices_filename):    
+        seed_indices_sorted = analysis_handler.organize_models(seed_indices,
+                                                                score_list_train)
+        utility.save_pickle(seed_indices_filename, seed_indices_sorted)
+        
+    if not os.path.exists(obj_list_train_filename):
+        obj_list_train_sorted = analysis_handler.organize_models(obj_list_train,
+                                                                score_list_train)
+        utility.save_pickle(obj_list_train_filename, obj_list_train_sorted)
+        
+    if not os.path.exists(obj_list_all_filename):
+        analysis_handler._opt = opt_gen
+        obj_list_gen = analysis_handler.get_response_scores(hof_response_list)
+        obj_list_gen_sorted = analysis_handler.organize_models(obj_list_gen,
+                                                                score_list_train)
+        utility.save_pickle(obj_list_all_filename, obj_list_gen_sorted)
+    
+    if not os.path.exists(obj_list_untrain_filename):    
+        analysis_handler._opt = opt_untrain
+        obj_list_untrain = analysis_handler.get_response_scores(hof_response_list)
 
-    analysis_handler._opt = opt_gen
-    obj_list_gen = analysis_handler.get_response_scores(hof_response_list)
-
-    analysis_handler._opt = opt_untrain
-    obj_list_untrain = analysis_handler.get_response_scores(hof_response_list)
+        obj_list_untrain_sorted = analysis_handler.organize_models(obj_list_untrain,
+                                                                    score_list_train)
+        utility.save_pickle(obj_list_untrain_filename, obj_list_untrain_sorted)
 
     analysis_handler._opt = opt_train
-    score_list_train = [np.sum(list(obj_dict_train.values())) \
-                        for obj_dict_train in obj_list_train]
-
-    hof_response_sorted = analysis_handler.organize_models(hof_response_list,
+    
+    # Save the hof responses at the end
+    if not os.path.exists(hof_responses_filename):
+        hof_response_sorted = analysis_handler.organize_models(hof_response_list,
                                                                 score_list_train)
-    seed_indices_sorted = analysis_handler.organize_models(seed_indices,
-                                                                score_list_train)
-    obj_list_train_sorted = analysis_handler.organize_models(obj_list_train,
-                                                                score_list_train)
-    obj_list_gen_sorted = analysis_handler.organize_models(obj_list_gen,
-                                                                score_list_train)
-    obj_list_untrain_sorted = analysis_handler.organize_models(obj_list_untrain,
-                                                                score_list_train)
+        utility.save_pickle(hof_responses_filename, hof_response_sorted)
 
     # Save the sorted hall of fame output in .pkl
     hof_model_params_sorted = analysis_handler.save_hof_output_params(hof_model_params,\
                                               hof_params_filename,score_list_train)
-    utility.save_pickle(hof_responses_filename, hof_response_sorted)
-    utility.save_pickle(obj_list_train_filename, obj_list_train_sorted)
-    utility.save_pickle(obj_list_all_filename, obj_list_gen_sorted)
-    utility.save_pickle(obj_list_untrain_filename, obj_list_untrain_sorted)
-    utility.save_pickle(seed_indices_filename, seed_indices_sorted)
+    
 
     # Save the entire hall of fame parameters
     for i,hof_param in enumerate(hof_model_params_sorted):
