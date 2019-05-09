@@ -42,6 +42,7 @@ pids=""
           echo "Launching optimization for $cell_id"
           nohup launch_optimjob --cell_id $cell_id --ext_scripts $script_repo --conda_env $conda > out$index.log 2> err$index.log &
           pids+="$! "
+          sleep 60
           index=$(($index+1))
           if [[ $index = $max_jobs ]]; then
               break
@@ -52,6 +53,6 @@ pids=""
 
 wait $pids
 
-rm -rf err*.log out*.log
+# rm -rf err*.log out*.log
 echo "# of jobs submitted = $index"
 
