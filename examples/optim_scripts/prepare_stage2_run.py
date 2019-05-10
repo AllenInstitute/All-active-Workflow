@@ -26,6 +26,21 @@ def main():
     perisomatic_model_id = cell_metadata['Perisomatic_id']
     dend_type = cell_metadata['Dendrite_type']
     species = cell_metadata['Species']
+    me_type = cell_metadata.pop('ME_type',None)
+    
+    
+    if dend_type == 'spiny':
+        cell_type = 'exc' 
+    elif dend_type == 'aspiny':
+        cell_type = 'inh'
+    else:
+        if me_type:
+            cell_type = 'exc' if 'Exc' in me_type else 'inh'
+            # Remove ME type from metadata for backward compatibility
+            utility.save_json(path_to_cell_metadata,cell_metadata)
+        else:
+            raise Exception('cell-type ambiguous')
+    
     wasabi_bucket = 's3://aibs.snmo.01/'
     wasabi_bucket += '%s/%s'%(species.replace(' ',''),cell_id)
 
@@ -34,7 +49,7 @@ def main():
     ephys_data_path,stimmap_filename = nwb_handler.save_cell_data\
                                     (acceptable_stimtypes)
     feature_file = 'feature_set_stage2_spiny.json' \
-                if dend_type == 'spiny' else \
+                if cell_type == 'exc' else \
                     'feature_set_stage2_aspiny.json'
     
     feature_set_repo = os.path.abspath(os.path.join(script_repo_dir,feature_file))
@@ -68,8 +83,12 @@ def main():
     
     if species == 'Mus musculus':
         param_bounds_file = 'param_bounds_stage2_mouse_spiny.json' \
-            if dend_type == 'spiny' else \
+            if cell_type == 'exc' else \
                 'param_bounds_stage2_mouse_aspiny.json'
+    else:
+        param_bounds_file = 'param_bounds_stage2_human_spiny.json' \
+            if cell_type == 'exc' else \
+                'param_bounds_stage2_human_aspiny.json'
     
     param_bounds_repo = os.path.abspath(os.path.join(script_repo_dir,param_bounds_file))
     param_bounds_repo = param_bounds_repo \

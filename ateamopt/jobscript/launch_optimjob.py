@@ -23,6 +23,9 @@ def create_optim_job(args):
 
     if args.nwb_path:
         me_props['nwb_path'] = args.nwb_path
+        
+    if args.me_type:
+        me_props['me_type'] = args.me_type
 
     script_dir = os.path.join(os.getcwd(),'Script_Repo')
     if os.path.exists(script_dir):
@@ -60,6 +63,8 @@ def main():
                         help='Morphology path for unpublished cells')
     parser.add_argument('--nwb_path', required=False, default=None,
                         help='Ephys path for unpublished cells')
+    parser.add_argument('--me_type', required=False, default=None,
+                        help='ME type from the clustering')
     parser.add_argument('--qos', required=False, default=None,
                         help='Specify queue for NERSC')
     parser.add_argument('--conda_env', required=False, default='ateam_opt',
