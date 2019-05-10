@@ -195,8 +195,8 @@ class Allactive_Classification(object):
     def get_cellid_for_opt(df_L,df_S,target_field='cre',
                            addl_target = 'me_type',
                            non_std_morph_path=None,select_types=None):
-        
-        select_fields = list([target_field, addl_target])
+        info_fields = ['cre','dendrite_type']
+        select_fields = list(set([target_field, addl_target]+info_fields))
         select_fields = [select_field_ for select_field_ in select_fields \
                          if select_field_ is not None]
         df_L = df_L.dropna(subset=select_fields,how='any',axis=0)
