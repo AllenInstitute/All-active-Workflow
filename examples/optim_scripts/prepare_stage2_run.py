@@ -29,15 +29,15 @@ def main():
     me_type = cell_metadata.pop('ME_type',None)
     
     
-    if dend_type == 'spiny':
-        cell_type = 'exc' 
-    elif dend_type == 'aspiny':
-        cell_type = 'inh'
+    if me_type:
+        cell_type = 'exc' if 'Exc' in me_type else 'inh'
+        # Remove ME type from metadata for backward compatibility
+        utility.save_json(path_to_cell_metadata,cell_metadata)
     else:
-        if me_type:
-            cell_type = 'exc' if 'Exc' in me_type else 'inh'
-            # Remove ME type from metadata for backward compatibility
-            utility.save_json(path_to_cell_metadata,cell_metadata)
+        if dend_type == 'spiny':
+            cell_type = 'exc' 
+        elif dend_type == 'aspiny':
+            cell_type = 'inh'
         else:
             raise Exception('cell-type ambiguous')
     
