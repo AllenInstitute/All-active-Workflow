@@ -192,12 +192,18 @@ class Allactive_Classification(object):
         
     # Get cell ids for optimization from ME data
     @staticmethod        
-    def get_cellid_for_opt(df_L,df_S,field='me_type',
-                           non_std_morph_path=None,select_cre=None):
-        df_L_select = df_L.loc[df_L[field].notnull(),['Cell_id',
-                               'cre','dendrite_type',field]]
-        if select_cre:
-            df_L_select = df_L_select.loc[df_L_select['cre'].isin(select_cre),]
+    def get_cellid_for_opt(df_L,df_S,target_field='cre',
+                           addl_target = 'me_type',
+                           non_std_morph_path=None,select_types=None):
+        
+        select_fields = list([target_field, addl_target])
+        select_fields = [select_field_ for select_field_ in select_fields \
+                         if select_field_ is not None]
+        df_L = df_L.dropna(subset=select_fields,how='any',axis=0)
+        df_L_select = df_L.loc[:,['Cell_id']+select_fields]
+        if select_types:
+            df_L_select = df_L_select.loc[df_L_select[target_field].\
+                                          isin(select_types),]
         
         df_L_cellids = df_L_select['Cell_id'].unique()
         df_S_cellids = df_S['Cell_id'].unique()
@@ -208,8 +214,9 @@ class Allactive_Classification(object):
             df_S_cellids = np.append(df_S_cellids,non_std_cell_ids)
         cell_id_target = [cell_ for cell_ in df_L_cellids \
                           if cell_ not in df_S_cellids]
-        df_L_select = df_L_select.loc[df_L_select['Cell_id'].isin(cell_id_target),]
-
+        df_L_select = df_L_select.loc[df_L_select['Cell_id'].\
+                                      isin(cell_id_target),]
+        df_L_select = df_L_select.reset_index(drop=True)
         return df_L_select
         
     @staticmethod    
