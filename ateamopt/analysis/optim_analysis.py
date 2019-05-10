@@ -288,7 +288,7 @@ class Optim_Analyzer(object):
 
         opt_config = utility.load_json(opt_config_file)
         train_protocol_path = opt_config['protocols']
-        released_model = opt_config['released_model']
+#        released_model = opt_config['released_model']
 
         train_protocols = utility.load_json(train_protocol_path)
 
@@ -390,7 +390,7 @@ class Optim_Analyzer(object):
                                 linewidth=1,
                                 label = 'Experiment',
                                 alpha = 0.8)
-                    if released_model:
+                    try:
                         responses_release_time = responses_release[name_loc]['time']
                         responses_release_voltage = responses_release[name_loc]['voltage']
                         l4,=ax_comp[index//n_col,index%n_col].plot(responses_release_time,
@@ -399,7 +399,9 @@ class Optim_Analyzer(object):
                                 linewidth=.1,
                                 label = 'Released %s'%resp_comparison,
                                 alpha = 0.4)
-
+                    except:
+                        logger.debug('No released %s model'%resp_comparison)
+                        
                     if index//n_col == n_row-1:
                         ax_comp[index//n_col,index%n_col].set_xlabel('Time (ms)')
                     if index%n_col == 0:
@@ -415,10 +417,10 @@ class Optim_Analyzer(object):
                     index_plot +=1
                     if index%fig_per_page == 0 or index_plot == all_plots:
                         fig_comp.suptitle('Response Comparisons',fontsize=16)
-                        if released_model:
+                        try:
                             handles = [l1, l3, l4]
                             ncol = 3
-                        else:
+                        except:
                              handles = [l1, l3]
                              ncol = 2
                         labels = [h.get_label() for h in handles]
@@ -444,7 +446,7 @@ class Optim_Analyzer(object):
 
         opt_config = utility.load_json(opt_config_file)
         train_protocol_path = opt_config['protocols']
-        released_model = opt_config['released_model']
+#        released_model = opt_config['released_model']
         train_protocols = utility.load_json(train_protocol_path)
 
         logger.debug('Calculating Objectives for Optimized and Released Responses')
@@ -486,7 +488,7 @@ class Optim_Analyzer(object):
                   color='b',
                   alpha=opacity,
                   label='Optimized')
-            if released_model:
+            if bool(responses_release):
                 ax.bar(index,
                       list(iter_dict_release.values()),
                       bar_width,
@@ -494,6 +496,8 @@ class Optim_Analyzer(object):
                       color='r',
                       alpha=opacity,
                       label='Released')
+            else:
+                logger.debug('No released model')
             ax.set_xticks(xtick_pos)
             ax.set_xticklabels(tick_label, fontsize= 8)
             plt.xticks(rotation=90)

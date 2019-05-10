@@ -11,6 +11,7 @@ import os
 from collections import defaultdict
 from sklearn.preprocessing import StandardScaler   
 from sklearn.pipeline import Pipeline
+from sklearn.manifold import TSNE
 from sklearn.svm import SVC
 from sklearn import preprocessing
 from sklearn.metrics import classification_report,\
@@ -19,8 +20,34 @@ from sklearn.model_selection import train_test_split
 from sklearn.utils.multiclass import unique_labels     
 import seaborn as sns
 import matplotlib.pyplot as plt
+from matplotlib.lines import Line2D
+
  
 logger = logging.getLogger(__name__)
+
+marker_list = list(Line2D.markers.keys())[2:-4]
+
+def reformat_legend(axes,sorted_class,color_list):
+    
+    all_handles,all_labels,all_colors = [], [], []
+    for i in range(axes.shape[0]):
+        for j in range(axes.shape[1]):
+            handles,labels = axes[i][j].get_legend_handles_labels()
+            for handle_,label_ in zip(handles,labels):
+                label_split = label_.split('.')[0]
+                if  label_split not in all_labels:
+                    all_labels.append(label_split)
+                    all_handles.append(handle_)
+                    all_colors.append(color_list[sorted_class.index(label_split)])
+    
+    dummy_handles = []
+    for handle_,label_,color_ in zip(all_handles,all_labels,all_colors):
+        h = plt.scatter([],[],marker = 'o',color = color_,
+                      label = label_)
+        dummy_handles.append(h)
+    
+    return dummy_handles,all_labels
+
 
 class Allactive_Classification(object):
     def __init__(self, param_file_list=None,metadata_file_list=None,
@@ -207,7 +234,9 @@ class Allactive_Classification(object):
     
     @staticmethod
     def prepare_data_clf(data,feature_fields,target_field,
-                         least_pop=5):
+                         least_pop=3):
+        
+        data = data.loc[:,~data.columns.duplicated()]
         data_section = data.loc[:,feature_fields+[target_field]] 
         
         # drop any cell with target field nan
@@ -255,21 +284,84 @@ class Allactive_Classification(object):
         confusion_matrix_svm = confusion_matrix(y_test, y_pred_test)
         svm_report = classification_report(y_test, y_pred_test)
         score = accuracy_score(y_test, y_pred_test)*100
+        classes = le.inverse_transform(unique_labels(y_test, \
+                                        y_pred_test))
         
+        df_conf_svm = pd.DataFrame(confusion_matrix_svm, classes,
+              classes)
+        df_conf_svm=df_conf_svm.div(df_conf_svm.sum(axis=1),axis=0)
         if plot_confusion_mat:
-            classes = le.inverse_transform(unique_labels(y_test, \
-                                            y_pred_test))
-            df_conf_svm = pd.DataFrame(confusion_matrix_svm, classes,
-                  classes)
             fig = plt.figure()
             sns.set(style="darkgrid", font_scale=1)
-            ax = sns.heatmap(df_conf_svm, annot=True, fmt="d")# font size
+            ax = sns.heatmap(df_conf_svm,cmap='seismic',alpha=0.8)
             fig.suptitle('Accuracy: %s %%'%score, fontsize = 14)
             ax.set_ylabel('True Label')
             ax.set_xlabel('Predicted Label')
             fig.savefig(conf_mat_figname,bbox_inches='tight')
-            
-        return score,confusion_matrix_svm,svm_report
+            plt.close(fig)
+        return score,confusion_matrix_svm,svm_report,df_conf_svm
             
     
-    
+    @staticmethod
+    def tsne_embedding(X_df,y_df,feature_fields,
+                       target_field,marker_field='Cell_id',
+                       col_var = None,figname='tsne_plot.pdf',
+                       figtitle = ''):
+        
+        tsne_pipeline = Pipeline([('scaling', StandardScaler()), \
+                     ('tsne',TSNE(n_components=2,random_state =0))])
+            
+        X_data = X_df.loc[:,feature_fields].values
+        tsne_results = tsne_pipeline.fit_transform(X_data)
+        
+        data = pd.concat([X_df,y_df],axis=1)
+        data['x-tsne'] = tsne_results[:,0]
+        data['y-tsne'] = tsne_results[:,1]
+        data['hue_marker'] = data.apply(lambda x : \
+                    x[target_field] +'.'+ x[marker_field], axis =1)
+        
+        sorted_target = sorted(list(data[target_field].unique()))
+        sorted_marker = sorted(list(data[marker_field].unique()))
+        sorted_hue_marker = sorted(list(data['hue_marker'].unique()))
+        sorted_col = sorted(list(data[col_var].unique())) \
+                    if col_var else None
+        
+        current_palette = sns.color_palette()
+        color_list = sns.color_palette(current_palette,len(sorted_target))
+        color_df_list = [color_list[sorted_target.index(hue_.split('.')[0])] \
+                         for hue_ in sorted_hue_marker]
+        
+        marker_df_list = [marker_list[sorted_marker.index(hue_.\
+                           split('.')[1])%len(marker_list)] \
+                         for hue_ in sorted_hue_marker]
+        
+        if target_field == marker_field:
+            marker_df_list = ['o']*len(marker_df_list)
+        
+        sns.set(style="darkgrid", font_scale=1)
+        g = sns.FacetGrid(data,
+                          col=col_var,col_order=sorted_col, 
+                          hue='hue_marker',hue_order = sorted_hue_marker,
+                          palette=color_df_list, hue_kws=dict(marker=marker_df_list),                      
+                          height=9,aspect= 1.2)
+        g = (g.map(plt.scatter, "x-tsne", "y-tsne", alpha=.8,s=80))
+         
+        axes = g.axes
+        dummy_handles,all_labels = reformat_legend(axes,sorted_target,color_list)
+        g.fig.tight_layout(rect=[0, 0.1, 1, 0.95])
+        g.fig.legend(handles = dummy_handles, labels = all_labels,
+                     loc = 'lower center', ncol = 6)
+        figtitle += ' (n=%s)'%len(data['Cell_id'].unique())
+        g.fig.suptitle(figtitle)
+        g.fig.savefig(figname, dpi= 80,bbox_inches='tight')
+        plt.close(g.fig)
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        

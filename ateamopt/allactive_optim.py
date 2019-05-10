@@ -146,7 +146,7 @@ class Allactive_Optim(object):
                 cell_metadata['Area'] = metadata_cell['structure_area_abbrev']
                 cell_metadata['Cre_line'] = metadata_cell['transgenic_line']
                 cell_metadata['Layer'] = metadata_cell['structure_layer_name']
-
+                cell_metadata['ME_type'] = props.get('me_type')
 
             api = allensdk.api.queries.rma_api.RmaApi() # Get the model metadata
 
