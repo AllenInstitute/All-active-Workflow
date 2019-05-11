@@ -28,11 +28,11 @@ def main():
     species = cell_metadata['Species']
     me_type = cell_metadata.pop('ME_type',None)
     
+    # Remove ME type from metadata for backward compatibility
+    utility.save_json(path_to_cell_metadata,cell_metadata)
     
     if me_type:
         cell_type = 'exc' if 'Exc' in me_type else 'inh'
-        # Remove ME type from metadata for backward compatibility
-        utility.save_json(path_to_cell_metadata,cell_metadata)
     else:
         if dend_type == 'spiny':
             cell_type = 'exc' 
