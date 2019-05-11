@@ -65,7 +65,7 @@ class Allactive_Classification(object):
         self.ephys_file_list = ephys_file_list
         self.morph_file_list = morph_file_list
     
-    def allactive_param_data(self,repeat_params):
+    def allactive_param_data(self,repeat_params,save_data=False):
         analysis_handler = Optim_Analyzer()
         func = partial(analysis_handler.convert_aibs_param_to_dict,
                        repeat_params = repeat_params)
@@ -74,6 +74,9 @@ class Allactive_Classification(object):
         p.close()
         p.join()
         param_df = pd.DataFrame(param_dict_list)
+        if save_data:
+            self.save_class_data(param_df,'allactive_params.csv',
+                        'allactive_paramsdatatype.csv')
         return param_df
     
     def allactive_metadata(self,save_data=False):
@@ -241,14 +244,16 @@ class Allactive_Classification(object):
     
     @staticmethod
     def prepare_data_clf(data,feature_fields,target_field,
-                         least_pop=3):
+                         property_fields = [],
+                         least_pop=5):
         
         data = data.loc[:,~data.columns.duplicated()]
-        data_section = data.loc[:,feature_fields+[target_field]] 
+        data_section = data.loc[:,feature_fields+property_fields+\
+                                [target_field]] 
         
         # drop any cell with target field nan
         data_section = data_section.dropna(axis=0, how = 'any',
-                                           subset=[target_field])
+                               subset=[target_field] + property_fields)
         
         # filtering based on least populated class
         agg_data = data_section.groupby(target_field)[feature_fields[0]].\
@@ -259,10 +264,11 @@ class Allactive_Classification(object):
                         isin(filtered_targets),]
         
         # drop any feature which is nan for any cells
-        data_section = data_section.dropna(axis =1, how = 'any')
+        data_section = data_section.dropna(axis =1,
+                                           how = 'any')
         revised_features = [feature_field for feature_field in \
                     list(data_section) if feature_field in feature_fields]
-        X_df = data_section.loc[:,revised_features]
+        X_df = data_section.loc[:,revised_features + property_fields]
         y_df = data_section.loc[:,[target_field]]
         return X_df,y_df,revised_features
     
@@ -283,7 +289,7 @@ class Allactive_Classification(object):
         y_data = y_df['label_encoder'].values
         
         X_train, X_test, y_train, y_test = train_test_split(X_data, y_data,\
-                        test_size=0.2, 
+                        test_size=0.3, 
                         stratify=y_data, random_state=0)
         
         svm_pipeline.fit(X_train, y_train)
@@ -297,10 +303,12 @@ class Allactive_Classification(object):
         df_conf_svm = pd.DataFrame(confusion_matrix_svm, classes,
               classes)
         df_conf_svm=df_conf_svm.div(df_conf_svm.sum(axis=1),axis=0)
+        
         if plot_confusion_mat:
-            fig = plt.figure()
             sns.set(style="darkgrid", font_scale=1)
-            ax = sns.heatmap(df_conf_svm,cmap='seismic',alpha=0.8)
+            fig = plt.figure()
+            cmap = sns.cubehelix_palette(light=1, as_cmap=True)
+            ax = sns.heatmap(df_conf_svm,cmap=cmap,alpha=0.8)
             fig.suptitle('Accuracy: %s %%'%score, fontsize = 14)
             ax.set_ylabel('True Label')
             ax.set_xlabel('Predicted Label')
@@ -345,7 +353,7 @@ class Allactive_Classification(object):
         if target_field == marker_field:
             marker_df_list = ['o']*len(marker_df_list)
         
-        sns.set(style="darkgrid", font_scale=1)
+        sns.set(style="darkgrid", font_scale=1.5)
         g = sns.FacetGrid(data,
                           col=col_var,col_order=sorted_col, 
                           hue='hue_marker',hue_order = sorted_hue_marker,

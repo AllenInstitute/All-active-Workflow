@@ -51,8 +51,10 @@ pids=""
     done
 }< $csv_file
 
-wait $pids
-
 # rm -rf err*.log out*.log
 echo "# of jobs submitted = $index"
+
+wait $pids
+
+
 
