@@ -321,7 +321,8 @@ class Allactive_Classification(object):
     def tsne_embedding(X_df,y_df,feature_fields,
                        target_field,marker_field='Cell_id',
                        col_var = None,figname='tsne_plot.pdf',
-                       figtitle = ''):
+                       figtitle = '',
+                       **kwargs):
         
         tsne_pipeline = Pipeline([('scaling', StandardScaler()), \
                      ('tsne',TSNE(n_components=2,random_state =0))])
@@ -368,6 +369,16 @@ class Allactive_Classification(object):
                      loc = 'lower center', ncol = 6)
         figtitle += ' (n=%s)'%len(data['Cell_id'].unique())
         g.fig.suptitle(figtitle)
+        
+        if kwargs.get('xlims'):
+            for i in range(axes.shape[0]):
+                for j in range(axes.shape[1]):
+                    axes[i,j].set_xlim(kwargs['xlims'])
+        if kwargs.get('ylims'):
+             for i in range(axes.shape[0]):
+                for j in range(axes.shape[1]):
+                    axes[i,j].set_ylim(kwargs['ylims'])
+        
         g.fig.savefig(figname, dpi= 80,bbox_inches='tight')
         plt.close(g.fig)
         

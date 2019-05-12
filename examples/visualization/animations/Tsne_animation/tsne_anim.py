@@ -25,9 +25,10 @@ def main():
     target_field = 'Cre_line'
     
     files = []
-    for hof_ind in range(max_hof_index):
-        param_data = hof_param_data.loc[hof_param_data.hof_index< \
-                                        hof_ind+1,]
+    lims = [-100,100]
+    for hof_ind in range(max_hof_index+1):
+        param_data = hof_param_data.loc[hof_param_data.hof_index<= \
+                                        hof_ind,]
         param_data = param_data.drop(labels='hof_index',axis=1)
         df_tsne_p_cre = pd.merge(param_data,cre_data,how='left',
                             on='Cell_id')
@@ -42,9 +43,10 @@ def main():
         file_path = os.path.join(anim_prefix,fname)
         utility.create_filepath(file_path)
         clf_handler.tsne_embedding(p_X_df,p_y_df,tsne_features,
-                           target_field,marker_field=target_field,
-                           figname=file_path,
-                           figtitle = 'TSNE : Model parameters')
+               target_field,marker_field=target_field,
+               figname=file_path,
+           figtitle = 'TSNE : Model parameters-{} models per cell'.format(hof_ind+1),
+           xlims=lims,ylims=lims)
         files.append(file_path)
         
     anim_handler = animation_module.Animation(movie_name = \
