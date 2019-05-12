@@ -35,6 +35,10 @@ $ docker push anirban6908/aibs_software_ani:ateam_opt # push the image
 $ shifterimg -v pull docker:anirban6908/aibs_software_ani:ateam_opt # pull the image (only needs to be done once)
 $ salloc -N 1 -C haswell -q debug --image anirban6908/aibs_software_ani:ateam_opt --volume="/global/homes/a/ani/docker/bmtk_docker_sims:/app" # Run the image interactively
 $ shifter /bin/bash # interactive bash shell in your shifter image
+
+# Add the following sbatch directives in the jobscript
+#SBATCH --image=docker:anirban6908/aibs_software_ani:ateam_opt
+#SBATCH --volume="/global/homes/a/ani/docker/bmtk_docker_sims:/app" # Mounting the current directory to the image volume
 ``` 
 * BBP5
 ```sh
