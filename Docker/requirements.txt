@@ -1,9 +1,9 @@
 git+https://github.com/anirban6908/AllenSDK.git
 git+https://github.com/anirban6908/eFEL.git
-git+https://github.com/anirban6908/BluePyOpt.git
+git+https://github.com/anirban6908/BluePyOpt.git@speedup_x
 git+https://github.com/anirban6908/bmtk.git
-git+https://auth_token:x-oauth-basic@github.com/anirban6908/ateam-tools.git
-git+https://auth_token:x-oauth-basic@github.com/anirban6908/All-active-Workflow.git
+git+https://8dc8e0a4846c8d08d32643ee156204111780c021:x-oauth-basic@github.com/anirban6908/ateam-tools.git
+git+https://8dc8e0a4846c8d08d32643ee156204111780c021:x-oauth-basic@github.com/anirban6908/All-active-Workflow.git
 neurom
 seaborn==0.9
 pandas==0.23.4
