@@ -36,11 +36,15 @@ pids=""
 
 {
     read  # Extra read to ignore header
-    while IFS=, read -r cell_id
+    while IFS=',' read -r cell_id me_type
     do
         if [ ! -d $cell_id ]; then
           echo "Launching optimization for $cell_id"
-          nohup launch_optimjob --cell_id $cell_id --ext_scripts $script_repo --conda_env $conda > out$index.log 2> err$index.log &
+          if [ -z "$me_type" ]; then
+            nohup launch_optimjob --cell_id $cell_id --ext_scripts $script_repo --conda_env $conda > out$index.log 2> err$index.log &
+          else
+            nohup launch_optimjob --cell_id $cell_id --ext_scripts $script_repo --me_type $me_type --conda_env $conda > out$index.log 2> err$index.log &
+          fi
           pids+="$! "
           sleep 60
           index=$(($index+1))
