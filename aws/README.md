@@ -3,7 +3,7 @@ Requirement : AWS and Wasabi accounts
 
 #### Create an AMI with necessary software:
 * Launch a t2 micro instance and install all the necessary software on a conda environment.
-* Set up wasabi: 
+* Set up wasabi:
 ```sh
 $ pip install awscli-plugin-endpoint
 $ aws configure # use access key and secret access keys, default output: json, region us-east-1
@@ -17,7 +17,7 @@ $ aws s3 cp dir s3://aibs.snmo.01/dir_group/dir --recursive --profile wasabi
 
 #### Create an EBS volume
 
-* Create an EBS volume using the AWS management console 
+* Create an EBS volume using the AWS management console
 * Attach the EBS volume to the running t2 micro instance.
 * Log in to the t2 micro instance and mount the EBS volume
 ```sh
@@ -37,4 +37,34 @@ $ sudo umount /data
 * AWS Management Console -> Instances -> Actions -> Image -> Create Image
 * Give it a name and increase the volume a little bit while saving the snapshot.
 
+#### Running StarCluster on your machine
 
+* Install StarCluster on your machine
+```sh
+$ sudo easy_install StarCluster
+```
+
+* Edit the starcluster config file (comes automatically with installation) with desired configuration e.g. node type, ebs volume, ami id on your favorite text editor
+```sh
+$ subl ~/.starcluster/config # Edit starcluster config in sublime text
+```
+
+* Launch the cluster
+```sh
+$ starcluster start -c snmo_cluster ani_cluster
+```
+
+* If the cluster launches successfully login to the head node to submit jobs
+```sh
+$ starcluster sshmaster ani_cluster
+$ source /home/ubuntu/.bashrc  # Load the paths specified in the ami
+$ cd $job_directory
+$ qsub jobscript.sh # submit jobs
+$ qstat # show jobqueue
+$ qdel $jobid # cancel job
+```
+
+* Terminate the cluster
+```sh
+$ starcluster terminate ani_cluster
+```
