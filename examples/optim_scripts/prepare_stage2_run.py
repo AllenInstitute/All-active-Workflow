@@ -27,20 +27,20 @@ def main():
     dend_type = cell_metadata['Dendrite_type']
     species = cell_metadata['Species']
     me_type = cell_metadata.pop('ME_type',None)
-    
+
     # Remove ME type from metadata for backward compatibility
     utility.save_json(path_to_cell_metadata,cell_metadata)
-    
+
     if me_type:
         cell_type = 'exc' if 'Exc' in me_type else 'inh'
     else:
         if dend_type == 'spiny':
-            cell_type = 'exc' 
+            cell_type = 'exc'
         elif dend_type == 'aspiny':
             cell_type = 'inh'
         else:
             raise Exception('cell-type ambiguous')
-    
+
     wasabi_bucket = 's3://aibs.snmo.01/'
     wasabi_bucket += '%s/%s'%(species.replace(' ',''),cell_id)
 
@@ -51,14 +51,14 @@ def main():
     feature_file = 'feature_set_stage2_spiny.json' \
                 if cell_type == 'exc' else \
                     'feature_set_stage2_aspiny.json'
-    
+
     feature_set_repo = os.path.abspath(os.path.join(script_repo_dir,feature_file))
     feature_set_repo = feature_set_repo \
             if os.path.exists(feature_set_repo) else None
     feature_default_template = utility.locate_template_file(os.path.join('parameters',\
                         'feature_set_stage2.json')) # default includes check_AIS_initiation
     feature_path = feature_set_repo or feature_default_template
-    
+
     filter_rule_func = filter_feat_proto_active
     select_dict = {'spike_proto': 2,
                    'nospike_proto' :0}
@@ -72,7 +72,7 @@ def main():
                    stimmap_filename,filter_rule_func,select_dict,
                    add_fi_kink,feature_reject_stim_type= feature_reject_stim_type,
                    spiketimes_exp_path=spiketimes_exp_path)
-        
+
     features_write_path,untrained_features_write_path,all_features_write_path,\
         protocols_write_path,all_protocols_write_path = \
         nwb_handler.write_ephys_features(train_features,test_features,\
@@ -80,7 +80,7 @@ def main():
     # Create the parameter bounds for the optimization
     model_params_handler = AllActive_Model_Parameters(cell_id)
     morph_path = model_params_handler.swc_path
-    
+
     if species == 'Mus musculus':
         param_bounds_file = 'param_bounds_stage2_mouse_spiny.json' \
             if cell_type == 'exc' else \
@@ -89,7 +89,7 @@ def main():
         param_bounds_file = 'param_bounds_stage2_human_spiny.json' \
             if cell_type == 'exc' else \
                 'param_bounds_stage2_human_aspiny.json'
-    
+
     param_bounds_repo = os.path.abspath(os.path.join(script_repo_dir,param_bounds_file))
     param_bounds_repo = param_bounds_repo \
             if os.path.exists(param_bounds_repo) else None
@@ -105,7 +105,7 @@ def main():
                         model_params_release,param_bounds_path)
     mech_write_path,mech_release_write_path = model_params_handler.write_mechanisms_opt(model_mechs,\
                         model_mechs_release)
-    
+
     props = {}
 
     # Perisomatic model
@@ -151,13 +151,13 @@ def main():
         batch_job = Slurm_JobModule(jobtemplate_path,machine,conda_env=conda_env)
         batch_job.script_generator()
         analysis_jobtemplate_path = 'job_templates/Stage2_analyze_template.sh'
-    
+
     elif 'aws' in machine:
         jobtemplate_path = 'job_templates/Stage2_sge.sh'
         batch_job = SGE_JobModule(jobtemplate_path,machine,conda_env=conda_env)
         batch_job.script_generator()
         analysis_jobtemplate_path = 'job_templates/Stage2_analyze_template_sge.sh'
-        
+
     else:
         cp_dir = 'checkpoints'
         testJob = test_JobModule(machine,'batch_job.sh','%s/seed1.pkl'%cp_dir,
@@ -173,11 +173,11 @@ def main():
         analysis_job = ChainSubJob(analysis_jobtemplate_path,machine,\
                         script_name = 'analyze_results.sh',conda_env=conda_env)
         analysis_job.script_generator()
-    
 
-    # Transfer data to Wasabi only for AWS    
+
+    # Transfer data to Wasabi only for AWS
     if 'aws' in machine:
-        s3_transfer_cmd = 'aws s3 cp %s %s --recursive --profile wasabi\n'%(parent_dir,wasabi_bucket)
+        s3_transfer_cmd = 'aws s3 mv %s %s --recursive --profile wasabi\n'%(parent_dir,wasabi_bucket)
         analysis_job.adjust_template('python analysis_stage2.py',s3_transfer_cmd,
                                      add=True,partial_match=True)
 

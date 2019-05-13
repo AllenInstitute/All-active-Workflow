@@ -9,7 +9,7 @@ $ pip install awscli-plugin-endpoint
 $ aws configure # use access key and secret access keys, default output: json, region us-east-1
 $ aws configure --profile wasabi # now use wasabi access keys and secret access keys,region us-west-1
 $ aws configure set plugins.endpoint awscli_plugin_endpoint
-$ aws configure --profile wasabi set s3.endpoint_url https://s3.us-west-1.wasabisys.com
+$ aws configure --profile wasabi set s3.endpoint_url https://s3.wasabisys.com
 $ aws s3 ls --profile wasabi  # check wasabi buckets
 $ aws s3 cp dir s3://aibs.snmo.01/dir_group/dir --recursive --profile wasabi
 ```
