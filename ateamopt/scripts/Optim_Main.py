@@ -116,21 +116,21 @@ def main():
 
     if args.start or args.continu:
         logger.debug('Doing start or continue')
-        try:
-            opt.run(max_ngen=args.max_ngen,
-                    offspring_size=args.offspring_size,
-                    continue_cp=args.continu,
-                    cp_filename=args.checkpoint,
-                    cp_backup=args.cp_backup)
+        
+        if os.path.exists(args.checkpoint):
+            try:
+                cp = utility.load_pickle(args.checkpoint)
+            except:
+                logger.debug('Checkpoint file is corrupt! Looking for backup')
+                shutil.copyfile(args.cp_backup,args.checkpoint)
+            
+        opt.run(max_ngen=args.max_ngen,
+                offspring_size=args.offspring_size,
+                continue_cp=args.continu,
+                cp_filename=args.checkpoint,
+                cp_backup=args.cp_backup)
 
-        except:
-            logger.debug('Checkpoint file is corrupt! Looking for backup')
-            shutil.move(args.cp_backup,args.checkpoint)
-            opt.run(max_ngen=args.max_ngen,
-                    offspring_size=args.offspring_size,
-                    continue_cp=args.continu,
-                    cp_filename=args.checkpoint,
-                    cp_backup=args.cp_backup)
+       
 
 
 if __name__ == '__main__':
