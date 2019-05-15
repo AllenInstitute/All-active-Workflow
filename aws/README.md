@@ -11,7 +11,7 @@ $ aws configure --profile wasabi # now use wasabi access keys and secret access 
 $ aws configure set plugins.endpoint awscli_plugin_endpoint
 $ aws configure --profile wasabi set s3.endpoint_url https://s3.wasabisys.com
 $ aws s3 ls --profile wasabi  # check wasabi buckets
-$ aws s3 cp dir s3://aibs.snmo.01/dir_group/dir --recursive --profile wasabi
+$ aws s3 cp dir s3://aibs.test.ani/dir_group/dir --recursive --profile wasabi
 ```
 * Log out
 
@@ -37,7 +37,7 @@ $ sudo umount /data
 * AWS Management Console -> Instances -> Actions -> Image -> Create Image
 * Give it a name and increase the volume a little bit while saving the snapshot.
 
-#### Running StarCluster on your machine
+#### Launching jobs using StarCluster on your machine
 
 * Install StarCluster on your machine
 ```sh
@@ -58,6 +58,17 @@ $ starcluster start -c snmo_cluster ani_cluster
 ```sh
 $ starcluster sshmaster ani_cluster
 $ source /home/ubuntu/.bashrc  # Load the paths specified in the ami
+$ cp -r /home/ubuntu/.aws ~/   # Copy the aws config files
+```
+
+* Make sure to copy the aws config file to each node for upload to wasabi s3 storage
+```sh
+$ starcluster get ani_cluster /root/.aws . # Copy the aws config from master node
+$ starcluster put ani_cluster --node node001-7 .aws /root/ # node000 - master node, ~/ = /root
+```
+* Submit jobs
+```sh
+$ starcluster sshmaster ani_cluster
 $ cd $job_directory
 $ qsub jobscript.sh # submit jobs
 $ qstat # show jobqueue

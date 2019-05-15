@@ -43,7 +43,7 @@ def main():
 
     wasabi_bucket = 's3://aibs.test.ani/'
     wasabi_bucket += '%s/%s'%(species.replace(' ',''),cell_id)
-    
+
     # Get the conda environment and nwb processing type
     if sys.argv[-1] == 'non_standard_nwb':
         non_standard_nwb = True
@@ -184,7 +184,7 @@ def main():
 
     # Transfer data to Wasabi only for AWS
     if 'aws' in machine:
-        s3_transfer_cmd = 'aws s3 mv %s %s --recursive --profile wasabi\n'%(parent_dir,wasabi_bucket)
+        s3_transfer_cmd = '# aws s3 mv %s %s --recursive --profile wasabi\n'%(parent_dir,wasabi_bucket)
         analysis_job.adjust_template('python analysis_stage2.py',s3_transfer_cmd,
                                      add=True,partial_match=True)
 
