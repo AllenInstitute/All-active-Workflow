@@ -16,7 +16,7 @@ class JobModule(object):
 
 
     def adjust_template(self,match_line, replace_line, add = False,
-                        partial_match = False):
+                        partial_match = False, add_in_place = False):
         with open(self.script_name, "r") as in_file:
             buf = in_file.readlines()
 
@@ -28,6 +28,9 @@ class JobModule(object):
                     if match_eval:
                         if add:
                             line +=  "%s\n"%replace_line
+                        elif add_in_place:
+                            line = line.rstrip()
+                            line +=  " %s\n"%replace_line
                         else:
                             line = "%s\n"%replace_line
 
@@ -36,12 +39,13 @@ class JobModule(object):
 class ChainSubJob(JobModule):
 
     def __init__(self, script_template, machine,script_name = 'chain_job.sh',
-                     conda_env='ateam_opt'):
+                     conda_env='ateam_opt',non_standard_nwb=False):
 
         super(ChainSubJob,self).__init__(machine,script_name)
 
         self.conda_env = conda_env
         self.script_template = utility.locate_template_file(script_template)
+        self.non_standard_nwb = non_standard_nwb
 
 
     def script_generator(self):
@@ -87,6 +91,10 @@ class ChainSubJob(JobModule):
         elif submit_cmd == 'sh':
             self.adjust_template('RES=$(sh batch_job.sh)', 'sh batch_job.sh')
             self.adjust_template('echo ${RES##* }', '',partial_match = True)
+        
+        if self.non_standard_nwb:
+            self.adjust_template('python prepare', 'non_standard_nwb',
+                                 partial_match = True,add_in_place=True)
 
     def run_job(self):
 

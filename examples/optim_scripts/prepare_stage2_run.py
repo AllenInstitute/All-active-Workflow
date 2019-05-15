@@ -41,16 +41,24 @@ def main():
         else:
             raise Exception('cell-type ambiguous')
 
-    wasabi_bucket = 's3://aibs.snmo.01/'
+    wasabi_bucket = 's3://aibs.test.ani/'
     wasabi_bucket += '%s/%s'%(species.replace(' ',''),cell_id)
+    
+    # Get the conda environment and nwb processing type
+    if sys.argv[-1] == 'non_standard_nwb':
+        non_standard_nwb = True
+        conda_env = sys.argv[-2]
+    else:
+        conda_env = sys.argv[-1]
+        non_standard_nwb = False
 
     # Extract data and get the features for the stage
     nwb_handler = NWB_Extractor(cell_id)
     ephys_data_path,stimmap_filename = nwb_handler.save_cell_data\
-                                    (acceptable_stimtypes)
-    feature_file = 'feature_set_stage2_spiny.json' \
+                (acceptable_stimtypes,non_standard_nwb=non_standard_nwb)
+    feature_file = 'feature_set_stage2_exc.json' \
                 if cell_type == 'exc' else \
-                    'feature_set_stage2_aspiny.json'
+                    'feature_set_stage2_inh.json'
 
     feature_set_repo = os.path.abspath(os.path.join(script_repo_dir,feature_file))
     feature_set_repo = feature_set_repo \
@@ -82,13 +90,13 @@ def main():
     morph_path = model_params_handler.swc_path
 
     if species == 'Mus musculus':
-        param_bounds_file = 'param_bounds_stage2_mouse_spiny.json' \
+        param_bounds_file = 'param_bounds_stage2_mouse_exc.json' \
             if cell_type == 'exc' else \
-                'param_bounds_stage2_mouse_aspiny.json'
+                'param_bounds_stage2_mouse_inh.json'
     else:
-        param_bounds_file = 'param_bounds_stage2_human_spiny.json' \
+        param_bounds_file = 'param_bounds_stage2_human_exc.json' \
             if cell_type == 'exc' else \
-                'param_bounds_stage2_human_aspiny.json'
+                'param_bounds_stage2_human_inh.json'
 
     param_bounds_repo = os.path.abspath(os.path.join(script_repo_dir,param_bounds_file))
     param_bounds_repo = param_bounds_repo \
@@ -164,7 +172,6 @@ def main():
                                  2,2)
         testJob.script_generator()
         analysis_cmd = 'python analysis_stage2.py -vv --cp_dir  checkpoints \n'
-#        analysis_cmd += 'aws s3 cp %s %s --recursive --profile wasabi\n'%(parent_dir,wasabi_bucket)
         testJob.adjust_template('bash chain_job.sh',analysis_cmd)
 
 

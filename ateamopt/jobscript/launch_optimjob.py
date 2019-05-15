@@ -47,7 +47,8 @@ def create_optim_job(args):
            handle.write(args.qos)
     
     jobtemplate_path = 'job_templates/Stage0_chainjob_template.sh'
-    chain_job = ChainSubJob(jobtemplate_path,machine,conda_env = args.conda_env)
+    chain_job = ChainSubJob(jobtemplate_path,machine,conda_env = args.conda_env,
+                            non_standard_nwb=args.non_std_nwb)
     chain_job.script_generator()
     chain_job.run_job()
 
@@ -69,6 +70,7 @@ def main():
                         help='Specify queue for NERSC')
     parser.add_argument('--conda_env', required=False, default='ateam_opt',
                         help='Specify the conda environment')
-
+    parser.add_argument('--non_std_nwb', action="store_true",default=False,
+                        help='Non standard processing of .nwb files')
     args = parser.parse_args()
     create_optim_job(args)

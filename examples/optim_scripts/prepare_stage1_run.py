@@ -20,15 +20,21 @@ def main():
     script_repo_dir = os.path.join(parent_dir, script_repo_dirname)
     path_to_cell_metadata = glob.glob(parent_dir+'/cell_metadata*.json')[0]
     cell_metadata=utility.load_json(path_to_cell_metadata)
-
     acceptable_stimtypes = ['Long Square']
-
     cell_id = cell_metadata['Cell_id']
+    
+    # Get the conda environment and nwb processing type
+    if sys.argv[-1] == 'non_standard_nwb':
+        non_standard_nwb = True
+        conda_env = sys.argv[-2]
+    else:
+        conda_env = sys.argv[-1]
+        non_standard_nwb = False
 
     # Extract data and get the features for the stage
     nwb_handler = NWB_Extractor(cell_id)
     ephys_data_path,stimmap_filename = nwb_handler.save_cell_data\
-                    (acceptable_stimtypes)
+                    (acceptable_stimtypes,non_standard_nwb=non_standard_nwb)
     feature_path = utility.locate_template_file(os.path.join('parameters',\
                         'feature_set_stage1.json'))
     filter_rule_func = filter_feat_proto_passive
@@ -78,9 +84,6 @@ def main():
     for script_path in [optimizer_script]:
         shutil.copy(script_path,stage_cwd)
 
-    # Get the conda environment
-    conda_env = sys.argv[-1]
-
     # Create batch jobscript
     machine = cell_metadata['Machine']
     if 'hpc-login' in machine:
@@ -108,7 +111,8 @@ def main():
 
     # Create Chain job for next stage
 
-    chain_job = ChainSubJob(chain_jobtemplate_path,machine,conda_env=conda_env)
+    chain_job = ChainSubJob(chain_jobtemplate_path,machine,conda_env=conda_env,
+                            non_standard_nwb=non_standard_nwb)
     chain_job.script_generator()
 
 
