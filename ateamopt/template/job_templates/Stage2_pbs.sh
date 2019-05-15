@@ -71,11 +71,5 @@ wait $pids
 # If job finishes in time analyze result
 mv ${CHECKPOINTS_DIR}/* checkpoints_final/
 
-# check if the job with 4th seed is finished
-# if [[ $seed = 4 ]]; then
 qsub analyze_results.sh
-# else
-#     seed_new=$(($seed+1))
-#     sed -i -e "s/seed=$seed/seed=$seed_new/g" batch_job.sh
-#     qsub batch_job.sh
-# fi
+

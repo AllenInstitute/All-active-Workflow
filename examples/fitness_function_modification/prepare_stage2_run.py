@@ -4,7 +4,7 @@ from ateamopt.nwb_extractor import NWB_Extractor
 from ateamopt.model_parameters import AllActive_Model_Parameters
 from ateamopt.utils import utility
 from ateamopt.optim_config_rules import filter_feat_proto_active,\
-                                adjust_param_bounds
+            adjust_param_bounds,filter_feat_proto_basic
 from ateamopt.jobscript.jobmodule import test_JobModule,\
             PBS_JobModule,Slurm_JobModule,SGE_JobModule,ChainSubJob
 import shutil
@@ -80,11 +80,31 @@ def main():
                    stimmap_filename,filter_rule_func,select_dict,
                    add_fi_kink,feature_reject_stim_type= feature_reject_stim_type,
                    spiketimes_exp_path=spiketimes_exp_path)
-
+    
+    
     features_write_path,untrained_features_write_path,all_features_write_path,\
         protocols_write_path,all_protocols_write_path = \
         nwb_handler.write_ephys_features(train_features,test_features,\
                              all_features,train_protocols,all_protocols)
+    
+    
+    # Get the basic ephys features for first round of training
+    filter_rule_func = filter_feat_proto_basic
+    train_features_basic,_,_,train_protocols_basic,_ = \
+        nwb_handler.get_ephys_features(feature_path,ephys_data_path,
+                   stimmap_filename,filter_rule_func,select_dict,
+                   add_fi_kink,feature_reject_stim_type= feature_reject_stim_type,
+                   spiketimes_exp_path=spiketimes_exp_path)
+        
+    features_basic_path = os.path.join('config/{}'.format(cell_id),
+                                       'features_basic.json')
+    protocols_basic_path = os.path.join('config/{}'.format(cell_id),
+                                       'features_basic.json')
+    
+    utility.save_json(features_basic_path,train_features_basic)    
+    utility.save_json(protocols_basic_path,train_protocols_basic)  
+    
+    
     # Create the parameter bounds for the optimization
     model_params_handler = AllActive_Model_Parameters(cell_id)
     morph_path = model_params_handler.swc_path
@@ -135,6 +155,16 @@ def main():
                                   release_params,release_param_write_path,
                                   **props)
 
+    # Basic config file
+    model_params_handler.write_opt_config_file(morph_path,param_write_path,
+                                  mech_write_path,mech_release_write_path,
+                                  features_basic_path,untrained_features_write_path,
+                                  all_features_write_path,
+                                  protocols_basic_path,all_protocols_write_path,
+                                  release_params,release_param_write_path,
+                                  opt_config_filename = 'config_file_basic.json'
+                                  **props)
+
     # Copy the optimization files in the current directory
 
     optimizer_script=utility.locate_script_file('Optim_Main.py')
@@ -155,7 +185,7 @@ def main():
         analysis_jobtemplate_path = 'job_templates/Stage2_analyze_template_pbs.sh'
 
     elif any(substring in machine for substring in ['cori', 'bbp']):
-        jobtemplate_path = 'job_templates/Stage2_slurm.sh'
+        jobtemplate_path = 'job_templates/Stage2_slurm_parallel_seed.sh'
         batch_job = Slurm_JobModule(jobtemplate_path,machine,conda_env=conda_env)
         batch_job.script_generator()
         analysis_jobtemplate_path = 'job_templates/Stage2_analyze_template.sh'
@@ -175,12 +205,27 @@ def main():
         testJob.adjust_template('bash chain_job.sh',analysis_cmd)
 
 
+    batch_job.adjust_template('MAX_NGEN=200','MAX_NGEN=100')
+    batch_job.adjust_template('--ipyparallel',
+              '--config_path config_file_basic.json      \ ',
+              add=True,partial_match=True)
+    
+    # fitness function modification
+    ffmod_script = os.path.join(script_repo_dir,'ffmod_script.sh')
+    with open(ffmod_script,'r') as templ:
+            ffmod_cmd = templ.read()
+    ffmod_cmd = ffmod_cmd.replace('qsub',batch_job.submit_verb)
+    batch_job.adjust_template('analyze_results.sh','',partial_match = True)
+    batch_job.adjust_template('mv ${CHECKPOINTS_DIR}/*',ffmod_cmd,
+                              partial_match = True)
+    
     # Create Analysis job for final stage
     if any(substring in machine for substring in ['cori','bbp','hpc-login','aws']):
         analysis_job = ChainSubJob(analysis_jobtemplate_path,machine,\
                         script_name = 'analyze_results.sh',conda_env=conda_env)
         analysis_job.script_generator()
 
+    
 
     # Transfer data to Wasabi only for AWS
     if 'aws' in machine:

@@ -126,12 +126,12 @@ def filter_feat_proto_active(features_dict,protocols_dict,all_protocols_dict,
          protocols_dict_filtered,all_protocols_dict
 
 
-def filter_feat_proto_active_simple(features_dict,protocols_dict):
+def filter_feat_proto_basic(features_dict,protocols_dict):
     features_dict = correct_voltage_feat_std(features_dict)
     spiking_proto_dict = OrderedDict()
     training_stimtype_reject = ['LongDCSupra','Ramp','Short_Square_Triple','Noise']
     feature_reject = ['voltage_base','steady_state_voltage','time_to_first_spike',
-                      'ISI_CV','AHP_depth','depol_block']
+                      'ISI_CV','adaptation_index2','depol_block']
     
     for feat_key,feat_val in features_dict.items():
         if any(reject_stim in feat_key for reject_stim in training_stimtype_reject):
