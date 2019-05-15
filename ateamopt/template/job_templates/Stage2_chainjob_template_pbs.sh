@@ -44,11 +44,7 @@ fi
 STAGE="STAGE2_"
 JOBNAME=$STAGE$CELL_ID
 sed -i -e "s/Stage2/$JOBNAME/g" batch_job.sh
-if [ -f qos.txt ]; then
-    queue=$(<qos.txt)
-    sed -i -e "s/regular/$queue/g" batch_job.sh # Specific to Cori
-fi
-sed -i -e "s/Stage2/$JOBNAME/g" analyze_results.sh
+if [ -f analyze_results.sh ]; then sed -i -e "s/Stage2/$JOBNAME/g" analyze_results.sh ; fi
 echo $PARENT_DIR > pwd.txt
 echo $CELL_ID > cell_id.txt
 

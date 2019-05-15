@@ -146,8 +146,7 @@ class Allactive_Optim(object):
                 cell_metadata['Area'] = metadata_cell['structure_area_abbrev']
                 cell_metadata['Cre_line'] = metadata_cell['transgenic_line']
                 cell_metadata['Layer'] = metadata_cell['structure_layer_name']
-                if props.get('me_type'):
-                    cell_metadata['ME_type'] = props.get('me_type')
+                
 
             api = allensdk.api.queries.rma_api.RmaApi() # Get the model metadata
 
@@ -168,6 +167,7 @@ class Allactive_Optim(object):
                 filename= 'nersc_queue.txt'
                 content = 'premium'
                 utility.save_file(filename,content)
+                props.pop('premium_queue')
 
             # Manually set metadata
 
@@ -177,7 +177,9 @@ class Allactive_Optim(object):
                 for metadata_key in cell_metadata_set.intersection(props_set):
                     cell_metadata[metadata_key] = props[metadata_key]
 
-
+            if props.get('me_type'):
+                cell_metadata['ME_type'] = props.get('me_type')
+            
             utility.save_json(metadata_filename,cell_metadata)
         else:
             cell_metadata = utility.load_json(metadata_filename)

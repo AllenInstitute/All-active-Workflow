@@ -178,9 +178,12 @@ def correct_voltage_feat_std(features_dict,
     feature_key = []
     for feat_name in feature_correct_list:
         for key,val in features_dict.items():
-            if val['soma'][feat_name][1] == 0:
-                feature_stat[feat_name].append(val['soma'][feat_name][0])
-                feature_key.append(key)
+            try:
+                if val['soma'][feat_name][1] == 0:
+                    feature_stat[feat_name].append(val['soma'][feat_name][0])
+                    feature_key.append(key)
+            except:
+                pass
 
     feature_key = list(set(feature_key))
 
