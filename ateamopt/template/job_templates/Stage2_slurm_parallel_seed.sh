@@ -1,44 +1,53 @@
 #!/bin/sh
 
-#PBS -q celltypes
-#PBS -l walltime=24:00:00
-#PBS -l nodes=16:ppn=16
-#PBS -l mem=100g
-#PBS -N Stage2
-#PBS -e /dev/null
-#PBS -o /dev/null
-#PBS -r n
-#PBS -m bea
+#SBATCH -p prod
+#SBATCH -t 12:00:00
+#SBATCH -n 256
+#SBATCH -C cpu|nvme
+#SBATCH -A proj36
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=anin@alleninstitute.org
+#SBATCH -J Stage2
+#SBATCH --signal=B:USR1@60
 
-cd $PBS_O_WORKDIR
+run_dependent_script() {
+func="$1" ; shift
+for sig ; do
+trap "$func $sig" "$sig"
+done
+}
+
+# trap function to relaunch the optimization
+func_trap() {
+sbatch batch_job.sh
+}
+
+# submit launch script upon signal USR1
+run_dependent_script func_trap USR1
 
 set -ex
 
 source activate conda_env
 
-# Relaunch batch job if not finished
-qsub -W depend=afternotok:$PBS_JOBID batch_job.sh
+PWD=$(pwd)
+LOGS=$PWD/logs
+mkdir -p $LOGS
 
 OFFSPRING_SIZE=512
 MAX_NGEN=200
 timeout=300
+seed=1
 
-
-PWD=$(pwd)
-export IPYTHONDIR=$PWD/.ipython
-ipython profile create
-file $IPYTHONDIR
-export IPYTHON_PROFILE=pbs.$PBS_JOBID
+export IPYTHONDIR=${PWD}/.ipython
+export IPYTHON_PROFILE=slurm.${SLURM_JOBID}
 
 ipcontroller --init --ip='*' --nodb --ping=30000 --profile=${IPYTHON_PROFILE} &
-sleep 30
-file $IPYTHONDIR/$IPYTHON_PROFILE
-mpiexec -n 256 ipengine --timeout=3000 --profile=${IPYTHON_PROFILE} &
-sleep 30
+sleep 10
+srun -n 256 --output="${LOGS}/engine_%j_%2t.out" ipengine --timeout=3000 --profile=${IPYTHON_PROFILE} &
+sleep 10
 
 CHECKPOINTS_DIR="checkpoints"
 CHECKPOINTS_BACKUP="checkpoints_backup"
-
 mkdir -p $CHECKPOINTS_DIR
 mkdir -p $CHECKPOINTS_BACKUP
 mkdir -p checkpoints_final
@@ -68,8 +77,9 @@ done
 
 wait $pids
 
+
 # If job finishes in time analyze result
 mv ${CHECKPOINTS_DIR}/* checkpoints_final/
 
-qsub analyze_results.sh
+sbatch analyze_results.sh
 

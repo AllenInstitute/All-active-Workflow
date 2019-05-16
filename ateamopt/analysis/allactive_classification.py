@@ -370,21 +370,70 @@ class Allactive_Classification(object):
         figtitle += ' (n=%s)'%len(data['Cell_id'].unique())
         g.fig.suptitle(figtitle)
         
-        if kwargs.get('xlims'):
-            for i in range(axes.shape[0]):
-                for j in range(axes.shape[1]):
-                    axes[i,j].set_xlim(kwargs['xlims'])
-        if kwargs.get('ylims'):
-             for i in range(axes.shape[0]):
-                for j in range(axes.shape[1]):
-                    axes[i,j].set_ylim(kwargs['ylims'])
+#        if kwargs.get('xlims'):
+#            for i in range(axes.shape[0]):
+#                for j in range(axes.shape[1]):
+#                    axes[i,j].set_xlim(kwargs['xlims'])
+#        if kwargs.get('ylims'):
+#             for i in range(axes.shape[0]):
+#                for j in range(axes.shape[1]):
+#                    axes[i,j].set_ylim(kwargs['ylims'])
         
         g.fig.savefig(figname, dpi= 80,bbox_inches='tight')
         plt.close(g.fig)
         
-        
-        
-        
+    @staticmethod
+    def get_fi_slope(stim_fi, spike_fi):
+        spiking_stim_idx = [ix for ix,rate in enumerate(spike_fi)\
+                               if rate > 0]
+        stim_fi = np.array(stim_fi)[spiking_stim_idx]
+        spike_fi = np.array(spike_fi)[spiking_stim_idx]
+        x = np.array(stim_fi)*1e3
+        y = np.array(spike_fi)
+        A = np.vstack([x, np.ones_like(x)]).T
+        m, _ = np.linalg.lstsq(A, y)[0]
+        return m
+
+    @staticmethod
+    def get_fi_intercept(stim_fi, spike_fi):
+        nonspiking_stim_idx = [ix for ix,rate in enumerate(spike_fi) if rate ==0]
+        non_spiking_stim = [stim for idx,stim in enumerate(stim_fi) \
+                if idx in nonspiking_stim_idx and stim > 0]
+        intercept = non_spiking_stim[-1]
+        return intercept*1e3  
+    
+    
+    def get_fI_prop(self,fi_data_file):
+        if type(fi_data_file) is tuple:
+            cell_id = fi_data_file[0].split('_')[-1].split('.')[0]
+            data_dict = {'Cell_id' : cell_id}
+            for fi_file in fi_data_file:
+                fi_data = utility.load_pickle(fi_file)
+                stim_key = [key for key in fi_data.keys() \
+                                if 'stim' in key][0]
+                freq_key = [key for key in fi_data.keys() \
+                                if 'freq' in key][0]
+                data_type = stim_key.split('_',1)[1]
+                slope_ = self.get_fi_slope(fi_data[stim_key],fi_data[freq_key])
+                icpt_ = self.get_fi_intercept(fi_data[stim_key],fi_data[freq_key])
+                data_dict['slope_{}'.format(data_type)] = slope_
+                data_dict['intercept_{}'.format(data_type)] = icpt_
+        else:
+            fi_data = utility.load_pickle(fi_data_file)
+            cell_id = fi_data_file.split('_')[-1].split('.')[0]
+            data_dict = {'Cell_id' : cell_id}
+            stim_keys = sorted([key for key in fi_data.keys() \
+                                if 'stim' in key])
+            freq_keys = sorted([key for key in fi_data.keys() \
+                                if 'freq' in key])
+            for stim,freq in zip(stim_keys,freq_keys):
+                data_type = stim.split('_',1)[1]
+                slope_ = self.get_fi_slope(fi_data[stim],fi_data[freq])
+                icpt_ = self.get_fi_intercept(fi_data[stim],fi_data[freq])
+                data_dict['slope_{}'.format(data_type)] = slope_
+                data_dict['intercept_{}'.format(data_type)] = icpt_
+                
+        return data_dict
         
         
         
