@@ -89,17 +89,13 @@ def main():
     
     
     # Get the basic ephys features for first round of training
-    filter_rule_func = filter_feat_proto_basic
-    train_features_basic,_,_,train_protocols_basic,_ = \
-        nwb_handler.get_ephys_features(feature_path,ephys_data_path,
-                   stimmap_filename,filter_rule_func,select_dict,
-                   add_fi_kink,feature_reject_stim_type= feature_reject_stim_type,
-                   spiketimes_exp_path=spiketimes_exp_path)
+    train_features_basic,train_protocols_basic = \
+       filter_feat_proto_basic(all_features,all_protocols)
         
     features_basic_path = os.path.join('config/{}'.format(cell_id),
                                        'features_basic.json')
     protocols_basic_path = os.path.join('config/{}'.format(cell_id),
-                                       'features_basic.json')
+                                       'protocols_basic.json')
     
     utility.save_json(features_basic_path,train_features_basic)    
     utility.save_json(protocols_basic_path,train_protocols_basic)  
@@ -162,7 +158,7 @@ def main():
                                   all_features_write_path,
                                   protocols_basic_path,all_protocols_write_path,
                                   release_params,release_param_write_path,
-                                  opt_config_filename = 'config_file_basic.json'
+                                  opt_config_filename = 'config_file_basic.json',
                                   **props)
 
     # Copy the optimization files in the current directory
@@ -220,7 +216,8 @@ def main():
                               partial_match = True)
     
     # Create Analysis job for final stage
-    if any(substring in machine for substring in ['cori','bbp','hpc-login','aws']):
+    if any(substring in machine for substring in ['cori','bbp',\
+                                                  'hpc-login','aws']):
         analysis_job = ChainSubJob(analysis_jobtemplate_path,machine,\
                         script_name = 'analyze_results.sh',conda_env=conda_env)
         analysis_job.script_generator()

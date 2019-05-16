@@ -5,3 +5,4 @@ if [ $MAX_NGEN = 100 ]; then
 else
     mv ${CHECKPOINTS_DIR}/* checkpoints_final/
     qsub analyze_results.sh
+fi

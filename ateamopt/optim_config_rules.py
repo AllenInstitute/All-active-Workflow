@@ -130,15 +130,18 @@ def filter_feat_proto_basic(features_dict,protocols_dict):
     features_dict = correct_voltage_feat_std(features_dict)
     spiking_proto_dict = OrderedDict()
     training_stimtype_reject = ['LongDCSupra','Ramp','Short_Square_Triple','Noise']
-    feature_reject = ['voltage_base','steady_state_voltage','time_to_first_spike',
-                      'ISI_CV','adaptation_index2','depol_block']
+    feature_reject = ['time_to_first_spike','ISI_CV','adaptation_index2',
+                      'depol_block']
     
     for feat_key,feat_val in features_dict.items():
         if any(reject_stim in feat_key for reject_stim in training_stimtype_reject):
             continue
         stim_amp = protocols_dict[feat_key]['stimuli'][0]['amp']
-        if feat_val['soma']['Spikecount'][0] > 0:
-            spiking_proto_dict[feat_key] = stim_amp
+        try:
+            if feat_val['soma']['Spikecount'][0] > 0:
+                spiking_proto_dict[feat_key] = stim_amp
+        except:
+            pass
             
     spiking_proto_sorted = sorted(spiking_proto_dict,
                            key=spiking_proto_dict.__getitem__)
@@ -150,6 +153,9 @@ def filter_feat_proto_basic(features_dict,protocols_dict):
     
     features_dict_filtered[spiking_proto_select]['soma'] =  entries_to_remove(\
                  feature_reject,features_dict_filtered[spiking_proto_select]['soma'])  
+    
+    features_dict_filtered[spiking_proto_select]['soma'].update({\
+                          "check_AISInitiation": [1.0,0.05]})
     
     return features_dict_filtered,protocols_dict_filtered
 
