@@ -7,6 +7,7 @@
         "AP_amplitude_from_voltagebase",
         "ISI_CV",
         "AP_width",
+        "AP_duration_half_width",
         "adaptation_index2",
         "AHP_depth",
         "depol_block",
