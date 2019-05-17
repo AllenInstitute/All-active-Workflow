@@ -143,8 +143,6 @@ def main():
     for script_path in [optimizer_script]:
         shutil.copy(script_path,stage_cwd)
 
-    # Get the conda environment
-    conda_env = sys.argv[-1]
 
     # Create batch jobscript
     machine = cell_metadata['Machine']

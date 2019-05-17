@@ -59,6 +59,7 @@ for seed in {1..4}; do
         --max_ngen=${MAX_NGEN}             \
         --seed=${seed}                     \
         --ipyparallel                      \
+        --config_path config_file.json     \
         --$JOB_STATUS                      \
         --timeout=$timeout                 \
         --checkpoint "${CHECKPOINTS_DIR}/seed${seed}.pkl" \

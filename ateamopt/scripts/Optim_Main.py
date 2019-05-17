@@ -119,7 +119,7 @@ def main():
         
         if os.path.exists(args.checkpoint):
             try:
-                cp = utility.load_pickle(args.checkpoint)
+                _ = utility.load_pickle(args.checkpoint)
             except:
                 logger.debug('Checkpoint file is corrupt! Looking for backup')
                 shutil.copyfile(args.cp_backup,args.checkpoint)
@@ -128,7 +128,8 @@ def main():
                 offspring_size=args.offspring_size,
                 continue_cp=args.continu,
                 cp_filename=args.checkpoint,
-                cp_backup=args.cp_backup)
+                cp_backup=args.cp_backup,
+                cp_backup_frequency=args.cp_backup_frequency)
 
        
 

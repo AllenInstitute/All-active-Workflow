@@ -3,9 +3,11 @@
 set -ex
 
 aibs_datapath='/allen/programs/celltypes/workgroups/humancolumn_ephysmodeling/anin/Optimizations_HPC/Mouse'
+aibs_runpath='/allen/aibs/mat/anin/hpc_trials'
 aibs_metricpath='/allen/aibs/mat/ateam_shared/Mouse_Model_Fit_Metrics'
+cell_complete_path=""
 
-cd $aibs_datapath
+cd $aibs_runpath
 for dir_mouse in */
     do
         if [ -f ${dir_mouse}Stage2/time_metrics_*.csv ]; then
@@ -27,8 +29,20 @@ for dir_mouse in */
             cp -r Stage2/Validation_Responses/fI* $target_path/
             cp -r Stage2/Validation_Responses/AP* $target_path/
 
-            cd $aibs_datapath
+            cell_complete_path+="$path "
+
+            cd $aibs_runpath
         fi
     done
 
 
+for complete_cell in $cell_complete_path
+    do
+        CELL_ID=${complete_cell##*/}
+        if [ ! -d $aibs_datapath/$CELL_ID ]; then
+            mv $complete_cell $aibs_datapath
+            sleep 5
+        else
+            echo "$CELL_ID is optimized twice"
+        fi
+    done
