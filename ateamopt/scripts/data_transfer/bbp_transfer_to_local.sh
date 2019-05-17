@@ -6,6 +6,7 @@ bbp_host=anirban@bbpv1.epfl.ch
 
 scp bbp_datapath.sh $bbp_host:~/
 ssh $bbp_host "sh bbp_datapath.sh" > bbp_log
+ssh $bbp_host "rm bbp_datapath.sh"
 
 for line in $(<bbp_log);
     do

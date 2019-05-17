@@ -128,35 +128,29 @@ def filter_feat_proto_active(features_dict,protocols_dict,all_protocols_dict,
 
 def filter_feat_proto_basic(features_dict,protocols_dict):
     features_dict = correct_voltage_feat_std(features_dict)
-    spiking_proto_dict = OrderedDict()
-    training_stimtype_reject = ['LongDCSupra','Ramp','Short_Square_Triple','Noise']
+    training_stimtype_reject = ['LongDCSupra','Ramp',
+                        'Short_Square_Triple','Noise','DB_check_DC']
     feature_reject = ['time_to_first_spike','ISI_CV','adaptation_index2',
                       'depol_block']
     
+    spiking_proto_select = []
     for feat_key,feat_val in features_dict.items():
         if any(reject_stim in feat_key for reject_stim in training_stimtype_reject):
             continue
-        stim_amp = protocols_dict[feat_key]['stimuli'][0]['amp']
-        try:
-            if feat_val['soma']['Spikecount'][0] > 0:
-                spiking_proto_dict[feat_key] = stim_amp
-        except:
-            pass
+        spiking_proto_select.append(feat_key)
             
-    spiking_proto_sorted = sorted(spiking_proto_dict,
-                           key=spiking_proto_dict.__getitem__)
-    spiking_proto_select = spiking_proto_sorted[-1]
+
+    
     features_dict_filtered = {key:val for key,val in features_dict.items() \
-                              if key == spiking_proto_select}
+                              if key in spiking_proto_select}
     protocols_dict_filtered = {key:val for key,val in protocols_dict.items() \
-                              if key == spiking_proto_select}
+                              if key in spiking_proto_select}
     
-    features_dict_filtered[spiking_proto_select]['soma'] =  entries_to_remove(\
-                 feature_reject,features_dict_filtered[spiking_proto_select]['soma'])  
+    for filtered_key,filtered_val in features_dict_filtered.items():
+        filtered_val['soma'] =  entries_to_remove(\
+                 feature_reject,filtered_val['soma'])  
     
-    features_dict_filtered[spiking_proto_select]['soma'].update({\
-                          "check_AISInitiation": [1.0,0.05]})
-    
+
     return features_dict_filtered,protocols_dict_filtered
 
 def filter_feat_proto_passive(features_dict,protocols_dict,all_protocols_dict,
