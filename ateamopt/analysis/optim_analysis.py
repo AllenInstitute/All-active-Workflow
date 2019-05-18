@@ -93,6 +93,12 @@ class Optim_Analyzer(object):
         obj_list = list(opt.toolbox.map(opt.toolbox.evaluate_response,response_list))
         return obj_list
 
+    def get_response_features(self,response_list):
+        logger.debug('Calculating Features for Responses')
+        opt = self._opt
+        feature_list = list(opt.toolbox.map(opt.toolbox.evaluate_features,response_list))
+        return feature_list
+
     @staticmethod
     def organize_models(param_list, score_list_train):
         param_list_arranged = [x for _,x in sorted(zip(score_list_train,param_list))]
