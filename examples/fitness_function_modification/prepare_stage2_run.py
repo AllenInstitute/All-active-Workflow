@@ -25,7 +25,7 @@ def filter_feat_proto_active(features_dict,protocols_dict,all_protocols_dict,
     spiking_proto_dict = OrderedDict()
     non_spiking_proto_dict =  OrderedDict()
     training_stimtype_reject = ['LongDCSupra','Ramp','Short_Square_Triple','Noise']
-    
+
     for feat_key,feat_val in features_dict.items():
         if any(reject_stim in feat_key for reject_stim in training_stimtype_reject):
             continue
@@ -36,17 +36,17 @@ def filter_feat_proto_active(features_dict,protocols_dict,all_protocols_dict,
             non_spiking_proto_dict[feat_key] = stim_amp
             if 'depol_block' in feat_val['soma'].keys():
                 del feat_val['soma']['depol_block']
-    
-    
+
+
     # Ignoring spiking protocol which are followed by non-spiking stim protocol
-    max_nospiking_amp = max(non_spiking_proto_dict.values()) 
-    f_key_list = []           
+    max_nospiking_amp = max(non_spiking_proto_dict.values())
+    f_key_list = []
     for spike_stim,spike_amp in spiking_proto_dict.items():
         if spike_amp < max_nospiking_amp:
            f_key_list.append(spike_stim)
-    spiking_proto_dict = entries_to_remove(f_key_list,spiking_proto_dict)       
-           
-           
+    spiking_proto_dict = entries_to_remove(f_key_list,spiking_proto_dict)
+
+
     spiking_proto_sorted = sorted(spiking_proto_dict,
                            key=spiking_proto_dict.__getitem__)
     non_spiking_proto_sorted = sorted(non_spiking_proto_dict,
@@ -71,11 +71,7 @@ def filter_feat_proto_active(features_dict,protocols_dict,all_protocols_dict,
         logger.debug('Number of nonspiking protocols requested exceeds data')
         nonspiking_proto_select = non_spiking_proto_sorted
 
-    if add_fi_kink:
-        spiking_proto_select.append(spiking_proto_sorted[0]) # the fist spiking stim
-        nonspiking_proto_select.append(non_spiking_proto_sorted[-1]) # the last non-spiking stim
-        spiking_proto_select = list(set(spiking_proto_select))
-        nonspiking_proto_select = list(set(nonspiking_proto_select))
+
 
     features_dict_filtered = {key:val for key,val in features_dict.items() \
                               if key in spiking_proto_select+
@@ -86,8 +82,8 @@ def filter_feat_proto_active(features_dict,protocols_dict,all_protocols_dict,
     untrained_features_dict = {key:val for key,val in features_dict.items() \
                               if key not in spiking_proto_select+
                                   nonspiking_proto_select}
-        
-                
+
+
     if add_DB_check:
         max_proto_key = spiking_proto_sorted[-1]
         max_amp = max([proto['amp'] for proto in protocols_dict[max_proto_key]['stimuli']])
@@ -175,7 +171,7 @@ def main():
     feature_path = feature_set_repo or feature_default_template
 
     filter_rule_func = filter_feat_proto_active
-    select_dict = {'spike_proto': 2,
+    select_dict = {'spike_proto': 1,
                    'nospike_proto' :0}
     add_fi_kink = True
 
@@ -187,27 +183,27 @@ def main():
                    stimmap_filename,filter_rule_func,select_dict,
                    add_fi_kink,feature_reject_stim_type= feature_reject_stim_type,
                    spiketimes_exp_path=spiketimes_exp_path)
-    
-    
+
+
     features_write_path,untrained_features_write_path,all_features_write_path,\
         protocols_write_path,all_protocols_write_path = \
         nwb_handler.write_ephys_features(train_features,test_features,\
                              all_features,train_protocols,all_protocols)
-    
-    
+
+
     # Get the basic ephys features for first round of training
     train_features_basic,train_protocols_basic = \
        filter_feat_proto_basic(train_features,train_protocols)
-        
+
     features_basic_path = os.path.join('config/{}'.format(cell_id),
                                        'features_basic.json')
     protocols_basic_path = os.path.join('config/{}'.format(cell_id),
                                        'protocols_basic.json')
-    
-    utility.save_json(features_basic_path,train_features_basic)    
-    utility.save_json(protocols_basic_path,train_protocols_basic)  
-    
-    
+
+    utility.save_json(features_basic_path,train_features_basic)
+    utility.save_json(protocols_basic_path,train_protocols_basic)
+
+
     # Create the parameter bounds for the optimization
     model_params_handler = AllActive_Model_Parameters(cell_id)
     morph_path = model_params_handler.swc_path
@@ -271,9 +267,10 @@ def main():
     # Copy the optimization files in the current directory
 
     optimizer_script=utility.locate_script_file('Optim_Main.py')
+    opt_script_fitness_mod = os.path.join(script_repo_dir,'Optim_Main_cont.py')
     stage_cwd = os.getcwd()
 
-    for script_path in [optimizer_script]:
+    for script_path in [optimizer_script,opt_script_fitness_mod]:
         shutil.copy(script_path,stage_cwd)
 
 
@@ -308,7 +305,11 @@ def main():
     config_replace_cmd = 'sed -i -e "s/config_path config_file.json/' \
         'config_path config_file_basic.json/g" {}'.format(batch_job.script_name)
     os.system(config_replace_cmd)
-    
+
+    # timeout_replace_cmd ='sed -i -e "s/timeout=300/' \
+    #     'timeout=150/g" {}'.format(batch_job.script_name)
+    # os.system(timeout_replace_cmd)
+
     # fitness function modification
     ffmod_script = os.path.join(script_repo_dir,'ffmod_script.sh')
     with open(ffmod_script,'r') as templ:
@@ -317,7 +318,7 @@ def main():
     batch_job.adjust_template('analyze_results.sh','',partial_match = True)
     batch_job.adjust_template('mv ${CHECKPOINTS_DIR}/*',ffmod_cmd,
                               partial_match = True)
-    
+
     # Create Analysis job for final stage
     if any(substring in machine for substring in ['cori','bbp',\
                                                   'hpc-login','aws']):
@@ -325,7 +326,7 @@ def main():
                         script_name = 'analyze_results.sh',conda_env=conda_env)
         analysis_job.script_generator()
 
-    
+
 
     # Transfer data to Wasabi only for AWS
     if 'aws' in machine:

@@ -21,7 +21,8 @@ from sklearn.utils.multiclass import unique_labels
 import seaborn as sns
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
-
+from IPython import get_ipython
+get_ipython().run_line_magic('matplotlib', 'inline')
  
 logger = logging.getLogger(__name__)
 
@@ -148,6 +149,21 @@ class Allactive_Classification(object):
             self.save_class_data(perf_metric_df,'performance_metric.csv',
                         'performance_datatype.csv')
         return perf_metric_df
+    
+    def broad_cre_lump_Pyr(self,cre_var):
+        pyr_select_list = ['Scnn1a-Tg3-Cre','Nr5a1-Cre',
+               'Rbp4-Cre_KL100','Ntsr1-Cre_GN220','Cux2-CreERT2']
+        if cre_var.startswith('Htr3a'):
+            return 'Htr3a'
+        elif cre_var.startswith('Pvalb'):
+            return 'Pvalb'
+        elif cre_var.startswith('Sst'):
+            return 'Sst'
+        elif cre_var in pyr_select_list:
+            return 'Pyr'
+        else:
+            return None
+    
     
     def ephys_data(self,save_data=False):
         select_features = ['AHP_depth',
@@ -384,36 +400,50 @@ class Allactive_Classification(object):
         
     @staticmethod
     def get_fi_slope(stim_fi, spike_fi):
-        spiking_stim_idx = [ix for ix,rate in enumerate(spike_fi)\
-                               if rate > 0]
-        stim_fi = np.array(stim_fi)[spiking_stim_idx]
-        spike_fi = np.array(spike_fi)[spiking_stim_idx]
-        x = np.array(stim_fi)*1e3
-        y = np.array(spike_fi)
-        A = np.vstack([x, np.ones_like(x)]).T
-        m, _ = np.linalg.lstsq(A, y)[0]
-        return m
+        try:
+            spiking_stim_idx = [ix for ix,rate in enumerate(spike_fi)\
+                                   if rate > 0]
+            stim_fi = np.array(stim_fi)[spiking_stim_idx]
+            spike_fi = np.array(spike_fi)[spiking_stim_idx]
+            x = np.array(stim_fi)*1e3
+            y = np.array(spike_fi)
+            A = np.vstack([x, np.ones_like(x)]).T
+            m, _ = np.linalg.lstsq(A, y)[0]
+            return m
+        except:
+            return None
+        
 
     @staticmethod
     def get_fi_intercept(stim_fi, spike_fi):
         nonspiking_stim_idx = [ix for ix,rate in enumerate(spike_fi) if rate ==0]
         non_spiking_stim = [stim for idx,stim in enumerate(stim_fi) \
                 if idx in nonspiking_stim_idx and stim > 0]
-        intercept = non_spiking_stim[-1]
-        return intercept*1e3  
+        try:
+            intercept = non_spiking_stim[-1]
+            return intercept*1e3  
+        except:
+            spiking_stim_idx = [ix for ix,rate in enumerate(spike_fi) if rate > 0]
+            spiking_stim = [stim for idx,stim in enumerate(stim_fi) \
+                if idx in spiking_stim_idx and stim > 0]
+            intercept=spiking_stim[0]
+            return intercept*1e3  
     
     
     def get_fI_prop(self,fi_data_file):
         if type(fi_data_file) is tuple:
             cell_id = fi_data_file[0].split('_')[-1].split('.')[0]
             data_dict = {'Cell_id' : cell_id}
+            label_list = {'exp':'exp', 'aa' : 'All_active',
+                           'peri' : 'Perisomatic'}
             for fi_file in fi_data_file:
                 fi_data = utility.load_pickle(fi_file)
+                data_type = fi_file.split('/')[-1].split('_')[1]
+                data_type = label_list[data_type]
                 stim_key = [key for key in fi_data.keys() \
                                 if 'stim' in key][0]
                 freq_key = [key for key in fi_data.keys() \
                                 if 'freq' in key][0]
-                data_type = stim_key.split('_',1)[1]
                 slope_ = self.get_fi_slope(fi_data[stim_key],fi_data[freq_key])
                 icpt_ = self.get_fi_intercept(fi_data[stim_key],fi_data[freq_key])
                 data_dict['slope_{}'.format(data_type)] = slope_
@@ -434,9 +464,215 @@ class Allactive_Classification(object):
                 data_dict['intercept_{}'.format(data_type)] = icpt_
                 
         return data_dict
+    
+    @staticmethod
+    def compare_fI_prop(fi_data_df,figname='fI_metric_comparison.pdf'):
+        utility.create_filepath(figname)
+        slope_exp = fi_data_df.slope_exp.values
+        slope_aa = fi_data_df.slope_All_active.values
+        slope_peri = fi_data_df.loc[fi_data_df['slope_Perisomatic'].\
+                                        notnull(),'slope_Perisomatic'].values
+        slope_exp_peri = fi_data_df.loc[fi_data_df['slope_Perisomatic'].\
+                                        notnull(),'slope_exp'].values
+        
+        max_slope = max(max(slope_exp), max(slope_aa), 
+                            max(slope_peri))+.1                               
+                                        
+        icpt_exp = fi_data_df.intercept_exp.values
+        icpt_aa = fi_data_df.intercept_All_active.values
+        icpt_peri = fi_data_df.loc[fi_data_df['intercept_Perisomatic'].\
+                                   notnull(),'intercept_Perisomatic'].values
+        icpt_exp_peri = fi_data_df.loc[fi_data_df['intercept_Perisomatic'].\
+                                   notnull(),'intercept_exp']
+
+        
+        sns.set(style="darkgrid", font_scale=1)
+        fig,(ax1,ax2) = plt.subplots(1,2,figsize = (6,3.5), dpi = 80)
+        ax1.plot([0,max_slope], [0,max_slope], color = 'k', lw = .5)
+        sc_aa=ax1.scatter(slope_exp, slope_aa, color = 'b', 
+                    s = 50, alpha = 0.5, lw = 0,label='All-active')
+        sc_peri=ax1.scatter(slope_exp_peri, slope_peri, color = 'r', 
+                    s = 50, alpha = 0.5, lw = 0,label='Perisomatic')
+
+        ax1.set_xlabel('$Hz \:pA^{-1}$')
+        ax1.set_ylabel('$Hz \:pA^{-1}$')
+        
+        max_intercept = max(max(icpt_exp), max(icpt_aa), 
+                            max(icpt_peri))+10
+        ax2.plot([0,max_intercept], [0,max_intercept], color = 'k', lw = .5)
+        ax2.scatter(icpt_exp, icpt_aa, color = 'b', 
+                    s = 50, alpha = 0.5, lw = 0)
+        ax2.scatter(icpt_exp_peri, icpt_peri, color = 'r',
+                    s = 50, alpha = 0.5, lw = 0)
+        
+        ax2.set_xlabel('$I_{inj} \:(pA)$')
+        ax2.set_ylabel('$I_{inj} \:(pA)$')
+        
+        handles = [sc_aa,sc_peri]
+        labels = [h.get_label() for h in handles]
+        fig.legend(handles = handles, labels=labels, \
+                        loc = 'lower center', ncol=2)
+        
+        fig.tight_layout(rect=[0, 0.05, 1, 0.95])
+        fig.savefig(figname,bbox_inches = 'tight')
+        plt.close(fig)
+    
+    def plot_fi_curve(self,fi_curve_filelist,data_df,figname='fi_curve.pdf'):
+        utility.create_filepath(figname)
+        sns.set(style="darkgrid", font_scale=1)
+        fig,ax = plt.subplots(2,3,figsize = (8,6),dpi= 80,sharey='row')
+        l_exp,l_aa,l_peri = [],[],[]
+        for fi_data_file in fi_curve_filelist:
+            if type(fi_data_file) is tuple:
+                col_list = {'exp':'k', 'aa' : 'b', 'peri' : 'r'}
+                column_list = {'exp':0, 'aa' : 1, 'peri' : 2}
+                label_list = {'exp':'Experiment', 'aa' : 'All-active', 'peri' : 'Perisomatic'}
+                cell_id = fi_data_file[0].split('_')[-1].split('.')[0]
+                cell_type = self.get_celltype(cell_id,data_df) 
+                if cell_type == 'unknown':
+                    continue
+                row_idx = 0 if cell_type == 'exc' else 1 
+                for fi_file in fi_data_file:
+                    fi_data = utility.load_pickle(fi_file)
+                    data_type = fi_file.split('/')[-1].split('_')[1]
+                    stim_key = [key for key in fi_data.keys() \
+                                    if 'stim' in key][0]
+                    freq_key = [key for key in fi_data.keys() \
+                                    if 'freq' in key][0]
+                    column_idx = column_list[data_type]
+                    l, = ax[row_idx,column_idx].plot(fi_data[stim_key],\
+                           fi_data[freq_key], color=col_list[data_type], 
+                              alpha = 0.5,label=label_list[data_type])
+                            
+                    if data_type == 'exp':
+                        l_exp.append(l)
+                    elif data_type == 'aa':
+                        l_aa.append(l)
+                    else:
+                        l_peri.append(l)
+                                
+
+            else:
+                fi_data = utility.load_pickle(fi_data_file)
+                col_list = {'exp':'k', 'All_active' : 'b',
+                            'Perisomatic' : 'r'}
+                column_list = {'exp':0, 'All_active' : 1, 'Perisomatic' : 2}
+                cell_id = fi_data_file.split('_')[-1].split('.')[0]
+                cell_type = self.get_celltype(cell_id,data_df) 
+                if cell_type == 'unknown':
+                    continue
+                row_idx = 0 if cell_type == 'exc' else 1 
+                stim_keys = sorted([key for key in fi_data.keys() \
+                                if 'stim' in key])
+                freq_keys = sorted([key for key in fi_data.keys() \
+                                if 'freq' in key])
+                for stim,freq in zip(stim_keys,freq_keys):
+                    data_type = stim.split('_',1)[1]
+                    column_idx = column_list[data_type]
+                    ax[row_idx,column_idx].plot(fi_data[stim],fi_data[freq],
+                      color=col_list[data_type], alpha = 0.5)
+                    
         
         
+        handles = [l_exp[0],l_aa[0],l_peri[0]]
+        labels = [h.get_label() for h in handles]
+        fig.legend(handles = handles, labels=labels, \
+                        loc = 'lower center', ncol=3)
+        fig.tight_layout(rect=[0, 0.05, 1, 0.95])
+        fig.savefig(figname,dpi=80,bbox_inches='tight')
+        plt.close(fig)
+
+            
+
+     
+    @staticmethod
+    def get_celltype(cell_id,data_df):
+        cell_type_data = data_df.loc[(data_df.Cell_id == cell_id) &\
+                   (data_df.hof_index == 0),                  
+                 ['me_type','ephys_cluster','Dendrite_type']].reset_index()
+        me_type = cell_type_data.at[0,'me_type']
+        e_type = cell_type_data.at[0,'ephys_cluster'] 
+        dend_type = cell_type_data.at[0,'Dendrite_type']
+        try:
+            one_word_type = me_type+'.'+ e_type+'.'+ dend_type
+        
+            if 'Exc' in one_word_type:
+                return 'exc'
+            elif 'Inh' in one_word_type:
+                return 'inh'                     
+            elif '.spiny' in one_word_type:
+                return 'exc'
+            elif '.spiny' in one_word_type:
+                return 'inh'
+            else:
+                return 'unknown'
+        except:
+            return 'unknown'
+    
+    def plot_AP_shape(self,AP_shape_filelist,data_df,figname='AP_shape.pdf'):
+        utility.create_filepath(figname)
+        sns.set(style="darkgrid", font_scale=1)
+        fig,ax = plt.subplots(2,3,figsize = (8,6),dpi= 80, sharey='row')
+        l_exp,l_aa,l_peri = [],[],[]
+        
+        for AP_shape_file in AP_shape_filelist:
+            if type(AP_shape_file) is tuple:
+                col_list = {'exp':'k', 'aa' : 'b', 'peri' : 'r'}
+                column_list = {'exp':0, 'aa' : 1, 'peri' : 2}
+                label_list = {'exp':'Experiment', 'aa' : 'All-active', 'peri' : 'Perisomatic'}
+                cell_id = AP_shape_file[0].split('_')[-1].split('.')[0]
+                cell_type = self.get_celltype(cell_id,data_df) 
+                if cell_type == 'unknown':
+                    continue
+                row_idx = 0 if cell_type == 'exc' else 1 
+                for file_ in AP_shape_file:
+                    AP_data = utility.load_pickle(file_)
+                    time_data = AP_data['time']
+                    data_type = file_.split('/')[-1].split('_')[2]
+                    for key,val in AP_data.items():
+                        if 'time' not in key:              
+                            spike_shape_data = val
+                            column_idx = column_list[data_type]
+                            l, = ax[row_idx,column_idx].plot(time_data,\
+                              spike_shape_data, color=col_list[data_type], 
+                              alpha = 0.5,label=label_list[data_type])
+                            
+                            if data_type == 'exp':
+                                l_exp.append(l)
+                            elif data_type == 'aa':
+                                l_aa.append(l)
+                            else:
+                                l_peri.append(l)
+                                
+
+            else:
+                AP_data = utility.load_pickle(AP_shape_file)
+                col_list = {'exp':'k', 'All_active' : 'b',
+                            'Perisomatic' : 'r'}
+                column_list = {'exp':0, 'All_active' : 1, 'Perisomatic' : 2}
+                cell_id = AP_shape_file.split('_')[-1].split('.')[0]
+                cell_type = self.get_celltype(cell_id,data_df) 
+                if cell_type == 'unknown':
+                    continue
+                row_idx = 0 if cell_type == 'exc' else 1 
+                stim_names = sorted(list(set([key.split('_')[0]+'_'+key.split('_')[1]\
+                              for key in AP_data.keys()])))
+                for stim_name in stim_names:
+                    time_data = AP_data[stim_name+'_time']
+                    for data_type in col_list.keys():
+                        try:
+                            spike_shape_data = AP_data[stim_name+'_'+data_type]
+                            column_idx = column_list[data_type]
+                            ax[row_idx,column_idx].plot(time_data,\
+                              spike_shape_data, color=col_list[data_type], alpha = 0.5)
+                        except:
+                            pass
         
         
-        
-        
+        handles = [l_exp[0],l_aa[0],l_peri[0]]
+        labels = [h.get_label() for h in handles]
+        fig.legend(handles = handles, labels=labels, \
+                        loc = 'lower center', ncol=3)
+        fig.tight_layout(rect=[0, 0.05, 1, 0.95])
+        fig.savefig(figname,dpi=80,bbox_inches='tight')
+        plt.close(fig)
