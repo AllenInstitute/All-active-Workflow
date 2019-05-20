@@ -6,6 +6,8 @@ Creating the code base for All-active Model generation and analysis written on t
 #### Launching optimization jobs
 * AIBS hpc
 ```sh
+$ cd /allen/aibs/mat/ateam_shared/optimization_software
+$ sh add_shared_conda.sh
 $ source activate ateam_opt
 $ launch_optimjob --help # Look at the options
 $ launch_optimjob --cell_id xyz --ext_scripts /allen/aibs/mat/anin/software/All-active-Workflow/examples/optim_scripts 

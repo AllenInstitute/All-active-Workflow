@@ -107,10 +107,11 @@ def main():
     hof_responses_filename = 'analysis_params/hof_response_all.pkl'
     obj_list_train_filename = 'analysis_params/hof_obj_train.pkl'
     obj_list_all_filename = 'analysis_params/hof_obj_all.pkl'
+    feat_list_all_filename = 'analysis_params/hof_features_all.pkl'
     obj_list_untrain_filename = 'analysis_params/hof_obj_untrain.pkl'
     seed_indices_filename = 'analysis_params/seed_indices.pkl'
 
-    score_list_unordered_filename = 'analysis_params/score_list_unordered.pkl'
+    score_list_train_filename = 'analysis_params/score_list_train.pkl'
     
     # Response for the entire hall of fame not arranged
     hof_response_list = analysis_handler.get_model_responses(hof_model_params,
@@ -119,14 +120,13 @@ def main():
     
     # Sort everything with respect to training error
     
-    
-    if not os.path.exists(score_list_unordered_filename):
+    if not os.path.exists(score_list_train_filename):
         score_list_train = [np.sum(list(obj_dict_train.values())) \
                         for obj_dict_train in obj_list_train]
-        utility.create_filepath(score_list_unordered_filename)
-        utility.save_pickle(score_list_unordered_filename, score_list_train)
+        utility.create_filepath(score_list_train_filename)
+        utility.save_pickle(score_list_train_filename, score_list_train)
     else:
-        score_list_train = utility.load_pickle(score_list_unordered_filename)    
+        score_list_train = utility.load_pickle(score_list_train_filename)    
     
     if not os.path.exists(seed_indices_filename):    
         seed_indices_sorted = analysis_handler.organize_models(seed_indices,
@@ -144,6 +144,13 @@ def main():
         obj_list_gen_sorted = analysis_handler.organize_models(obj_list_gen,
                                                                 score_list_train)
         utility.save_pickle(obj_list_all_filename, obj_list_gen_sorted)
+        
+    if not os.path.exists(feat_list_all_filename):
+        analysis_handler._opt = opt_gen
+        feat_list_gen = analysis_handler.get_response_features(hof_response_list)
+        feat_list_gen_sorted = analysis_handler.organize_models(feat_list_gen,
+                                                                score_list_train)
+        utility.save_pickle(feat_list_all_filename, feat_list_gen_sorted)
     
     if not os.path.exists(obj_list_untrain_filename):    
         analysis_handler._opt = opt_untrain
@@ -166,13 +173,15 @@ def main():
     # Save the sorted hall of fame output in .pkl
     hof_model_params_sorted = analysis_handler.save_hof_output_params(hof_model_params,\
                                               hof_params_filename,score_list_train)
-    
-
     # Save the entire hall of fame parameters
     for i,hof_param in enumerate(hof_model_params_sorted):
         aibs_params_modelname = 'fitted_params/hof_param_%s_%s.json'%(cell_id,i)
         analysis_handler.save_params_aibs_format(aibs_params_modelname,
                                     hof_param,expand_params = True)
+
+    # Now save the sorted score
+    utility.save_pickle(score_list_train_filename, sorted(score_list_train)) 
+
 
     GA_evol_path = 'analysis_params/GA_evolution_params.pkl'
     analysis_handler.save_GA_evolultion_info(GA_evol_path)
@@ -182,7 +191,7 @@ def main():
 
     if release_param_write_path:
         eval_handler_release = Bpopt_Evaluator(all_protocols_write_path,
-                                   features_write_path,
+                                   all_feature_path,
                                    morph_path, release_param_write_path,
                                    mech_release_write_path,
                                    stub_axon = False,
@@ -196,6 +205,16 @@ def main():
 
     resp_release_filename = './resp_release.txt'
     analysis_handler.get_release_responses(opt_release,resp_release_filename)
+
+    resp_release_aa = utility.load_pickle(resp_release_filename)[0]
+    
+    try:
+        features_release_aa = opt_release.evaluator.fitness_calculator.\
+                        calculate_features(resp_release_aa)        
+        features_aa_filename = 'Validation_Responses/Features_released_aa_%s.pkl'%cell_id
+        utility.save_pickle(features_aa_filename,features_release_aa)
+    except:
+        pass
 
     stim_mapfile = 'preprocessed/StimMapReps.csv'
     analysis_write_path = '%s_Stage2.pdf'%cell_id
@@ -227,7 +246,7 @@ def main():
         peri_param_write_path = opt_config['peri_parameters']
         peri_mech_write_path = opt_config['peri_mechanism']
         eval_handler_peri = Bpopt_Evaluator(all_protocols_write_path,
-                                   features_write_path,
+                                   all_feature_path,
                                    morph_path, peri_param_write_path,
                                    peri_mech_write_path,
                                    timed_evaluation = False)
@@ -236,6 +255,11 @@ def main():
                             evaluator=evaluator_peri)
         model_type = 'Perisomatic'
         analysis_handler.get_release_responses(opt_peri,resp_peri_filename)
+        resp_peri = utility.load_pickle(resp_peri_filename)[0]
+        features_peri = opt_peri.evaluator.fitness_calculator.calculate_features(resp_peri)
+        features_peri_filename = 'Validation_Responses/Features_peri_%s.pkl'%cell_id
+        utility.save_pickle(features_peri_filename,features_peri)
+        
         pdf_pages= analysis_handler.plot_grid_Response(resp_filename,
                                         resp_peri_filename,
                                         stim_mapfile,pdf_pages,resp_comparison = model_type)

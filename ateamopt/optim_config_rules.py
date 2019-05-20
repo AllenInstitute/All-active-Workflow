@@ -150,7 +150,8 @@ def filter_feat_proto_basic(features_dict,protocols_dict):
         filtered_val['soma'] =  entries_to_remove(\
                  feature_reject,filtered_val['soma'])  
     
-
+    features_dict_filtered = {key:val for key,val in \
+                      features_dict_filtered.items() if bool(val['soma'])}
     return features_dict_filtered,protocols_dict_filtered
 
 def filter_feat_proto_passive(features_dict,protocols_dict,all_protocols_dict,
