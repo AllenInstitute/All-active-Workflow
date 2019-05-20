@@ -207,10 +207,14 @@ def main():
     analysis_handler.get_release_responses(opt_release,resp_release_filename)
 
     resp_release_aa = utility.load_pickle(resp_release_filename)[0]
-    features_release_aa = opt_release.evaluator.fitness_calculator.\
-                    calculate_features(resp_release_aa)
-    features_aa_filename = 'Validation_Responses/Features_released_aa_%s.pkl'%cell_id
-    utility.save_pickle(features_aa_filename,features_release_aa)
+    
+    try:
+        features_release_aa = opt_release.evaluator.fitness_calculator.\
+                        calculate_features(resp_release_aa)        
+        features_aa_filename = 'Validation_Responses/Features_released_aa_%s.pkl'%cell_id
+        utility.save_pickle(features_aa_filename,features_release_aa)
+    except:
+        pass
 
     stim_mapfile = 'preprocessed/StimMapReps.csv'
     analysis_write_path = '%s_Stage2.pdf'%cell_id
