@@ -13,6 +13,8 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.pipeline import Pipeline
 from sklearn.manifold import TSNE
 from sklearn.svm import SVC
+from sklearn.ensemble import RandomForestClassifier           
+
 from sklearn import preprocessing
 from sklearn.metrics import classification_report,\
                  confusion_matrix,accuracy_score  
@@ -21,6 +23,7 @@ from sklearn.utils.multiclass import unique_labels
 import seaborn as sns
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
+
 from IPython import get_ipython
 get_ipython().run_line_magic('matplotlib', 'inline')
  
@@ -152,7 +155,7 @@ class Allactive_Classification(object):
     
     def broad_cre_lump_Pyr(self,cre_var):
         pyr_select_list = ['Scnn1a-Tg3-Cre','Nr5a1-Cre',
-               'Rbp4-Cre_KL100','Ntsr1-Cre_GN220','Cux2-CreERT2']
+               'Rbp4-Cre_KL100','Rorb-IRES2-Cre','Cux2-CreERT2']
         if cre_var.startswith('Htr3a'):
             return 'Htr3a'
         elif cre_var.startswith('Pvalb'):
@@ -332,6 +335,74 @@ class Allactive_Classification(object):
             plt.close(fig)
         return score,confusion_matrix_svm,svm_report,df_conf_svm
             
+    
+    @staticmethod
+    def RF_classifier(X_df,y_df,feature_fields,target_field,
+                  plot_confusion_mat=False,conf_mat_figname=None,
+                  plot_feat_imp=False,feat_imp_figname=None):
+        clf = RandomForestClassifier(n_estimators=100, random_state=0)
+        rf_pipeline = Pipeline([('scaler', StandardScaler()),
+                                  ('random_forest', clf)])
+        le = preprocessing.LabelEncoder()   
+        y_df['label_encoder']= le.fit_transform(y_df[target_field])
+        
+        X_data = X_df.loc[:,feature_fields].values
+        y_data = y_df['label_encoder'].values
+        
+        X_train, X_test, y_train, y_test = train_test_split(X_data, y_data,\
+                        test_size=0.3, 
+                        stratify=y_data, random_state=0)
+        rf_pipeline.fit(X_train, y_train)
+        y_pred_test = rf_pipeline.predict(X_test)
+        
+        confusion_matrix_rf = confusion_matrix(y_test, y_pred_test)
+        rf_report = classification_report(y_test, y_pred_test)
+        score = accuracy_score(y_test, y_pred_test)*100
+        classes = le.inverse_transform(unique_labels(y_test, \
+                                        y_pred_test))
+        df_conf_rf= pd.DataFrame(confusion_matrix_rf, classes,
+                  classes)
+        df_conf_rf=df_conf_rf.div(df_conf_rf.sum(axis=1),axis=0)
+        
+        feature_imp = pd.Series(rf_pipeline.named_steps['random_forest'].feature_importances_,
+                        index=feature_fields).sort_values(ascending=False)
+        feature_fields_sorted = feature_imp.index.values
+        feature_dict = {'importance': [], 'param_name' : []}
+        for tree in rf_pipeline.named_steps['random_forest'].estimators_:
+            for i, param_name_ in enumerate(feature_fields_sorted):
+                sorted_idx = np.where(np.array(feature_fields) == param_name_)[0][0]
+                feature_dict['importance'].append(tree.feature_importances_[sorted_idx])
+                feature_dict['param_name'].append(param_name_)
+        feature_imp_df = pd.DataFrame(feature_dict)
+        
+        
+        if plot_confusion_mat:
+            fig = plt.figure()
+            sns.set(style="darkgrid", font_scale=1)
+            cmap = sns.cubehelix_palette(light=1, as_cmap=True)
+            ax = sns.heatmap(df_conf_rf,cmap=cmap,alpha=0.8)
+            fig.suptitle('Accuracy: %s %%'%score, fontsize = 14)
+            ax.set_ylabel('True Label')
+            ax.set_xlabel('Predicted Label')
+            fig.savefig(conf_mat_figname,bbox_inches='tight')
+            plt.close(fig)
+        
+        
+        if plot_feat_imp:
+            fig,ax = plt.subplots(1, figsize = (8,6))
+            ax = sns.barplot(x='param_name', y='importance', data= feature_imp_df,
+                            order =feature_fields_sorted, ax = ax)
+            ax.set_ylabel('Feature Importance Score')
+#            ax.set_xlabel('')
+            ax.set_xticklabels(labels=feature_fields_sorted,
+                               rotation=90,ha = 'center')
+            fig.savefig(feat_imp_figname,bbox_inches='tight')
+            plt.close(fig)
+        
+        
+        return score,confusion_matrix_rf,rf_report,df_conf_rf,\
+                feature_imp_df
+        
     
     @staticmethod
     def tsne_embedding(X_df,y_df,feature_fields,

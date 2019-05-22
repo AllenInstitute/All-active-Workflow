@@ -15,8 +15,13 @@ for line in $(<aws_log);
         starcluster get ani_cluster $aws_path/Stage2/*.pdf $CELL_ID/
         starcluster get ani_cluster $aws_path/Stage2/fitted_params $CELL_ID/
         starcluster get ani_cluster $aws_path/Stage2/config $CELL_ID/
+        starcluster get ani_cluster $aws_path/Stage2/analysis_params/hof_features_all.pkl $CELL_ID/
+        starcluster get ani_cluster $aws_path/Stage2/analysis_params/hof_obj*.pkl $CELL_ID/
+        starcluster get ani_cluster $aws_path/Stage2/analysis_params/score_list_train.pkl $CELL_ID/
+        starcluster get ani_cluster $aws_path/Stage2/analysis_params/seed_indices.pkl $CELL_ID/
         starcluster get ani_cluster $aws_path/Stage2/Validation_Responses/exp* $CELL_ID/
         starcluster get ani_cluster $aws_path/Stage2/Validation_Responses/fitness* $CELL_ID/
+        starcluster get ani_cluster $aws_path/Stage2/Validation_Responses/Features* $CELL_ID/
         starcluster get ani_cluster $aws_path/cell_metadata* $CELL_ID/
         starcluster get ani_cluster $aws_path/morph_stats* $CELL_ID/
         starcluster get ani_cluster $aws_path/Stage2/time_metrics* $CELL_ID/

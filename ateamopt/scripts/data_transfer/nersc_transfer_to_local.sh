@@ -17,8 +17,13 @@ for line in $(<nersc_log);
         scp -i /local1/nersc_ssh/mynersc -r $nersc_path/Stage2/*.pdf $CELL_ID/
         scp -i /local1/nersc_ssh/mynersc -r $nersc_path/Stage2/fitted_params $CELL_ID/
         scp -i /local1/nersc_ssh/mynersc -r $nersc_path/Stage2/config $CELL_ID/
+        scp -i /local1/nersc_ssh/mynersc -r $nersc_path/Stage2/analysis_params/hof_features_all.pkl $CELL_ID/
+        scp -i /local1/nersc_ssh/mynersc -r $nersc_path/Stage2/analysis_params/hof_obj*.pkl $CELL_ID/
+        scp -i /local1/nersc_ssh/mynersc -r $nersc_path/Stage2/analysis_params/score_list_train.pkl $CELL_ID/
+        scp -i /local1/nersc_ssh/mynersc -r $nersc_path/Stage2/analysis_params/seed_indices.pkl $CELL_ID/
         scp -i /local1/nersc_ssh/mynersc -r $nersc_path/Stage2/Validation_Responses/exp* $CELL_ID/
         scp -i /local1/nersc_ssh/mynersc -r $nersc_path/Stage2/Validation_Responses/fitness* $CELL_ID/
+        scp -i /local1/nersc_ssh/mynersc -r $nersc_path/Stage2/Validation_Responses/Features* $CELL_ID/
         scp -i /local1/nersc_ssh/mynersc -r $nersc_path/cell_metadata* $CELL_ID/
         scp -i /local1/nersc_ssh/mynersc -r $nersc_path/morph_stats* $CELL_ID/
         scp -i /local1/nersc_ssh/mynersc -r $nersc_path/Stage2/time_metrics* $CELL_ID/

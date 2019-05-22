@@ -17,6 +17,11 @@ for line in $(<aws_log);
                 aws s3 cp ${s3_mouse_bucket}${CELL_ID}Stage2/ $CELL_ID --exclude "*" --include "*.pdf" --recursive --profile wasabi
                 aws s3 cp ${s3_mouse_bucket}${CELL_ID}Stage2/fitted_params ${CELL_ID}fitted_params --recursive --profile wasabi
                 aws s3 cp ${s3_mouse_bucket}${CELL_ID}Stage2/config $CELL_ID/config --recursive --profile wasabi
+                aws s3 cp ${s3_mouse_bucket}${CELL_ID}Stage2/analysis_params/hof_features_all.pkl ${CELL_ID} --profile wasabi
+                aws s3 cp ${s3_mouse_bucket}${CELL_ID}Stage2/analysis_params/ ${CELL_ID} --exclude "*" --include "hof_obj*" --recursive --profile wasabi
+                aws s3 cp ${s3_mouse_bucket}${CELL_ID}Stage2/analysis_params/score_list_train.pkl ${CELL_ID} --profile wasabi
+                aws s3 cp ${s3_mouse_bucket}${CELL_ID}Stage2/analysis_params/seed_indices.pkl ${CELL_ID} --profile wasabi
+                aws s3 cp ${s3_mouse_bucket}${CELL_ID}Stage2/Validation_Responses/ ${CELL_ID} --exclude "*" --include "Features*" --recursive --profile wasabi
                 aws s3 cp ${s3_mouse_bucket}${CELL_ID}Stage2/Validation_Responses/ ${CELL_ID} --exclude "*" --include "AP_shape*" --recursive --profile wasabi
                 aws s3 cp ${s3_mouse_bucket}${CELL_ID}Stage2/Validation_Responses/ ${CELL_ID} --exclude "*" --include "fI*" --recursive --profile wasabi
                 aws s3 cp ${s3_mouse_bucket}${CELL_ID}Stage2/Validation_Responses/ ${CELL_ID} --exclude "*" --include "exp*" --recursive --profile wasabi

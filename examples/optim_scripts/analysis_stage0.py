@@ -67,8 +67,7 @@ def main():
                                    features_write_path,
                                    morph_path, release_param_write_path,
                                    mech_release_write_path,
-                                   do_replace_axon = False,
-                                   do_replace_axon_swc = True,
+                                   do_replace_axon = True,
                                    timed_evaluation = False)
         evaluator_release = eval_handler_release.create_evaluator()
         opt_release = bpopt.optimisations.DEAPOptimisation(
