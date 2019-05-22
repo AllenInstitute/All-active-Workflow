@@ -4,6 +4,7 @@ set -ex
 
 aws_mouse=/aibs_data
 
+# To be used with starcluster
 # Mouse cells
 cd $aws_mouse
 for dir_mouse in */
