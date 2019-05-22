@@ -21,8 +21,13 @@ for dir_mouse in */
             cp -r Stage2/*.pdf $target_path/
             cp -r Stage2/fitted_params $target_path/
             cp -r Stage2/config $target_path/
+            cp -r Stage2/analysis_params/hof_features_all.pkl $target_path/
+            cp -r Stage2/analysis_params/hof_obj*.pkl $target_path/
+            cp -r Stage2/analysis_params/score_list_train.pkl $target_path/
+            cp -r Stage2/analysis_params/seed_indices.pkl $target_path/
             cp -r Stage2/Validation_Responses/exp* $target_path/
             cp -r Stage2/Validation_Responses/fitness* $target_path/
+            cp -r Stage2/Validation_Responses/Features* $target_path/
             cp -r cell_metadata* $target_path/
             cp -r morph_stats* $target_path/
             cp -r Stage2/time_metrics* $target_path/

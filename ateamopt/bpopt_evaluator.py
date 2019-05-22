@@ -14,8 +14,7 @@ class Bpopt_Evaluator(object):
                  morph_path, param_path, mech_path,ephys_dir='preprocessed',
                  **props):
         """
-        do_replace_axon : stub axon (60 micron, uniform 1 micron dia)
-        do_replace_axon_swc : bluepyopt axon replace code, diameter taken
+        do_replace_axon : bluepyopt axon replace code, diameter taken
         from swc file
         """
         self.morph_path = morph_path

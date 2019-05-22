@@ -137,10 +137,16 @@ def main():
 
     # Copy the optimization files in the current directory
 
-    optimizer_script=utility.locate_script_file('Optim_Main.py')
+    optimizer_script='Optim_Main.py'
+    optimizer_script_repo = os.path.abspath(os.path.join(script_repo_dir,
+                                    optimizer_script))
+    optimizer_script_repo = optimizer_script_repo if os.path.exists(optimizer_script_repo)\
+                                    else None
+    optimizer_script_default=utility.locate_script_file('Optim_Main.py')
+    optimizer_script_path = optimizer_script_repo or optimizer_script_default
+    
     stage_cwd = os.getcwd()
-
-    for script_path in [optimizer_script]:
+    for script_path in [optimizer_script_path]:
         shutil.copy(script_path,stage_cwd)
 
 
