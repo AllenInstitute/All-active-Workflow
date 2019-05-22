@@ -27,7 +27,9 @@ for dir_mouse in */
             cp -r Stage2/analysis_params/seed_indices.pkl $target_path/
             cp -r Stage2/Validation_Responses/exp* $target_path/
             cp -r Stage2/Validation_Responses/fitness* $target_path/
-            cp -r Stage2/Validation_Responses/Features* $target_path/
+            if [ -f Stage2/Validation_Responses/Features*.pkl ]; then
+                cp -r Stage2/Validation_Responses/Features* $target_path/
+            fi
             cp -r cell_metadata* $target_path/
             cp -r morph_stats* $target_path/
             cp -r Stage2/time_metrics* $target_path/
