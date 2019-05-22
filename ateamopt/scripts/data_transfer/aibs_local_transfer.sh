@@ -25,16 +25,12 @@ for dir_mouse in */
             cp -r Stage2/analysis_params/hof_obj*.pkl $target_path/
             cp -r Stage2/analysis_params/score_list_train.pkl $target_path/
             cp -r Stage2/analysis_params/seed_indices.pkl $target_path/
-            cp -r Stage2/Validation_Responses/exp* $target_path/
+            cp -r Stage2/Validation_Responses/exp*.csv $target_path/
             cp -r Stage2/Validation_Responses/fitness* $target_path/
-            if [ -f Stage2/Validation_Responses/Features*.pkl ]; then
-                cp -r Stage2/Validation_Responses/Features* $target_path/
-            fi
+            cp -r Stage2/Validation_Responses/*.pkl $target_path/
             cp -r cell_metadata* $target_path/
             cp -r morph_stats* $target_path/
             cp -r Stage2/time_metrics* $target_path/
-            cp -r Stage2/Validation_Responses/fI* $target_path/
-            cp -r Stage2/Validation_Responses/AP* $target_path/
 
             cell_complete_path+="$path "
 
