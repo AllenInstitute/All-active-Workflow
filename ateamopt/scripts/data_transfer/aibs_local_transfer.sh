@@ -2,6 +2,7 @@
 
 set -ex
 
+# Can be run from any location on CentOS
 aibs_datapath='/allen/programs/celltypes/workgroups/humancolumn_ephysmodeling/anin/Optimizations_HPC/Mouse'
 aibs_runpath='/allen/aibs/mat/anin/hpc_trials'
 aibs_metricpath='/allen/aibs/mat/ateam_shared/Mouse_Model_Fit_Metrics'

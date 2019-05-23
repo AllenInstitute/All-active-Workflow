@@ -171,7 +171,8 @@ class Allactive_Classification(object):
     def ephys_data(self,save_data=False):
         select_features = ['AHP_depth',
                        'AP_amplitude_from_voltagebase',
-                       'AP_width']
+                       'AP_width',
+                       'voltage_base']
         ephys_file_list=self.ephys_file_list
         features_list = []
         for ephys_file_ in ephys_file_list:
@@ -567,6 +568,7 @@ class Allactive_Classification(object):
 
         ax1.set_xlabel('$Hz \:pA^{-1}$')
         ax1.set_ylabel('$Hz \:pA^{-1}$')
+        ax1.set_title('fi slope')
         
         max_intercept = max(max(icpt_exp), max(icpt_aa), 
                             max(icpt_peri))+10
@@ -578,6 +580,7 @@ class Allactive_Classification(object):
         
         ax2.set_xlabel('$I_{inj} \:(pA)$')
         ax2.set_ylabel('$I_{inj} \:(pA)$')
+        ax2.set_title('Rheobase')
         
         handles = [sc_aa,sc_peri]
         labels = [h.get_label() for h in handles]
@@ -747,3 +750,82 @@ class Allactive_Classification(object):
         fig.tight_layout(rect=[0, 0.05, 1, 0.95])
         fig.savefig(figname,dpi=80,bbox_inches='tight')
         plt.close(fig)
+        
+    @staticmethod
+    def compare_AP_prop(AP_data_df,figname='AP_metric_comparison.pdf'):
+        utility.create_filepath(figname)
+        AP_amp_df = AP_data_df.loc[AP_data_df.feature == \
+                           'AP_amplitude_from_voltagebase',]
+        AP_width_df = AP_data_df.loc[AP_data_df.feature == \
+                           'AP_width',]
+        AP_amp_aa = AP_amp_df.loc[AP_amp_df.value_aa.notnull(),
+                                  'value_aa'].values
+        AP_amp_exp_aa = AP_amp_df.loc[AP_amp_df.value_aa.notnull(),\
+                                  'value_exp'].values
+        AP_amp_exp_peri = AP_amp_df.loc[AP_amp_df.value_peri.notnull(),\
+                                  'value_exp'].values
+        
+        AP_amp_peri = AP_amp_df.loc[AP_amp_df.value_peri.notnull(),\
+                                  'value_peri'].values
+        max_AP_amp = max(max(AP_amp_aa), max(AP_amp_exp_aa), max(AP_amp_exp_peri),
+                            max(AP_amp_peri))+10                              
+                                        
+        AP_width_aa = AP_width_df.loc[AP_width_df.value_aa.notnull(),
+                                  'value_aa'].values
+        AP_width_exp_aa = AP_width_df.loc[AP_width_df.value_aa.notnull(),\
+                                  'value_exp'].values
+        AP_width_exp_peri = AP_width_df.loc[AP_width_df.value_peri.notnull(),\
+                                  'value_exp'].values
+        
+        AP_width_peri = AP_width_df.loc[AP_width_df.value_peri.notnull(),\
+                                  'value_peri'].values
+        max_AP_width = max(max(AP_width_aa), max(AP_width_exp_aa), max(AP_width_exp_peri),
+                            max(AP_width_peri))+.1         
+
+        
+        sns.set(style="darkgrid", font_scale=1)
+        fig,(ax1,ax2) = plt.subplots(1,2,figsize = (6,3.5), dpi = 80)
+        ax1.plot([50,max_AP_amp], [50,max_AP_amp], color = 'k', lw = .5)
+        AP_amp_aa=ax1.scatter(AP_amp_exp_aa, AP_amp_aa, color = 'b', 
+                    s = 20, alpha = 0.5, lw = 0,label='All-active')
+        AP_amp_peri= ax1.scatter(AP_amp_exp_peri, AP_amp_peri, color = 'r', 
+                    s = 20, alpha = 0.5, lw = 0,label='Perisomatic')
+
+        ax1.set_xlabel('$mV$')
+        ax1.set_ylabel('$mV$')
+        ax1.set_title('AP amplitude')
+
+        ax2.plot([0,max_AP_width], [0,max_AP_width], color = 'k', lw = .5)
+        ax2.scatter(AP_width_exp_aa, AP_width_aa, color = 'b', 
+                    s = 20, alpha = 0.5, lw = 0)
+        ax2.scatter(AP_width_exp_peri, AP_width_peri, color = 'r',
+                    s = 20, alpha = 0.5, lw = 0)
+        
+        ax2.set_xlabel('$ms$')
+        ax2.set_ylabel('$ms$')
+        ax2.set_title('AP width')
+        
+        handles = [AP_amp_aa,AP_amp_peri]
+        labels = [h.get_label() for h in handles]
+        fig.legend(handles = handles, labels=labels, \
+                        loc = 'lower center', ncol=2)
+        
+        fig.tight_layout(rect=[0, 0.05, 1, 0.95])
+        fig.savefig(figname,bbox_inches = 'tight')
+        plt.close(fig)
+    
+    @staticmethod
+    def exp_features_to_dict(exp_feature_file):
+        exp_feature_dict = utility.load_json(exp_feature_file)
+        cell_id = exp_feature_file.split('/')[-2]
+        final_dict={}
+        for exp_stim,exp_feat_dict in exp_feature_dict.items():
+            for key,val in exp_feat_dict['soma'].items():
+                stim_loc_feat = '{stim}.{loc}.{feat}'.format(stim=exp_stim,
+                                 loc='soma',feat=key)
+                final_dict[stim_loc_feat] = val[0]
+        
+        return (final_dict,cell_id)
+    
+#    def get_AP_features(self,file):
+        
