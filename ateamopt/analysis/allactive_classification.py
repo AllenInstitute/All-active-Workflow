@@ -827,5 +827,4 @@ class Allactive_Classification(object):
         
         return (final_dict,cell_id)
     
-#    def get_AP_features(self,file):
         

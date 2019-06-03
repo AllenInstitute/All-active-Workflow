@@ -200,21 +200,15 @@ def main():
         evaluator_release = eval_handler_release.create_evaluator()
         opt_release = bpopt.optimisations.DEAPOptimisation(
                             evaluator=evaluator_release)
-    else:
-        opt_release = None
-
-    resp_release_filename = './resp_release.txt'
-    analysis_handler.get_release_responses(opt_release,resp_release_filename)
-
-    resp_release_aa = utility.load_pickle(resp_release_filename)[0]
-    
-    try:
+        resp_release_filename = './resp_release.txt'
+        analysis_handler.get_release_responses(opt_release,resp_release_filename)
+        resp_release_aa = utility.load_pickle(resp_release_filename)[0]
         features_release_aa = opt_release.evaluator.fitness_calculator.\
                         calculate_features(resp_release_aa)        
         features_aa_filename = 'Validation_Responses/Features_released_aa_%s.pkl'%cell_id
         utility.save_pickle(features_aa_filename,features_release_aa)
-    except:
-        pass
+    else:
+        resp_release_filename = None
 
     stim_mapfile = 'preprocessed/StimMapReps.csv'
     analysis_write_path = '%s_Stage2.pdf'%cell_id

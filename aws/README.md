@@ -58,6 +58,7 @@ $ starcluster start -c snmo_cluster ani_cluster
 ```sh
 $ starcluster sshmaster ani_cluster
 $ source /home/ubuntu/.bashrc  # Load the paths specified in the ami
+$ source activate ateam        # Activate conda environment 
 $ cp -r /home/ubuntu/.aws ~/   # Copy the aws config files
 ```
 
@@ -68,7 +69,6 @@ $ starcluster put ani_cluster --node node001-7 .aws /root/ # node000 - master no
 ```
 * Submit jobs
 ```sh
-$ starcluster sshmaster ani_cluster
 $ cd $job_directory
 $ qsub jobscript.sh # submit jobs
 $ qstat # show jobqueue
