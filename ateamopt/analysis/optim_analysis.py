@@ -294,17 +294,18 @@ class Optim_Analyzer(object):
 
         opt_config = utility.load_json(opt_config_file)
         train_protocol_path = opt_config['protocols']
-#        released_model = opt_config['released_model']
 
         train_protocols = utility.load_json(train_protocol_path)
 
         opt = self._opt # Optimizer object
 
-        response = utility.load_pickle(response_filename)[0] # response with minimum training error
-        responses_release = utility.load_pickle(response_release_filename)[0]
         logger.debug('Retrieving Optimized and Released Responses')
-
-
+        response = utility.load_pickle(response_filename)[0] # response with minimum training error
+        try:
+            responses_release = utility.load_pickle(response_release_filename)[0]
+        except:
+            logger.debug('No released %s model'%resp_comparison)
+        
         # Saving model response for hof[0]
         if save_model_response:
             utility.create_dirpath(model_response_dir)
@@ -390,7 +391,7 @@ class Optim_Analyzer(object):
                     else: # stolen triblip protocol
                         exp_time,exp_voltage = [],[]
 
-                    l3, = ax_comp[index//n_col,index%n_col].plot(exp_time,
+                    l2, = ax_comp[index//n_col,index%n_col].plot(exp_time,
                                 exp_voltage,
                                 color='black',
                                 linewidth=1,
@@ -399,14 +400,14 @@ class Optim_Analyzer(object):
                     try:
                         responses_release_time = responses_release[name_loc]['time']
                         responses_release_voltage = responses_release[name_loc]['voltage']
-                        l4,=ax_comp[index//n_col,index%n_col].plot(responses_release_time,
+                        l3,=ax_comp[index//n_col,index%n_col].plot(responses_release_time,
                                 responses_release_voltage,
                                 color='r',
                                 linewidth=.1,
                                 label = 'Released %s'%resp_comparison,
                                 alpha = 0.4)
                     except:
-                        logger.debug('No released %s model'%resp_comparison)
+                        pass
                         
                     if index//n_col == n_row-1:
                         ax_comp[index//n_col,index%n_col].set_xlabel('Time (ms)')
@@ -424,10 +425,10 @@ class Optim_Analyzer(object):
                     if index%fig_per_page == 0 or index_plot == all_plots:
                         fig_comp.suptitle('Response Comparisons',fontsize=16)
                         try:
-                            handles = [l1, l3, l4]
+                            handles = [l1, l2, l3]
                             ncol = 3
                         except:
-                             handles = [l1, l3]
+                             handles = [l1, l2]
                              ncol = 2
                         labels = [h.get_label() for h in handles]
                         fig_comp.legend(handles = handles, labels=labels, loc = 'lower center', ncol=ncol)
@@ -448,19 +449,22 @@ class Optim_Analyzer(object):
         # objectives
         opt = self._opt # Optimizer object
         opt_response = utility.load_pickle(response_filename)[0]
-        responses_release =  utility.load_pickle(response_release_filename)[0]
+        if response_release_filename:
+            responses_release =  utility.load_pickle(response_release_filename)[0]
+        else:
+            responses_release = {}
 
         opt_config = utility.load_json(opt_config_file)
         train_protocol_path = opt_config['protocols']
-#        released_model = opt_config['released_model']
         train_protocols = utility.load_json(train_protocol_path)
 
         logger.debug('Calculating Objectives for Optimized and Released Responses')
 
         objectives = opt.evaluator.fitness_calculator.calculate_scores(opt_response)
-        objectives_release = opt.evaluator.fitness_calculator.calculate_scores(responses_release)
-
         objectives = OrderedDict(sorted(objectives.items()))
+        
+        objectives_release = opt.evaluator.fitness_calculator.\
+                                                calculate_scores(responses_release)
         objectives_release = OrderedDict(sorted(objectives_release.items()))
 
         feature_split_names = [name.split('.',1)[-1] for name in objectives.keys()]
