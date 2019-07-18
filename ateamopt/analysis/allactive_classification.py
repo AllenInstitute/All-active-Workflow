@@ -9,12 +9,12 @@ import multiprocessing
 import numpy as np
 import os
 from collections import defaultdict
-from sklearn.preprocessing import StandardScaler   
+from sklearn.preprocessing import StandardScaler,MinMaxScaler   
 from sklearn.pipeline import Pipeline
 from sklearn.manifold import TSNE
 from sklearn.svm import SVC
 from sklearn.ensemble import RandomForestClassifier           
-
+from sklearn.decomposition import PCA
 from sklearn import preprocessing
 from sklearn.metrics import classification_report,\
                  confusion_matrix,accuracy_score  
@@ -23,6 +23,12 @@ from sklearn.utils.multiclass import unique_labels
 import seaborn as sns
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
+from matplotlib.cm import ScalarMappable
+from matplotlib.colors import ListedColormap
+from scipy.stats import iqr
+from umap import UMAP
+from matplotlib.ticker import MaxNLocator
+
 
 from IPython import get_ipython
 get_ipython().run_line_magic('matplotlib', 'inline')
@@ -31,7 +37,7 @@ logger = logging.getLogger(__name__)
 
 marker_list = list(Line2D.markers.keys())[2:-4]
 
-def reformat_legend(axes,sorted_class,color_list):
+def reformat_legend(axes,sorted_class,color_list,marker_size):
     
     all_handles,all_labels,all_colors = [], [], []
     for i in range(axes.shape[0]):
@@ -46,7 +52,7 @@ def reformat_legend(axes,sorted_class,color_list):
     
     dummy_handles = []
     for handle_,label_,color_ in zip(all_handles,all_labels,all_colors):
-        h = plt.scatter([],[],marker = 'o',color = color_,
+        h = plt.scatter([],[],marker = 'o',color = color_,s=marker_size,
                       label = label_)
         dummy_handles.append(h)
     
@@ -57,7 +63,8 @@ class Allactive_Classification(object):
     def __init__(self, param_file_list=None,metadata_file_list=None,
                      model_perf_filelist=None,me_cluster_data=None,
                      sdk_datapath=None,
-                     ephys_file_list = None,
+                     efeature_file_list = None,
+                     protocol_file_list = None,
                      morph_file_list = None,
                      species=None):
         self.species = species
@@ -66,7 +73,8 @@ class Allactive_Classification(object):
         self.sdk_datapath = sdk_datapath
         self.me_cluster_data = me_cluster_data
         self.model_perf_filelist = model_perf_filelist
-        self.ephys_file_list = ephys_file_list
+        self.efeature_file_list = efeature_file_list
+        self.protocol_file_list = protocol_file_list
         self.morph_file_list = morph_file_list
     
     def allactive_param_data(self,repeat_params,save_data=False):
@@ -169,24 +177,56 @@ class Allactive_Classification(object):
     
     
     def ephys_data(self,save_data=False):
-        select_features = ['AHP_depth',
-                       'AP_amplitude_from_voltagebase',
-                       'AP_width',
-                       'voltage_base']
-        ephys_file_list=self.ephys_file_list
-        features_list = []
-        for ephys_file_ in ephys_file_list:
-            cell_id = ephys_file_.split('/')[-2]
-            ephys_features_dict = {'Cell_id':cell_id}
-            feature_dict = utility.load_json(ephys_file_)
-            eFEL_features = self.get_eFEL_features(feature_dict,
-                                               select_features)
-            ephys_features_dict.update(eFEL_features)
-            features_list.append(ephys_features_dict.copy())
-        ephys_features_df = pd.DataFrame(features_list)
+#        select_features = ['AHP_depth',
+#                       'AP_amplitude_from_voltagebase',
+#                       'AP_width',
+#                       'voltage_base']
+        efeature_file_list=sorted(self.efeature_file_list)
+        protocol_file_list = sorted(self.protocol_file_list) 
+#        features_list = []
+#        for efeature_file in efeature_file_list:
+#            cell_id = efeature_file.split('/')[-2]
+#            ephys_features_dict = {'Cell_id':cell_id}
+#            feature_dict = utility.load_json(efeature_file)
+#            eFEL_features = self.get_eFEL_features(feature_dict,
+#                                               select_features)
+#            ephys_features_dict.update(eFEL_features)
+#            features_list.append(ephys_features_dict.copy())
+#        ephys_features_df = pd.DataFrame(features_list)
         
-        return ephys_features_df
         
+        ephys_dict_list = []
+        for proto_file,efeature_file in zip(protocol_file_list,\
+                                            efeature_file_list):
+            cell_id = proto_file.split('/')[-2]
+            proto_dict = utility.load_json(proto_file)
+            proto_dict = {p_key:p_val['stimuli'][0]['amp'] for p_key,p_val\
+                          in proto_dict.items()}
+            sorted_proto_names = sorted(proto_dict,key=proto_dict.__getitem__)
+            efeature_dict = utility.load_json(efeature_file)
+            
+            
+            for sorted_proto in sorted_proto_names:
+                if 'LongDC_' in sorted_proto:
+                    ephys_dict = {'Cell_id':cell_id}
+                    ephys_dict['stim_name'] = sorted_proto
+                    ephys_dict['amp'] = proto_dict[sorted_proto]
+                    if sorted_proto in efeature_dict.keys():
+                        feat= efeature_dict[sorted_proto]['soma']
+                        feat = {e_key:e_val[0] for e_key,e_val in feat.items()}
+                        ephys_dict.update(feat)
+                    ephys_dict_list.append(ephys_dict)
+        
+        ephys_df= pd.DataFrame(ephys_dict_list)  
+        cell_ids = ephys_df.Cell_id.unique()
+        efeat_max_amp_df= pd.concat([ephys_df.loc[ephys_df.Cell_id==cell_id,]\
+                         .tail(1) for cell_id in cell_ids])
+        
+        return efeat_max_amp_df,ephys_df
+        
+    
+    
+    
     @staticmethod
     def get_data_fields(data_path):
         if isinstance(data_path,pd.DataFrame):
@@ -279,7 +319,7 @@ class Allactive_Classification(object):
         agg_data = data_section.groupby(target_field)[feature_fields[0]].\
                         agg(np.size).to_dict()
         filtered_targets = [key for key,val in agg_data.items() \
-                            if val > least_pop]
+                            if val >= least_pop]
         data_section = data_section.loc[data_section[target_field].\
                         isin(filtered_targets),]
         
@@ -325,22 +365,25 @@ class Allactive_Classification(object):
         df_conf_svm=df_conf_svm.div(df_conf_svm.sum(axis=1),axis=0)
         
         if plot_confusion_mat:
-            sns.set(style="darkgrid", font_scale=1)
-            fig = plt.figure()
+            sns.set(style="whitegrid")
+            fig = plt.figure(figsize=(4,3))
             cmap = sns.cubehelix_palette(light=1, as_cmap=True)
-            ax = sns.heatmap(df_conf_svm,cmap=cmap,alpha=0.8)
-            fig.suptitle('Accuracy: %s %%'%score, fontsize = 14)
-            ax.set_ylabel('True Label')
-            ax.set_xlabel('Predicted Label')
+            ax = sns.heatmap(df_conf_svm,cmap=cmap,alpha=0.8,linewidths=.1,
+                             linecolor='lightgrey',vmin=0,vmax=1)
+            fig.suptitle('Accuracy: %s %%'%score, fontsize = 10)
+            ax.set_ylabel('True Label',fontsize=8)
+            ax.set_xlabel('Predicted Label',fontsize=8)
+            plt.setp(ax.get_xticklabels(),fontsize=8,rotation=60,ha='right')
+            plt.setp(ax.get_yticklabels(),fontsize=8)
             fig.savefig(conf_mat_figname,bbox_inches='tight')
             plt.close(fig)
         return score,confusion_matrix_svm,svm_report,df_conf_svm
             
     
     @staticmethod
-    def RF_classifier(X_df,y_df,feature_fields,target_field,
+    def RF_classifier(X_df,y_df,feature_fields,target_field,color_dict,
                   plot_confusion_mat=False,conf_mat_figname=None,
-                  plot_feat_imp=False,feat_imp_figname=None):
+                  plot_feat_imp=False,feat_imp_figname=None,):
         clf = RandomForestClassifier(n_estimators=100, random_state=0)
         rf_pipeline = Pipeline([('scaler', StandardScaler()),
                                   ('random_forest', clf)])
@@ -378,25 +421,45 @@ class Allactive_Classification(object):
         
         
         if plot_confusion_mat:
-            fig = plt.figure()
-            sns.set(style="darkgrid", font_scale=1)
+            sns.set(style="whitegrid")
+            fig = plt.figure(figsize=(4,3))
+            
             cmap = sns.cubehelix_palette(light=1, as_cmap=True)
-            ax = sns.heatmap(df_conf_rf,cmap=cmap,alpha=0.8)
-            fig.suptitle('Accuracy: %s %%'%score, fontsize = 14)
-            ax.set_ylabel('True Label')
-            ax.set_xlabel('Predicted Label')
+            ax = sns.heatmap(df_conf_rf,cmap=cmap,alpha=0.8,linewidths=.1,
+                             linecolor='lightgrey',vmin=0,vmax=1)
+            fig.suptitle('Accuracy: %s %%'%score, fontsize = 10)
+            ax.set_ylabel('True Label',fontsize=8)
+            ax.set_xlabel('Predicted Label',fontsize=8)
+            plt.setp(ax.get_xticklabels(),fontsize=8,rotation=60,ha='right')
+            plt.setp(ax.get_yticklabels(),fontsize=8)
             fig.savefig(conf_mat_figname,bbox_inches='tight')
             plt.close(fig)
         
         
         if plot_feat_imp:
             fig,ax = plt.subplots(1, figsize = (8,6))
+            color_list = [color_dict[feature_field_] for feature_field_ in
+                          feature_fields_sorted]
+            
+            feature_fields_cmap = [ckey for ckey in
+                          color_dict.keys() if ckey in feature_fields_sorted]
+            cmap_color_list = [color_dict[color_feat] for color_feat in 
+                               feature_fields_cmap]
+            my_cmap = ListedColormap(cmap_color_list)
+            sm = ScalarMappable(cmap=my_cmap, norm=plt.Normalize(0,
+                                     len(feature_fields_cmap)-1))
+            sm.set_array([])
             ax = sns.barplot(x='param_name', y='importance', data= feature_imp_df,
-                            order =feature_fields_sorted, ax = ax)
+                            order =feature_fields_sorted, 
+                            palette=color_list,errwidth=1,ax = ax)
             ax.set_ylabel('Feature Importance Score')
-#            ax.set_xlabel('')
+            ax.set_xlabel('')
             ax.set_xticklabels(labels=feature_fields_sorted,
                                rotation=90,ha = 'center')
+            cbar = plt.colorbar(sm,boundaries=np.arange(\
+                                len(feature_fields_sorted)+1)-0.5)
+            cbar.set_ticks(np.arange(len(feature_fields_cmap)))
+            cbar.ax.set_yticklabels(feature_fields_cmap, fontsize=10)    
             fig.savefig(feat_imp_figname,bbox_inches='tight')
             plt.close(fig)
         
@@ -404,6 +467,87 @@ class Allactive_Classification(object):
         return score,confusion_matrix_rf,rf_report,df_conf_rf,\
                 feature_imp_df
         
+    
+    @staticmethod
+    def umap_embedding(X_df,y_df,feature_fields,
+                       target_field,marker_field='Cell_id',
+                       col_var = None,figname='tsne_plot.pdf',
+                       figtitle = '',
+                       **kwargs):
+        
+        
+        umap_pipeline = Pipeline([
+                ('scaling', StandardScaler()), \
+                     ('umap',UMAP())])
+        X_data = X_df.loc[:,feature_fields].values
+        le = preprocessing.LabelEncoder()   
+        y_df['label_encoder']= le.fit_transform(y_df[target_field])
+        y_data = y_df['label_encoder'].values
+        
+        umap_results = umap_pipeline.fit_transform(X_data)
+        
+        data = pd.concat([X_df,y_df],axis=1)
+        data['x-umap'] = umap_results[:,0]
+        data['y-umap'] = umap_results[:,1]
+        data['hue_marker'] = data.apply(lambda x : \
+                    x[target_field] +'.'+ x[marker_field], axis =1)
+        
+        sorted_target = sorted(list(data[target_field].unique()))
+        sorted_marker = sorted(list(data[marker_field].unique()))
+        sorted_hue_marker = sorted(list(data['hue_marker'].unique()))
+        sorted_col = sorted(list(data[col_var].unique())) \
+                    if col_var else None
+        
+#        current_palette = sns.color_palette()
+        if kwargs.get('palette'):
+            palette = kwargs.pop('palette')
+        else:
+            palette = sns.color_palette()
+        color_list = sns.color_palette(palette,len(sorted_target))
+        color_df_list = [color_list[sorted_target.index(hue_.split('.')[0])] \
+                         for hue_ in sorted_hue_marker]
+        
+        marker_df_list = [marker_list[sorted_marker.index(hue_.\
+                           split('.')[1])%len(marker_list)] \
+                         for hue_ in sorted_hue_marker]
+        
+        if target_field == marker_field:
+            marker_df_list = ['o']*len(marker_df_list)
+        
+        if kwargs.get('marker_size'):
+            marker_size = kwargs['marker_size']
+        else:
+            marker_size = 10
+            
+        sns.set(style="whitegrid")
+        g = sns.FacetGrid(data,
+                          col=col_var,col_order=sorted_col, 
+                          hue='hue_marker',hue_order = sorted_hue_marker,
+                          palette=color_df_list, hue_kws=dict(marker=marker_df_list),                      
+                          height=8,aspect= 1.1
+                            )
+        g = (g.map(plt.scatter, "x-umap", "y-umap",s=marker_size))
+         
+        axes = g.axes
+        dummy_handles,all_labels = reformat_legend(axes,sorted_target,
+                                           color_list,marker_size)
+        for ax_ in axes.ravel():
+#            ax_.grid(False)
+            ax_.axis('off')
+            ax_.get_xaxis().set_visible(False)
+            ax_.axes.get_yaxis().set_visible(False)
+        
+        if kwargs.get('legend'):
+            g.fig.tight_layout(rect=[0, 0.1, .95, 1])
+            g.fig.legend(handles = dummy_handles, labels = all_labels,
+                         fontsize=16, loc= 'lower center',ncol=4)
+#        figtitle += ' (n=%s)'%len(data['Cell_id'].unique())
+#        g.fig.suptitle(figtitle,fontsize=16)
+#        
+
+        g.fig.savefig(figname, bbox_inches='tight',dpi=100)
+        plt.close(g.fig)    
+    
     
     @staticmethod
     def tsne_embedding(X_df,y_df,feature_fields,
@@ -430,8 +574,12 @@ class Allactive_Classification(object):
         sorted_col = sorted(list(data[col_var].unique())) \
                     if col_var else None
         
-        current_palette = sns.color_palette()
-        color_list = sns.color_palette(current_palette,len(sorted_target))
+#        current_palette = sns.color_palette()
+        if kwargs.get('palette'):
+            palette = kwargs.pop('palette')
+        else:
+            palette = sns.color_palette()
+        color_list = sns.color_palette(palette,len(sorted_target))
         color_df_list = [color_list[sorted_target.index(hue_.split('.')[0])] \
                          for hue_ in sorted_hue_marker]
         
@@ -442,34 +590,108 @@ class Allactive_Classification(object):
         if target_field == marker_field:
             marker_df_list = ['o']*len(marker_df_list)
         
-        sns.set(style="darkgrid", font_scale=1.5)
+        if kwargs.get('marker_size'):
+            marker_size = kwargs['marker_size']
+        else:
+            marker_size = 10
+            
+        sns.set(style="whitegrid")
         g = sns.FacetGrid(data,
                           col=col_var,col_order=sorted_col, 
                           hue='hue_marker',hue_order = sorted_hue_marker,
                           palette=color_df_list, hue_kws=dict(marker=marker_df_list),                      
-                          height=9,aspect= 1.2)
-        g = (g.map(plt.scatter, "x-tsne", "y-tsne", alpha=.8,s=80))
+                          height=8,aspect= 1.1
+                            )
+        g = (g.map(plt.scatter, "x-tsne", "y-tsne",s=marker_size))
          
         axes = g.axes
-        dummy_handles,all_labels = reformat_legend(axes,sorted_target,color_list)
-        g.fig.tight_layout(rect=[0, 0.1, 1, 0.95])
-        g.fig.legend(handles = dummy_handles, labels = all_labels,
-                     loc = 'lower center', ncol = 6)
-        figtitle += ' (n=%s)'%len(data['Cell_id'].unique())
-        g.fig.suptitle(figtitle)
+        dummy_handles,all_labels = reformat_legend(axes,sorted_target,
+                                           color_list,marker_size)
+        for ax_ in axes.ravel():
+#            ax_.grid(False)
+            ax_.axis('off')
+            ax_.get_xaxis().set_visible(False)
+            ax_.axes.get_yaxis().set_visible(False)
         
-#        if kwargs.get('xlims'):
-#            for i in range(axes.shape[0]):
-#                for j in range(axes.shape[1]):
-#                    axes[i,j].set_xlim(kwargs['xlims'])
-#        if kwargs.get('ylims'):
-#             for i in range(axes.shape[0]):
-#                for j in range(axes.shape[1]):
-#                    axes[i,j].set_ylim(kwargs['ylims'])
-        
-        g.fig.savefig(figname, dpi= 80,bbox_inches='tight')
+        if kwargs.get('legend'):
+            g.fig.tight_layout(rect=[0, 0.1, .95, 1])
+            g.fig.legend(handles = dummy_handles, labels = all_labels,
+                         fontsize=16, loc= 'lower center',ncol=4)
+#        figtitle += ' (n=%s)'%len(data['Cell_id'].unique())
+#        g.fig.suptitle(figtitle,fontsize=16)
+#        
+
+        g.fig.savefig(figname, bbox_inches='tight',dpi=100)
         plt.close(g.fig)
         
+    @staticmethod
+    def calc_param_dist(param_df):
+        param_df = param_df.sort_values('hof_index')
+        param_df = param_df.dropna(axis=1,how='all')
+        nunique = param_df.apply(pd.Series.nunique)
+        cols_to_drop = nunique[nunique == 1].index
+        param_df = param_df.drop(cols_to_drop, axis=1)
+        
+        param_values = param_df.drop(labels='hof_index',\
+                                     axis=1).values
+       
+        param_values = np.transpose(param_values)
+        param_mean = np.mean(param_values,axis=1)
+        vec_len = param_mean.shape[0]
+        param_values_sub = (param_values - \
+                            param_mean[:,None])/param_mean[:,None]
+        sub_norm_vec = np.linalg.norm(param_values_sub,axis=0)
+        sub_norm_total = np.sum(sub_norm_vec)/vec_len
+        sub_norm_ratio = sub_norm_vec/vec_len
+        dist_array = np.append(sub_norm_ratio,sub_norm_total)
+        return dist_array
+    
+    
+    def calc_param_separation(self,hof_param_df):
+        hof_param_df = hof_param_df.dropna(how='any',axis=1)
+        cell_ids = hof_param_df.Cell_id.unique()
+        param_df_list = [hof_param_df.loc[hof_param_df.Cell_id == cell_id,]\
+                         for cell_id in cell_ids]
+#        self.calc_param_dist(param_df_list[0])
+        p = Pool(multiprocessing.cpu_count())
+        param_dist_list = p.map(self.calc_param_dist,param_df_list)
+        p.close()
+        p.join()
+        return param_dist_list
+        
+    @staticmethod
+    def calc_obj_all(all_obj_file_list):
+        obj_dict_list = [] 
+        for obj_file in all_obj_file_list:
+            obj_dict = utility.load_pickle(obj_file)
+            cell_id = obj_file.split('/')[-2]
+            for ii,obj_dict_ in enumerate(obj_dict):
+                hof_obj_dict = {'Cell_id':cell_id,
+                                'hof_index' : ii}
+                hof_obj_dict['Feature_Avg'] = np.mean([val for val in obj_dict_.\
+                            values()])
+                obj_dict_list.append(hof_obj_dict)
+        hof_obj_df = pd.DataFrame(obj_dict_list)
+        return hof_obj_df
+    
+
+    @staticmethod
+    def agg_model_features(model_feature_file_list,max_train_amp_dict):
+        model_feat_dict_list = []
+        for model_feat_file in model_feature_file_list:
+            model_feat_dict = utility.load_pickle(model_feat_file)
+            cell_id = model_feat_file.split('/')[-2]
+            select_stim = max_train_amp_dict[cell_id]
+            for ii,feat_dict_ in enumerate(model_feat_dict):
+                hof_feat_dict = {'Cell_id':cell_id,
+                                'hof_index' : ii}
+                select_stim_feat = {key.split('.')[-1]:val for key,val in \
+                        feat_dict_.items() if select_stim in key}
+                hof_feat_dict.update(select_stim_feat)
+                model_feat_dict_list.append(hof_feat_dict)
+                
+        return pd.DataFrame(model_feat_dict_list)
+    
     @staticmethod
     def get_fi_slope(stim_fi, spike_fi):
         try:
@@ -558,8 +780,8 @@ class Allactive_Classification(object):
                                    notnull(),'intercept_exp']
 
         
-        sns.set(style="darkgrid", font_scale=1)
-        fig,(ax1,ax2) = plt.subplots(1,2,figsize = (6,3.5), dpi = 80)
+        sns.set(style="whitegrid", font_scale=1)
+        fig,(ax1,ax2) = plt.subplots(1,2,figsize = (6,3.5))
         ax1.plot([0,max_slope], [0,max_slope], color = 'k', lw = .5)
         sc_aa=ax1.scatter(slope_exp, slope_aa, color = 'b', 
                     s = 50, alpha = 0.5, lw = 0,label='All-active')
@@ -593,8 +815,8 @@ class Allactive_Classification(object):
     
     def plot_fi_curve(self,fi_curve_filelist,data_df,figname='fi_curve.pdf'):
         utility.create_filepath(figname)
-        sns.set(style="darkgrid", font_scale=1)
-        fig,ax = plt.subplots(2,3,figsize = (8,6),dpi= 80,sharey='row')
+        sns.set(style="whitegrid", font_scale=1)
+        fig,ax = plt.subplots(2,3,figsize = (8,6),sharey='row')
         l_exp,l_aa,l_peri = [],[],[]
         for fi_data_file in fi_curve_filelist:
             if type(fi_data_file) is tuple:
@@ -653,7 +875,7 @@ class Allactive_Classification(object):
         fig.legend(handles = handles, labels=labels, \
                         loc = 'lower center', ncol=3)
         fig.tight_layout(rect=[0, 0.05, 1, 0.95])
-        fig.savefig(figname,dpi=80,bbox_inches='tight')
+        fig.savefig(figname,bbox_inches='tight')
         plt.close(fig)
 
             
@@ -685,8 +907,8 @@ class Allactive_Classification(object):
     
     def plot_AP_shape(self,AP_shape_filelist,data_df,figname='AP_shape.pdf'):
         utility.create_filepath(figname)
-        sns.set(style="darkgrid", font_scale=1)
-        fig,ax = plt.subplots(2,3,figsize = (8,6),dpi= 80, sharey='row')
+        sns.set(style="whitegrid", font_scale=1)
+        fig,ax = plt.subplots(2,3,figsize = (8,6), sharey='row')
         l_exp,l_aa,l_peri = [],[],[]
         
         for AP_shape_file in AP_shape_filelist:
@@ -747,10 +969,86 @@ class Allactive_Classification(object):
         labels = [h.get_label() for h in handles]
         fig.legend(handles = handles, labels=labels, \
                         loc = 'lower center', ncol=3)
+        for ax_ in ax:
+            ax_.grid(False)
         fig.tight_layout(rect=[0, 0.05, 1, 0.95])
-        fig.savefig(figname,dpi=80,bbox_inches='tight')
+        fig.savefig(figname,bbox_inches='tight')
         plt.close(fig)
+    
+
+    @staticmethod
+    def compare_ephys_prop(efeature,efeaure_df,
+                           figname='efeature_comparison.pdf',
+                           axis_label='',
+                           title= '',**kwargs):
+        utility.create_filepath(figname)
+        select_df = efeaure_df.loc[efeaure_df.feature == \
+                           efeature,]
+        efeature_aa = select_df.loc[select_df.value_aa.notnull(),
+                                  'value_aa'].values
+        efeature_exp_aa = select_df.loc[select_df.value_aa.notnull(),\
+                                  'value_exp'].values
+        efeature_exp_peri = select_df.loc[select_df.value_peri.notnull(),\
+                                  'value_exp'].values
         
+        efeature_peri = select_df.loc[select_df.value_peri.notnull(),\
+                                  'value_peri'].values
+        max_efeature_amp = max(max(efeature_aa), max(efeature_exp_aa),
+                       max(efeature_exp_peri),max(efeature_peri))
+        min_efeature_amp = min(min(efeature_aa), min(efeature_exp_aa),
+                       min(efeature_exp_peri),min(efeature_peri))
+        median_efeature = np.median(select_df['value_exp'].values)
+        feature_iqr = iqr(select_df['value_exp'].values)
+        
+        plt.style.use('seaborn-whitegrid')
+        fig,ax = plt.subplots(figsize=(5,5),dpi=100)
+        ax.plot([min_efeature_amp,max_efeature_amp], [min_efeature_amp,max_efeature_amp],
+                 color = 'k', lw = .5)
+        scat_peri= ax.scatter(efeature_exp_peri, efeature_peri, color = 'r', 
+                    s = 40, alpha = 0.5, lw = 0,label='Perisomatic')
+        scat_aa=ax.scatter(efeature_exp_aa, efeature_aa, color = 'b', 
+                    s = 40, alpha = 0.5, lw = 0,label='All-active')
+        
+        xlim_minus,xlim_plus = max(median_efeature-5*feature_iqr,\
+                min_efeature_amp),min(median_efeature+5*feature_iqr,\
+                            max_efeature_amp)    
+        ax.grid(False)
+        xaxis_label = 'Experiment ' + axis_label \
+                    if efeature != 'AP_amplitude_from_voltagebase' \
+                        else 'Experiment \n' + axis_label
+        yaxis_label = 'Model ' + axis_label \
+                if efeature != 'AP_amplitude_from_voltagebase' \
+                        else 'Model \n' + axis_label
+        ax.set_xlabel(xaxis_label,fontsize=18)
+        ax.set_ylabel(yaxis_label,fontsize=18)
+        ax.locator_params(nbins=3, axis='x')
+        ax.locator_params(nbins=3, axis='y')
+
+        ax.spines['right'].set_visible(False)
+        ax.spines['top'].set_visible(False)
+#        if title != '':
+#            ax.set_title(title,fontsize=18)
+#        else:
+#            ax.set_title(efeature,fontsize=18)
+            
+        if efeature != 'Rheobase':   
+            ax.set_xlim([xlim_minus,xlim_plus])
+            ax.set_ylim([xlim_minus,xlim_plus])
+            
+#        ax.set_frame_on = False
+        handles = [scat_aa,scat_peri]
+        labels = [h.get_label() for h in handles]
+
+        if kwargs.get('legend'):
+            fig.legend(handles = handles, labels=labels, \
+                            loc = 'lower center', ncol=2,fontsize=18)
+            fig.tight_layout(rect=[0, 0.05, 1, 0.95])
+        
+        plt.setp(ax.get_xticklabels(),fontsize=16)
+        plt.setp(ax.get_yticklabels(),fontsize=16)
+        fig.savefig(figname,bbox_inches = 'tight')
+        plt.close(fig)
+    
     @staticmethod
     def compare_AP_prop(AP_data_df,figname='AP_metric_comparison.pdf'):
         utility.create_filepath(figname)
@@ -783,8 +1081,8 @@ class Allactive_Classification(object):
                             max(AP_width_peri))+.1         
 
         
-        sns.set(style="darkgrid", font_scale=1)
-        fig,(ax1,ax2) = plt.subplots(1,2,figsize = (6,3.5), dpi = 80)
+        sns.set(style="whitegrid", font_scale=1)
+        fig,(ax1,ax2) = plt.subplots(1,2,figsize = (6,3.5))
         ax1.plot([50,max_AP_amp], [50,max_AP_amp], color = 'k', lw = .5)
         AP_amp_aa=ax1.scatter(AP_amp_exp_aa, AP_amp_aa, color = 'b', 
                     s = 20, alpha = 0.5, lw = 0,label='All-active')

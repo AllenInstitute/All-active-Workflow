@@ -16,6 +16,9 @@ set -ex
 
 source activate conda_env
 
+# Relaunch batch job if not finished
+qsub -W depend=afternotok:$PBS_JOBID batch_job.sh
+
 PWD=$(pwd)
 LOGS=$PWD/logs
 mkdir -p $LOGS
@@ -32,7 +35,7 @@ export IPYTHON_PROFILE=pbs.$PBS_JOBID
 
 ipcontroller --init --ip='*' --nodb --ping=30000 --profile=${IPYTHON_PROFILE} &
 sleep 30
-file $IPYTHONDIR/$IPYTHON_PROFILE
+file $IPYTHONDIR/profile_$IPYTHON_PROFILE
 mpiexec -n 256 ipengine --timeout=3000 --profile=${IPYTHON_PROFILE} &
 sleep 30
 

@@ -16,6 +16,7 @@ for line in $(<bbp_log);
         scp -r $bbp_path/Stage2/*.pdf $CELL_ID/
         scp -r $bbp_path/Stage2/fitted_params $CELL_ID/
         scp -r $bbp_path/Stage2/config $CELL_ID/
+        scp -r $bbp_path/Stage2/config_file.json $CELL_ID/
         scp -r $bbp_path/Stage2/analysis_params/hof_features_all.pkl $CELL_ID/
         scp -r $bbp_path/Stage2/analysis_params/hof_obj*.pkl $CELL_ID/
         scp -r $bbp_path/Stage2/analysis_params/score_list_train.pkl $CELL_ID/
