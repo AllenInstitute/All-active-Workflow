@@ -17,6 +17,7 @@ for line in $(<aws_log);
                 aws s3 cp ${s3_mouse_bucket}${CELL_ID}Stage2/ $CELL_ID --exclude "*" --include "*.pdf" --recursive --profile wasabi
                 aws s3 cp ${s3_mouse_bucket}${CELL_ID}Stage2/fitted_params ${CELL_ID}fitted_params --recursive --profile wasabi
                 aws s3 cp ${s3_mouse_bucket}${CELL_ID}Stage2/config $CELL_ID/config --recursive --profile wasabi
+                aws s3 cp ${s3_mouse_bucket}${CELL_ID}Stage2/config_file.json $CELL_ID/ --profile wasabi
                 aws s3 cp ${s3_mouse_bucket}${CELL_ID}Stage2/analysis_params/hof_features_all.pkl ${CELL_ID} --profile wasabi
                 aws s3 cp ${s3_mouse_bucket}${CELL_ID}Stage2/analysis_params/ ${CELL_ID} --exclude "*" --include "hof_obj*" --recursive --profile wasabi
                 aws s3 cp ${s3_mouse_bucket}${CELL_ID}Stage2/analysis_params/score_list_train.pkl ${CELL_ID} --profile wasabi
