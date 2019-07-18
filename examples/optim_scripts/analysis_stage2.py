@@ -162,13 +162,11 @@ def main():
 
     analysis_handler._opt = opt_train
     
-    # Save the hof responses at the end
-    if not os.path.exists(hof_responses_filename):
-        hof_response_sorted = analysis_handler.organize_models(hof_response_list,
-                                                                score_list_train)
-        utility.save_pickle(hof_responses_filename, hof_response_sorted)
-    else:
-        hof_response_sorted = utility.load_pickle(hof_responses_filename)
+    # Save the sorted hof responses at the end
+    hof_response_sorted = analysis_handler.organize_models(hof_response_list,
+                                                       score_list_train)
+    utility.save_pickle(hof_responses_filename, hof_response_sorted)
+    
     
     # Save the sorted hall of fame output in .pkl
     hof_model_params_sorted = analysis_handler.save_hof_output_params(hof_model_params,\
