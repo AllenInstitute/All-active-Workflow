@@ -17,19 +17,21 @@ class Bpopt_Evaluator(object):
         do_replace_axon : bluepyopt axon replace code, diameter taken
         from swc file
         """
-        self.morph_path = morph_path
-        self.protocol_path=protocol_path
-        self.feature_path = feature_path
-        self.param_path=param_path
-        self.mech_path=mech_path
+        self.morph_path = morph_path if morph_path else None
+        self.protocol_path=protocol_path if protocol_path else None
+        self.feature_path = feature_path if feature_path else None
+        self.param_path=param_path if param_path else None
+        self.mech_path=mech_path if mech_path else None
         self.ephys_dir = ephys_dir
+        self.AIS_check = False
 
-        feature_definitions = utility.load_json(feature_path)
-        feature_set = []
-        for feat_key,feat_val in feature_definitions.items():
-            feature_set.extend(feat_val['soma'].keys())
-        self.AIS_check = True if 'check_AISInitiation' in \
-                list(set(feature_set)) else False
+        if self.feature_path:
+            feature_definitions = utility.load_json(self.feature_path)
+            feature_set = []
+            for feat_key,feat_val in feature_definitions.items():
+                feature_set.extend(feat_val['soma'].keys())
+            self.AIS_check = True if 'check_AISInitiation' in \
+                    list(set(feature_set)) else False
         self.timed_evaluation = props.pop('timed_evaluation',True)
         self.axon_type = 'stub_axon'
         if props.pop('do_replace_axon',None):
@@ -227,15 +229,18 @@ class Bpopt_Evaluator(object):
                         total_duration=stimulus_definition['totduration']))
                     recordings = [somav_recording]
                 elif stimulus_definition['type'] in ['TriBlip','Noise']:
-                    sweep_file = os.path.join(ephys_dir,
-                                      stimulus_definition['sweep_filenames'][0])
-                    stim_play_time = np.loadtxt(sweep_file)[:,0]
-                    stim_play_current = np.loadtxt(sweep_file)[:,2]
-                    stimuli.append(ephys.stimuli.NrnCurrentPlayStimulus(
-                        current_points=stim_play_current,
-                        time_points=stim_play_time,
-                        location=soma_loc))
-                    recordings = [somav_recording]
+                    try:
+                        sweep_file = os.path.join(ephys_dir,
+                                          stimulus_definition['sweep_filenames'][0])
+                        stim_play_time = np.loadtxt(sweep_file)[:,0]
+                        stim_play_current = np.loadtxt(sweep_file)[:,2]
+                        stimuli.append(ephys.stimuli.NrnCurrentPlayStimulus(
+                            current_points=stim_play_current,
+                            time_points=stim_play_time,
+                            location=soma_loc))
+                        recordings = [somav_recording]
+                    except Exception as e:
+                        logger.debug(e)
             protocols[protocol_name] = ephys.protocols.SweepProtocol(
                 protocol_name,
                 stimuli,
