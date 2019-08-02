@@ -355,6 +355,7 @@ class AllActive_Model_Parameters(object):
                               release_params,release_param_write_path,
                               opt_config_filename = 'config_file.json',
                               **kwargs):
+        """Writes a bunch of paths to json. Can also hack to write other keys for the Evaluator"""
 
         path_dict =  dict()
         path_dict['morphology'] = morph_path

@@ -55,7 +55,8 @@ def create_optimizer(args):
     param_path = path_data['parameters']
     eval_handler = Bpopt_Evaluator(protocol_path, feature_path, morph_path,
                                     param_path, mech_path, timeout = args.timeout,
-                                    learn_eval_trend = args.learn_eval_trend)
+                                    learn_eval_trend = args.learn_eval_trend,
+                                    do_replace_axon=path_data['do_replace_axon'])
     evaluator = eval_handler.create_evaluator()
 
     opt = bpopt.optimisations.DEAPOptimisation(
