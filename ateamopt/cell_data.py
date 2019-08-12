@@ -15,7 +15,7 @@ from neurom.core.types import tree_type_checker, NEURITES
 
 logger = logging.getLogger(__name__)
 
-class Allactive_Optim(object):
+class CellDataTool(object):
 
     def __init__(self,nwb_path = None, swc_path = None):
         self.cell_id = os.path.basename(os.getcwd())

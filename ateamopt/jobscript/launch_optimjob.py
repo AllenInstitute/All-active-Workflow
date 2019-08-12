@@ -1,6 +1,6 @@
 import os
 import argparse
-from ateamopt.allactive_optim import Allactive_Optim
+from ateamopt.cell_metadata import CellDataTool
 from ateamopt.utils import utility
 from ateamopt.jobscript.jobmodule import ChainSubJob
 import shutil
@@ -15,7 +15,7 @@ def create_optim_job(args):
     utility.create_dirpath(optim_dir)
     os.chdir(optim_dir) # Change Working directory
 
-    optim_model = Allactive_Optim()
+    cell_data = CellDataTool()
     me_props = {}
 
     if args.swc_path:
@@ -37,8 +37,8 @@ def create_optim_job(args):
         print(e)
 
     get_data = not os.path.exists('./cell_types')
-    cell_metadata = optim_model.save_cell_metadata(get_data,**me_props)
-    optim_model.save_morph_data()
+    cell_metadata = cell_data.save_cell_metadata(get_data,**me_props)
+    cell_data.save_morph_data()
 
     machine = cell_metadata['Machine']
 
