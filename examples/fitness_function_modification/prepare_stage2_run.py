@@ -1,6 +1,6 @@
 import os,sys
 import glob
-from ateamopt.nwb_extractor import NWB_Extractor
+from ateamopt.nwb_extractor import NwbExtractor
 from ateamopt.model_parameters import AllActive_Model_Parameters
 from ateamopt.utils import utility
 from ateamopt.optim_config_rules import correct_voltage_feat_std,\
@@ -156,7 +156,7 @@ def main():
         non_standard_nwb = False
 
     # Extract data and get the features for the stage
-    nwb_handler = NWB_Extractor(cell_id)
+    nwb_handler = NwbExtractor(cell_id)
     ephys_data_path,stimmap_filename = nwb_handler.save_cell_data\
                 (acceptable_stimtypes,non_standard_nwb=non_standard_nwb)
     feature_file = 'feature_set_stage2_exc.json' \

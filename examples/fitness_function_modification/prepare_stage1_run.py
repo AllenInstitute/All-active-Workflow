@@ -1,6 +1,6 @@
 import os,sys
 import glob
-from ateamopt.nwb_extractor import NWB_Extractor
+from ateamopt.nwb_extractor import NwbExtractor
 from ateamopt.model_parameters import AllActive_Model_Parameters
 from ateamopt.utils import utility
 from ateamopt.optim_config_rules import filter_feat_proto_passive,\
@@ -32,7 +32,7 @@ def main():
         non_standard_nwb = False
 
     # Extract data and get the features for the stage
-    nwb_handler = NWB_Extractor(cell_id)
+    nwb_handler = NwbExtractor(cell_id)
     ephys_data_path,stimmap_filename = nwb_handler.save_cell_data\
                     (acceptable_stimtypes,non_standard_nwb=non_standard_nwb)
     feature_path = utility.locate_template_file(os.path.join('parameters',\
