@@ -25,7 +25,7 @@ sbatch chain_job.sh
 #submit launch script upon signal USR1
 run_dependent_script func_trap USR1
 
-set -ex
+set -e
 
 source activate conda_env
 

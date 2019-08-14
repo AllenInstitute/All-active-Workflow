@@ -7,7 +7,7 @@
 #SBATCH -A proj36
 #SBATCH -J launch_Stage_1
 
-set -ex
+set -e
 
 # Activate conda environment
 

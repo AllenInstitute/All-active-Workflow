@@ -9,7 +9,7 @@
 #SBATCH --mail-user=anin@alleninstitute.org
 #SBATCH -J analyze_Stage2
 
-set -ex
+set -e
 
 source activate conda_env
 

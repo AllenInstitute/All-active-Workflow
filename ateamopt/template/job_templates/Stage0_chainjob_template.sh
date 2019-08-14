@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -ex
+set -e
 
 PARENT_DIR=$(pwd)
 CELL_ID=${PARENT_DIR##*/}
