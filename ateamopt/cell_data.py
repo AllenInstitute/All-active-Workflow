@@ -130,7 +130,7 @@ def host_machine_props(premium_queue):
         utility.save_file(filename, content)
     return cell_metadata
 
-
+# TODO: pull from lims, get_cells_df
 def cell_props(cell_id):
     cell_metadata = {}
     ctc = CellTypesCache(manifest_file='cell_types/manifest.json')
@@ -139,8 +139,6 @@ def cell_props(cell_id):
     if metadata_list:
         set_cell_metadata = False
         metadata_cell = metadata_list[0]
-        cell_metadata['Released_AllActive_id'] = str(model_dict['all_active'])
-        cell_metadata['Perisomatic_id'] = str(model_dict['perisomatic'])
         cell_metadata['Dendrite_type'] = metadata_cell['dendrite_type']
         cell_metadata['Species'] = metadata_cell['species']
         cell_metadata['Area'] = metadata_cell['structure_area_abbrev']
@@ -164,8 +162,13 @@ def model_props(cell_id):
 
     except:
         logger.debug('No biophysical model available')
+        return {}
 
-    api = allensdk.api.queries.rma_api.RmaApi()  # Get the model metadata
+    cell_metadata['Released_AllActive_id'] = str(model_dict['all_active'])
+    cell_metadata['Perisomatic_id'] = str(model_dict['perisomatic'])
+
+    # Get the model metadata
+    api = allensdk.api.queries.rma_api.RmaApi()  
 
     for model_type, model_id in model_dict.items():
         if model_id != '':
