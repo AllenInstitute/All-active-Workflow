@@ -135,11 +135,11 @@ def main():
     utility.save_json(path_to_cell_metadata,cell_metadata)
 
     if me_type:
-        cell_type = 'exc' if 'Exc' in me_type else 'inh'
+        cell_type = 'exc' if 'exc' in me_type.lower() else 'inh'
     else:
-        if dend_type == 'spiny':
+        if 'spiny' in dend_type.lower():
             cell_type = 'exc'
-        elif dend_type == 'aspiny':
+        elif 'aspiny' in dend_type.lower():
             cell_type = 'inh'
         else:
             raise Exception('cell-type ambiguous')

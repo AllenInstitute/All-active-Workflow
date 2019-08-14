@@ -1,5 +1,8 @@
 import os
-from allensdk.core.nwb_data_set import NwbDataSet
+# from allensdk.core.nwb_data_set import NwbDataSet
+# from ipfx.aibs_data_set import EphysDataSet
+from ipfx.aibs_data_set import AibsDataSet
+from ipfx.stim_features import get_stim_characteristics
 import numpy as np
 import json
 from collections import defaultdict
@@ -21,7 +24,7 @@ class NwbExtractor(object):
         self.temperature = temp
 
         self._nwb_path = nwb_path
-        if not nwb_path and nwb_search_pattern:
+        if not nwb_path:
             nwb_dir = utility.get_filepath_for_exten(exten='.nwb')
             try:
                 self._nwb_path = [str_path for str_path in nwb_dir if
@@ -67,7 +70,18 @@ class NwbExtractor(object):
 
         tot_duration = time[-1]
         return stim_start, stim_stop, stim_amp_start, stim_amp_end, tot_duration, hold_curr
-
+    
+    @staticmethod
+    def calc_stimparams_ipfx(time, stimulus_trace, trace_name):
+        start_time, duration, amplitude, start_idx, end_idx = get_stim_characteristics(stimulus_trace, time)
+        amplitude *= 1e12
+        stim_stop = start_time + duration
+        stim_amp_start = amplitude
+        stim_amp_end = amplitude
+        tot_duration = time[-1]
+        hold_curr = 0.0
+        return start_time, stim_stop, stim_amp_start, stim_amp_end, tot_duration, hold_curr
+    
     @staticmethod
     def calc_stimparams_nonstandard(time, stimulus_trace, trace_name):
         """Calculate stimuls start, stop and amplitude from trace for nonstandard nwb"""
@@ -163,7 +177,7 @@ class NwbExtractor(object):
                               for rep_name in rep_names]
                 stim_reps_sweep_map[trace_name] = rep_sweeps
 
-                tstart_set = set(['.1f' % rep_params[5]
+                tstart_set = set(['%.1f' % rep_params[5]
                                   for rep_params in reps[stim_type][amplitude]])
                 if len(tstart_set) != 1:
                     raise Exception(
@@ -171,7 +185,7 @@ class NwbExtractor(object):
                         "times: %s" %
                         (stim_type, amplitude.split('&')[0], str(tstart_set)))
 
-                tstop_set = set(['.1f' % rep_params[6]
+                tstop_set = set(['%.1f' % rep_params[6]
                                  for rep_params in reps[stim_type][amplitude]])
                 if len(tstop_set) != 1:
                     raise Exception(
@@ -235,29 +249,28 @@ class NwbExtractor(object):
 
         bpopt_stimtype_map = utility.bpopt_stimtype_map
         distinct_id_map = utility.aibs_stimname_map
-        nwb_file = NwbDataSet(self.nwb_path)
+        # Note: may also need to provide h5 "lab notebok" and/or ontology
+        from ipfx.stimulus import StimulusOntology
+        import allensdk.core.json_utilities as ju
+        ontology = StimulusOntology(ju.read(StimulusOntology.DEFAULT_STIMULUS_ONTOLOGY_FILE))
+        dataset = AibsDataSet(nwb_file=self.nwb_path, ontology=ontology)
 
         stim_map = defaultdict(list)
         stim_sweep_map = {}
         output_dir = os.path.join(os.getcwd(), ephys_dir)
         utility.create_dirpath(output_dir)
 
-        for sweep_number in nwb_file.get_sweep_numbers():
-            sweep_data = nwb_file.get_sweep_metadata(sweep_number)
-            stim_type = sweep_data['aibs_stimulus_name']
-
-            try:
-                stim_type = stim_type.decode('UTF-8')
-            except:
-                pass
+        for record in dataset.sweep_table.itertuples():
+            record = record._asdict()
+            sweep_number = record[AibsDataSet.SWEEP_NUMBER]
+            stim_type = record[AibsDataSet.STIMULUS_NAME]
 
             if stim_type in acceptable_stimtypes:
-                sweep = nwb_file.get_sweep(sweep_number)
+                # or use dataset.sweep to get full object, epochs
+                sweep = dataset.get_sweep_data(sweep_number)
 
-                start_idx, stop_idx = sweep['index_range']
-
-                stimulus_trace = sweep['stimulus'][start_idx:stop_idx]
-                response_trace = sweep['response'][start_idx:stop_idx]
+                stimulus_trace = sweep['stimulus']
+                response_trace = sweep['response']
 
                 sampling_rate = sweep['sampling_rate']
 
@@ -268,7 +281,7 @@ class NwbExtractor(object):
                 if non_standard_nwb:
                     calc_stimparams_func = self.calc_stimparams_nonstandard
                 else:
-                    calc_stimparams_func = self.calc_stimparams
+                    calc_stimparams_func = self.calc_stimparams_ipfx
 
                 stim_start, stim_stop, stim_amp_start, stim_amp_end, \
                     tot_duration, hold_curr = calc_stimparams_func(
@@ -288,6 +301,7 @@ class NwbExtractor(object):
                 time, stimulus_trace, response_trace = utility.downsample_ephys_data(
                     time, stimulus_trace, response_trace)
 
+                # save current timeseries only when needed
                 if stim_type in utility.bpopt_current_play_stimtypes:
                     with open(response_trace_filename, 'wb') as response_trace_file:
                         np.savetxt(response_trace_file,
@@ -303,9 +317,9 @@ class NwbExtractor(object):
                 stim_map[distinct_id_map[stim_type]].append([
                     trace_name,
                     bpopt_stimtype_map[stim_type],
-                    holding_current/1e12,
+                    hold_curr / 1e12,
                     stim_amp_start / 1e12,
-                    stim_amp_end/1e12,
+                    stim_amp_end / 1e12,
                     stim_start * 1e3,
                     stim_stop * 1e3,
                     tot_duration * 1e3,
