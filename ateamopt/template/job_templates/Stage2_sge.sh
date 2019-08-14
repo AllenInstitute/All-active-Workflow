@@ -9,7 +9,7 @@
 #$ -M anin@alleninstitute.org
 #$ -S /bin/bash
 
-set -ex
+set -e
 
 source activate conda_env
 

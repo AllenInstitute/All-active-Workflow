@@ -12,7 +12,7 @@
 
 cd $PBS_O_WORKDIR
 
-set -ex
+set -e
 
 source activate conda_env
 
