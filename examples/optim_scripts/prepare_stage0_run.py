@@ -116,7 +116,6 @@ def main():
         chain_jobtemplate_path = 'job_templates/Stage1_chainjob_template_pbs.sh'
 
     # Create Chain job for next stage
-
     chain_job = ChainSubJob(chain_jobtemplate_path,machine,conda_env=conda_env,
                             non_standard_nwb=non_standard_nwb)
     chain_job.script_generator()

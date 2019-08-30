@@ -3,29 +3,21 @@ from ateamopt.utils import utility
 import re
 import logging
 from collections import defaultdict
+import os
 
 logger = logging.getLogger(__name__)
 
 class AllActive_Model_Parameters(object):
 
     def __init__(self,cell_id,temp=34,v_init=-80,swc_path=None,\
-                 swc_search_pattern='cell_types',
                  released_aa_model_pattern='fit_aa_parameters',
                  prev_model_pattern='fit_opt',model_param_extension = '.json'):
 
         self.cell_id = cell_id
         self.v_init = v_init
         self.temperature = temp
-
         self._swc_path = swc_path
-        if not swc_path and swc_search_pattern:
-            swc_dir =  utility.get_filepath_for_exten(exten = '.swc')
-            try:
-                self._swc_path = [str_path for str_path in swc_dir if \
-                                      swc_search_pattern in str_path][0]
-            except:
-                pass
-
+        
         model_path_list = utility.get_filepath_for_exten(model_param_extension)
 
         # Parameter file for a released all-active model
@@ -227,7 +219,8 @@ class AllActive_Model_Parameters(object):
             for param_dict_release in model_params_release:
                 param_name = param_dict_release['param_name']
                 if param_name not in ['ena','ek','v_init','celsius']:
-                    release_params[param_name + '.' + param_dict_release['sectionlist']] = param_dict_release['value']
+                    release_params[param_name + '.' + param_dict_release['sectionlist']] = \
+                        param_dict_release['value']
 
             # Released parameter file in bpopt format for running simulation
             utility.save_json(release_param_write_path,model_params_release)
@@ -347,28 +340,30 @@ class AllActive_Model_Parameters(object):
         return peri_params_write_path, peri_mech_write_path
 
 
-    def write_opt_config_file(self,morph_path,param_write_path,
+    def write_opt_config_file(self,param_write_path,
                               mech_write_path,mech_release_write_path,
-                              features_write_path,untrained_features_write_path,
-                              all_features_write_path,
-                              protocols_write_path,all_protocols_write_path,
+                              train_features_write_path,test_features_write_path,
+                              protocols_write_path,
                               release_params,release_param_write_path,
                               opt_config_filename = 'config_file.json',
                               **kwargs):
-
-        path_dict =  dict()
-        path_dict['morphology'] = morph_path
+        if not os.path.exists(opt_config_filename):
+            path_dict =  dict()
+        else:
+            path_dict = utility.load_json(opt_config_filename)
+        
         path_dict['parameters'] = param_write_path
         path_dict['mechanism'] = mech_write_path
-        path_dict['mechanism_release'] = mech_release_write_path
-        path_dict['features'] = features_write_path
-        path_dict['untrained_features'] = untrained_features_write_path
-        path_dict['all_features'] = all_features_write_path
-        path_dict['protocols'] = protocols_write_path
-        path_dict['all_protocols'] = all_protocols_write_path
-        path_dict['release_params_bpopt'] = release_params
-        path_dict['released_model'] = release_param_write_path
-        for config_key,path in kwargs.items():
-            path_dict[config_key] = path
+        path_dict['released_aa_mechanism'] = mech_release_write_path
+        path_dict['train_features'] = train_features_write_path
+        path_dict['test_features'] = test_features_write_path
+        path_dict['train_protocols'] = protocols_write_path
+        path_dict['released_aa_model_dict'] = release_params
+        path_dict['released_aa_model'] = release_param_write_path
+        path_dict['released_peri_model'] = kwargs.get('released_peri_model')
+        path_dict['released_peri_mechanism'] = kwargs.get('released_peri_mechanism')
+
+#        for config_key,path in kwargs.items():
+#            path_dict[config_key] = path
 
         utility.save_json(opt_config_filename,path_dict)
