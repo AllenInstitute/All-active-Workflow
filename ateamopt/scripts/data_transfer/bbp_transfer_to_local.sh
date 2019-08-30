@@ -12,7 +12,7 @@ for line in $(<bbp_log);
     do
         bbp_path=$bbp_host:$line
         CELL_ID=${bbp_path##*/}
-        mkdir -p $CELL_ID
+        mkdir -p $CELL_ID/config_Stage1
         scp -r $bbp_path/Stage2/*.pdf $CELL_ID/
         scp -r $bbp_path/Stage2/fitted_params $CELL_ID/
         scp -r $bbp_path/Stage2/config $CELL_ID/

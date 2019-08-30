@@ -203,18 +203,22 @@ class SA_helper(object):
     def plot_sobol_analysis_from_df(sa_data_df,
                 analysis_path = 'figures/sens_analysis.pdf',palette='Set1'):
         
-        param_names = sorted(list(sa_data_df.param_name.unique()))
+        param_names = sorted( list(sa_data_df.param_name.unique()))
 
-        
-        current_palette = sns.color_palette(palette)
-        colors = sns.color_palette(current_palette,len(param_names))
+        ticklabel_fontsize = 18
+        axislabel_fontsize = 20
+        try:
+            current_palette = sns.color_palette(palette)
+            colors = sns.color_palette(current_palette,len(param_names))
+        except:
+            colors=palette[:len(param_names)]
         my_cmap = ListedColormap(colors)
         sm = ScalarMappable(cmap=my_cmap, norm=plt.Normalize(0,
                                      len(param_names)-1))
         sm.set_array([])
         
         g = sns.FacetGrid(sa_data_df,col='feature',
-              sharex=True,sharey='row', height=6, 
+              sharex=True,sharey='row', height=7, 
               aspect=.5)
         g = g.map(sns.barplot,'param_name','sobol_index',
                   order=param_names,palette=palette,errwidth=1)        
@@ -222,15 +226,20 @@ class SA_helper(object):
         for ax_ in axes:
             title_ = ax_.get_title()
             title_ = title_.split('|')[-1].split('=')[-1]
-            ax_.set_title(title_,fontsize=14)
+            ax_.set_title(title_,fontsize=axislabel_fontsize)
             xticklabels = ax_.get_xticklabels()
-            ax_.set_xticklabels(xticklabels,rotation=90,ha='center',fontsize=12)
+            ax_.set_xticklabels(xticklabels,rotation=90,ha='center',
+                                fontsize=ticklabel_fontsize)
+            plt.setp(ax_.get_yticklabels(),
+                                fontsize=ticklabel_fontsize)
             ax_.set_xlabel(None)
-        axes[0].set_ylabel('sobol index',fontsize=14)
+            
+        axes[0].set_ylabel('Sobol index',fontsize=axislabel_fontsize)
         g.fig.tight_layout(rect=[0, 0.03, 1, 0.95])
+        g.fig.subplots_adjust(wspace=0.1)
         cbar = plt.colorbar(sm,boundaries=np.arange(len(param_names)+1)-0.5)
         cbar.set_ticks(np.arange(len(param_names)))
-        cbar.ax.set_yticklabels(param_names, fontsize=12)    
+        cbar.ax.set_yticklabels(param_names, fontsize=ticklabel_fontsize)    
         g.fig.savefig(analysis_path,bbox_inches='tight')
         plt.close(g.fig)
         

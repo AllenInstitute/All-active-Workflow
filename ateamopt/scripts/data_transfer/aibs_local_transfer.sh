@@ -18,10 +18,11 @@ for dir_mouse in */
             echo $CELL_ID
 
             target_path=$aibs_metricpath/$CELL_ID
-            mkdir -p $target_path
+            mkdir -p $target_path/config_Stage1
             cp -r Stage2/*.pdf $target_path/
             cp -r Stage2/fitted_params $target_path/
             cp -r Stage2/config $target_path/
+            cp -r Stage1/config/* $target_path/config_Stage1/
             cp -r Stage2/config_file.json $target_path/
             cp -r Stage2/analysis_params/hof_features_all.pkl $target_path/
             cp -r Stage2/analysis_params/hof_obj*.pkl $target_path/
@@ -33,6 +34,7 @@ for dir_mouse in */
             cp -r cell_metadata* $target_path/
             cp -r morph_stats* $target_path/
             cp -r Stage2/time_metrics* $target_path/
+
 
             cell_complete_path+="$path "
 
