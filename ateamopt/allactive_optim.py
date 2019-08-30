@@ -56,22 +56,24 @@ class Allactive_Optim(object):
         if metadata['nwb_path'] == '':
             if 'hpc' in metadata['machine']: 
                 logger.debug('Retrieving files from network')
-                nwb_path = 'network_loc'
+#                nwb_path = 'network_loc'
+                ctc.get_ephys_data(self.cell_id)
             else:
                 ctc.get_ephys_data(self.cell_id)
             
-                nwb_path = os.path.abspath(utility.get_filepath_for_exten('.nwb')[0])
+            nwb_path = os.path.abspath(utility.get_filepath_for_exten('.nwb')[0])
             metadata['nwb_path'] = nwb_path
 
         # download/retrieve morphology
         if metadata['swc_path'] == '':
             if 'hpc' in metadata['machine']: 
                 logger.debug('Retrieving files from network')
-                swc_path = 'network_loc'
+#                swc_path = 'network_loc'
+                ctc.get_reconstruction(self.cell_id)
             else:
                 ctc.get_reconstruction(self.cell_id)
             
-                swc_path =  os.path.abspath(utility.get_filepath_for_exten('.swc')[0])
+            swc_path =  os.path.abspath(utility.get_filepath_for_exten('.swc')[0])
             metadata['swc_path'] = swc_path
         return metadata
 
