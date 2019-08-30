@@ -12,21 +12,15 @@ logger = logging.getLogger(__name__)
 
 class NWB_Extractor(object):
 
-    def __init__(self, cell_id, junc_potential=-14,temp=34,nwb_path=None,\
-                 nwb_search_pattern='cell_types',**kwargs):
+    def __init__(self, cell_id,nwb_path,junc_potential=-14,temp=34,\
+                 **kwargs):
 
         self.cell_id = cell_id
         self.junction_potential = junc_potential
         self.temperature = temp
         
         self._nwb_path = nwb_path
-        if not nwb_path and nwb_search_pattern:
-            nwb_dir =  utility.get_filepath_for_exten(exten = '.nwb')
-            try:
-                self._nwb_path = [str_path for str_path in nwb_dir if \
-                                      nwb_search_pattern in str_path][0]
-            except:
-                pass
+        
         
     @property
     def nwb_path(self):
@@ -182,7 +176,7 @@ class NWB_Extractor(object):
         with open(stimmapreps_csv_filename, 'w') as stimmapreps_csv_file:
             stimmapreps_csv_file.write(stimmapreps_csv_content)
 
-        return stim_reps_sweep_map,stimmap_filename
+        return stim_reps_sweep_map,stimmapreps_csv_filename
 
 
     @staticmethod
@@ -375,7 +369,72 @@ class NWB_Extractor(object):
                     stim_map[stim_name]['extra_recordings'] = record_list
         return stim_map
 
+    
+    
+    def get_efeatures_all(self,feature_set_filename,ephys_data_path,stimmap_filename,
+                           *args,**kwargs):
+        cell_name = self.cell_id
+        
+        feature_map = utility.load_json(feature_set_filename)
+        stim_features = feature_map['features'] # Features to extract
+        features_meanstd = defaultdict(
+            lambda: defaultdict(
+                lambda: defaultdict(dict)))
+        stim_map = self.get_stim_map(os.path.join(ephys_data_path,stimmap_filename))
+        for stim_name in stim_map.keys():
+           
+            logger.debug("\n### Getting features from %s of cell %s ###\n" \
+                % (stim_name, cell_name))
 
+            sweeps = []
+            for sweep_filename in stim_map[stim_name]['stimuli'][0]['sweep_filenames']:
+                sweep_fullpath = os.path.join(
+                    ephys_data_path,
+                    sweep_filename)
+
+                data = np.loadtxt(sweep_fullpath)
+                time = data[:, 0]
+                voltage = data[:, 1]
+
+                # Prepare sweep for eFEL
+                sweep = {}
+                sweep['T'] = time
+                sweep['V'] = voltage
+                sweep['stim_start'] = [stim_map[stim_name]['stimuli'][0]['delay']]
+                sweep['stim_end'] = [stim_map[stim_name]['stimuli'][0]['stim_end']]
+                
+                if 'check_AISInitiation' in stim_features:
+                    sweep['T;location_AIS'] = time
+                    sweep['V;location_AIS'] = voltage
+                    sweep['stim_start;location_AIS'] = [stim_map[stim_name]['stimuli'][0]['delay']]
+                    sweep['stim_end;location_AIS'] = [stim_map[stim_name]['stimuli'][0]['stim_end']]
+                sweeps.append(sweep)
+
+            # eFEL feature extraction
+            feature_results = efel.getFeatureValues(sweeps, stim_features)
+
+            for feature_name in stim_features:
+                # For one feature, a list with values for every sweep
+                feature_values = [np.nanmean(trace_dict[feature_name])
+                                  for trace_dict in feature_results
+                                  if trace_dict[feature_name] is not None]
+                if len(feature_values) == 0:
+                    continue
+                else:
+                    mean = np.nanmean(feature_values)
+                    std = np.nanstd(feature_values)
+                    
+                if feature_name == 'peak_time':
+                    feature_values = [trace_dict[feature_name].tolist() for trace_dict 
+                                      in feature_results]
+                    mean,std = None,None
+                
+                features_meanstd[stim_name]['soma'][
+                    feature_name] = [mean , std,feature_values]
+                
+        return stim_map,features_meanstd
+                
+    
     def get_ephys_features(self,feature_set_filename,ephys_data_path,stimmap_filename,
                            filter_rule_func,*args,**kwargs):
 
@@ -496,28 +555,27 @@ class NWB_Extractor(object):
                 all_stim_filtered
 
 
-    def write_ephys_features(self,train_features,test_features,all_features,
-                             train_protocols,all_protocols,
-                             base_dir = 'config/',**kwargs):
+    def write_ephys_features(self,train_features,test_features,
+                         train_protocols,base_dir = 'config/',**kwargs):
         cell_name = self.cell_id
-        features_write_path = kwargs.get('features_write_path') or \
-                base_dir+cell_name+'/features.json'
-        untrained_features_write_path = kwargs.get('untrained_features_write_path') \
-            or base_dir+cell_name+'/untrained_features.json'
-        all_features_write_path = kwargs.get('all_features_write_path') \
-            or base_dir+cell_name+'/all_features.json'
-        protocols_write_path = kwargs.get('protocols_write_path') \
-            or base_dir+cell_name+'/protocols.json'    
-        all_protocols_write_path = kwargs.get('all_protocols_write_path') \
-            or base_dir+cell_name+'/all_protocols.json'    
+        train_features_write_path = kwargs.get('train_features_write_path') or \
+                base_dir+cell_name+'/train_features.json'
+        test_features_write_path = kwargs.get('test_features_write_path') \
+            or base_dir+cell_name+'/test_features.json'
+#        all_features_write_path = kwargs.get('all_features_write_path') \
+#            or base_dir+cell_name+'/all_features.json'
+        train_protocols_write_path = kwargs.get('protocols_write_path') \
+            or base_dir+cell_name+'/train_protocols.json'    
+#        all_protocols_write_path = kwargs.get('all_protocols_write_path') \
+#            or base_dir+cell_name+'/all_protocols.json'    
 
-        utility.create_filepath(all_protocols_write_path)
+        utility.create_filepath(train_protocols_write_path)
         
-        utility.save_json(features_write_path,train_features)
-        utility.save_json(untrained_features_write_path,test_features)
-        utility.save_json(all_features_write_path,all_features)
-        utility.save_json(protocols_write_path,train_protocols)
-        utility.save_json(all_protocols_write_path,all_protocols)
+        utility.save_json(train_features_write_path,train_features)
+        utility.save_json(test_features_write_path,test_features)
+#        utility.save_json(all_features_write_path,all_features)
+        utility.save_json(train_protocols_write_path,train_protocols)
+#        utility.save_json(all_protocols_write_path,all_protocols)
         
-        return features_write_path,untrained_features_write_path,all_features_write_path,\
-                protocols_write_path,all_protocols_write_path
+        return train_features_write_path,test_features_write_path,\
+                train_protocols_write_path

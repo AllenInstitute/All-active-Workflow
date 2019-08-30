@@ -154,8 +154,7 @@ def filter_feat_proto_basic(features_dict,protocols_dict):
                       features_dict_filtered.items() if bool(val['soma'])}
     return features_dict_filtered,protocols_dict_filtered
 
-def filter_feat_proto_passive(features_dict,protocols_dict,all_protocols_dict,
-                                  *args):
+def filter_feat_proto_passive(features_dict,protocols_dict,*args):
 
     features_dict = correct_voltage_feat_std(features_dict)
     spiking_proto = []
@@ -164,17 +163,18 @@ def filter_feat_proto_passive(features_dict,protocols_dict,all_protocols_dict,
             spiking_proto.append(feat_key)
         del feat_val['soma']['Spikecount']
 
-    features_dict_filtered = {key:val for key,val in features_dict.items() \
+    train_features_dict = {key:val for key,val in features_dict.items() \
                               if key not in spiking_proto}
-    protocols_dict_filtered = {key:val for key,val in protocols_dict.items() \
+    train_protocols_dict = {key:val for key,val in protocols_dict.items() \
                               if key not in spiking_proto}
-    untrained_features_dict = {key:val for key,val in features_dict.items() \
-                              if key not in features_dict_filtered.keys()}
-    return features_dict_filtered,untrained_features_dict,\
-                 protocols_dict_filtered,all_protocols_dict
+    test_features_dict = {key:val for key,val in features_dict.items() \
+                              if key not in train_features_dict.keys()}
+    return train_features_dict,test_features_dict,\
+                 train_protocols_dict
 
 def correct_voltage_feat_std(features_dict, 
-                     feature_correct_list=['voltage_base', 'steady_state_voltage']):
+             feature_correct_list=['voltage_base', 'steady_state_voltage',
+               'decay_time_constant_after_stim']):
     feature_stat = defaultdict(list)
     feature_key = []
     for feat_name in feature_correct_list:

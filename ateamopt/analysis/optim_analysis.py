@@ -21,9 +21,12 @@ logger = logging.getLogger(__name__)
 
 class Optim_Analyzer(object):
 
-    def __init__(self,opt_obj=None,cp_dir=None):
+    def __init__(self,job_config,opt_obj=None):
         self._opt = opt_obj
-        self.cp_dir = cp_dir
+        self.stage_jobconfig = job_config['stage_jobconfig']
+        self.highlevel_job_props = job_config['highlevel_jobconfig']
+        self.job_config = job_config
+        self.cp_dir = self.stage_jobconfig['cp_dir']
         if self.cp_dir:
             self._cp_path = self.get_best_cp_seed() # the seed file with minimum error
         else:
@@ -179,11 +182,10 @@ class Optim_Analyzer(object):
         return param_dict
 
     def create_aibs_param_template(self,param_list,
-                                   expand_params = False,
-                                   opt_config_file='config_file.json'):
-        opt_config = utility.load_json(opt_config_file)
-        bpopt_param_path = opt_config['parameters']
-        morph_path = opt_config['morphology']
+                                   expand_params = False):
+        
+        bpopt_param_path = self.job_config['parameters']
+        morph_path = self.highlevel_job_props['swc_path']
 
         # Check for apical dendrite
         no_apical = utility.check_swc_for_apical(morph_path)
@@ -285,16 +287,13 @@ class Optim_Analyzer(object):
                       stim_file,pdf_pages,
                       resp_comparison = 'All-active',
                       save_model_response = False,
-                      model_response_dir = 'model_response/',
-                      ephys_dir= 'preprocessed/',
-                      opt_config_file='config_file.json'):
+                      model_response_dir = 'model_response/'):
 
         stim_df = pd.read_csv(stim_file, sep='\s*,\s*',
                                header=0, encoding='ascii', engine='python')
 
-        opt_config = utility.load_json(opt_config_file)
-        train_protocol_path = opt_config['protocols']
-
+        ephys_dir = self.highlevel_job_props['ephys_dir']
+        train_protocol_path = self.job_config['train_protocols']
         train_protocols = utility.load_json(train_protocol_path)
 
         opt = self._opt # Optimizer object
@@ -382,7 +381,7 @@ class Optim_Analyzer(object):
                                           np.transpose([response_time.values,
                                                         response_voltage.values]))
 
-                    FileName = ephys_dir + name
+                    FileName = os.path.join(ephys_dir,name)
                     data = np.loadtxt(FileName)
                     if any(data[:,1]):
                         exp_time  = data[:,0]
@@ -403,7 +402,7 @@ class Optim_Analyzer(object):
                         l3,=ax_comp[index//n_col,index%n_col].plot(responses_release_time,
                                 responses_release_voltage,
                                 color='r',
-                                linewidth=.1,
+                                linewidth=1,
                                 label = 'Released %s'%resp_comparison,
                                 alpha = 0.4)
                     except:
@@ -443,8 +442,7 @@ class Optim_Analyzer(object):
 
     def plot_feature_comp(self, response_filename,
                      response_release_filename,
-                     pdf_pages,
-                     opt_config_file = 'config_file.json'):
+                     pdf_pages):
 
         # objectives
         opt = self._opt # Optimizer object
@@ -454,8 +452,7 @@ class Optim_Analyzer(object):
         else:
             responses_release = {}
 
-        opt_config = utility.load_json(opt_config_file)
-        train_protocol_path = opt_config['protocols']
+        train_protocol_path = self.job_config['train_protocols']
         train_protocols = utility.load_json(train_protocol_path)
 
         logger.debug('Calculating Objectives for Optimized and Released Responses')
@@ -529,15 +526,13 @@ class Optim_Analyzer(object):
         return pdf_pages
 
     def plot_param_diversity(self,hof_params_filename,
-                             pdf_pages,
-                             opt_config_file = 'config_file.json'):
+                             pdf_pages):
 
         opt = self._opt
         best_individual = self.get_best_model()
         hof_list = utility.load_pickle(hof_params_filename)
 
-        opt_config = utility.load_json(opt_config_file)
-        release_params_bpopt = opt_config['release_params_bpopt']
+        release_params_bpopt = self.job_config['released_aa_model_dict']
         param_names = opt.evaluator.param_names
         param_values = opt.evaluator.params
         param_names_arranged = sorted(param_names)
@@ -1149,27 +1144,27 @@ class Optim_Analyzer(object):
             utility.save_pickle(spiketimes_hof_path,spiketimes_hof)
 
         validation_df = pd.DataFrame(exp_variance_hof)
-        validation_df_shortened = validation_df.loc[:,['Explained_Variance',
-                                               'Feature_Average',
-                                               'Feature_Average_Generalization']]
+#        validation_df_shortened = validation_df.loc[:,['Explained_Variance',
+#                                               'Feature_Average',
+#                                               'Feature_Average_Generalization']]
 
-        # Clustermap of the metrics on the hall-of-fame indices
-        try:
-            validation_df_shortened = validation_df_shortened.dropna(axis='columns')
-            seed_index = validation_df.pop('Seed')
-            lut = dict(zip(seed_index.unique(), "rbgy"))
-            row_colors = seed_index.map(lut)
-            validation_arr = validation_df_shortened.values
-            sns.set(style="darkgrid", font_scale=.95)
-            g=sns.clustermap(validation_df_shortened,col_cluster = False,
-                           standard_scale=1)
-            g=sns.clustermap(validation_df_shortened, annot = validation_arr[np.array(g.dendrogram_row.reordered_ind)],
-                        col_cluster = False, row_colors=row_colors, standard_scale=1)
-            g.fig.suptitle('Model Selection',fontsize = 14)
-            pdf_pages.savefig(g.fig)
-            plt.close(g.fig)
-        except Exception as e:
-            logger.debug(e)
+#        # Clustermap of the metrics on the hall-of-fame indices
+#        try:
+#            validation_df_shortened = validation_df_shortened.dropna(axis='columns')
+#            seed_index = validation_df.pop('Seed')
+#            lut = dict(zip(seed_index.unique(), "rbgy"))
+#            row_colors = seed_index.map(lut)
+#            validation_arr = validation_df_shortened.values
+#            sns.set(style="darkgrid", font_scale=.95)
+#            g=sns.clustermap(validation_df_shortened,col_cluster = False,
+#                           standard_scale=1)
+#            g=sns.clustermap(validation_df_shortened, annot = validation_arr[np.array(g.dendrogram_row.reordered_ind)],
+#                        col_cluster = False, row_colors=row_colors, standard_scale=1)
+#            g.fig.suptitle('Model Selection',fontsize = 14)
+#            pdf_pages.savefig(g.fig)
+#            plt.close(g.fig)
+#        except Exception as e:
+#            logger.debug(e)
        
         exp_variance_hof_df_path = exp_variance_hof_path.replace('pkl','csv')
         validation_df.to_csv(exp_variance_hof_df_path)
