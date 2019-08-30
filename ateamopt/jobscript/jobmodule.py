@@ -93,13 +93,14 @@ class ChainSubJob(JobModule):
             subjob_string = re.sub('# Copy compiled[\S\s]*fi','',
                                    subjob_string) 
         elif highlevel_job_props.get('compiled_modfiles_dir'):
-            subjob_string = re.sub('# Copy[\S\s]*modfiles_dir; fi','',
-                                   subjob_string)     
+            subjob_string = re.sub('# Copy modfiles[\S\s]*modfiles_dir_abs; fi','',
+                                   subjob_string)  
+            subjob_string = subjob_string.replace('compiled_modfiles_dir',
+                          highlevel_job_props['compiled_modfiles_dir'])
         else:
-            subjob_string = re.sub('# Copy[\S\s]*modfiles_dir; fi','',
+            subjob_string = re.sub('# Copy modfiles[\S\s]*fi','',
                                    subjob_string) 
-            subjob_string = re.sub('# Copy compiled[\S\s]*fi','',
-                                   subjob_string) 
+            
  
         with open(self.script_name, "w") as chainsubjob_script:
             chainsubjob_script.write(subjob_string)
