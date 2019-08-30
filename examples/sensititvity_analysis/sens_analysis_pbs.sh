@@ -13,4 +13,4 @@ cd $PBS_O_WORKDIR
 set -ex
 source activate ateam_opt
 
-python sa_example.py
+python sa_example.py sa_config.json

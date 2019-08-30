@@ -8,7 +8,7 @@ from multiprocessing import Pool
 import multiprocessing
 import numpy as np
 import os
-from collections import defaultdict
+from collections import defaultdict,namedtuple
 from sklearn.preprocessing import StandardScaler,MinMaxScaler   
 from sklearn.pipeline import Pipeline
 from sklearn.manifold import TSNE
@@ -18,7 +18,7 @@ from sklearn.decomposition import PCA
 from sklearn import preprocessing
 from sklearn.metrics import classification_report,\
                  confusion_matrix,accuracy_score  
-from sklearn.model_selection import train_test_split  
+from sklearn.model_selection import train_test_split,StratifiedKFold  
 from sklearn.utils.multiclass import unique_labels     
 import seaborn as sns
 import matplotlib.pyplot as plt
@@ -28,6 +28,9 @@ from matplotlib.colors import ListedColormap
 from scipy.stats import iqr
 from umap import UMAP
 from matplotlib.ticker import MaxNLocator
+from scipy import stats
+from scipy.stats import distributions,find_repeats
+import warnings
 
 
 from IPython import get_ipython
@@ -58,7 +61,102 @@ def reformat_legend(axes,sorted_class,color_list,marker_size):
     
     return dummy_handles,all_labels
 
+WilcoxonResult = namedtuple('WilcoxonResult', ('statistic', 'pvalue'))
 
+def wilcoxon_v(x, y=None, zero_method="wilcox", correction=False,
+             alternative="two-sided"):
+    if zero_method not in ["wilcox", "pratt", "zsplit"]:
+        raise ValueError("Zero method should be either 'wilcox' "
+                         "or 'pratt' or 'zsplit'")
+
+    if alternative not in ["two-sided", "less", "greater"]:
+        raise ValueError("Alternative must be either 'two-sided', "
+                         "'greater' or 'less'")
+
+    if y is None:
+        d = np.asarray(x)
+        if d.ndim > 1:
+            raise ValueError('Sample x must be one-dimensional.')
+    else:
+        x, y = map(np.asarray, (x, y))
+        if x.ndim > 1 or y.ndim > 1:
+            raise ValueError('Samples x and y must be one-dimensional.')
+        if len(x) != len(y):
+            raise ValueError('The samples x and y must have the same length.')
+        d = x - y
+
+    if zero_method in ["wilcox", "pratt"]:
+        n_zero = np.sum(d == 0, axis=0)
+        if n_zero == len(d):
+            raise ValueError("zero_method 'wilcox' and 'pratt' do not work if "
+                             "the x - y is zero for all elements.")
+
+    if zero_method == "wilcox":
+        # Keep all non-zero differences
+        d = np.compress(np.not_equal(d, 0), d, axis=-1)
+
+    count = len(d)
+    if count < 10:
+        warnings.warn("Sample size too small for normal approximation.")
+
+    r = stats.rankdata(abs(d))
+    r_plus = np.sum((d > 0) * r, axis=0)
+    r_minus = np.sum((d < 0) * r, axis=0)
+
+    if zero_method == "zsplit":
+        r_zero = np.sum((d == 0) * r, axis=0)
+        r_plus += r_zero / 2.
+        r_minus += r_zero / 2.
+
+    # return min for two-sided test, but r_plus for one-sided test
+    # the literature is not consistent here
+    # r_plus is more informative since r_plus + r_minus = count*(count+1)/2,
+    # i.e. the sum of the ranks, so r_minus and the min can be inferred
+    # (If alternative='pratt', r_plus + r_minus = count*(count+1)/2 - r_zero.)
+    # [3] uses the r_plus for the one-sided test, keep min for two-sided test
+    # to keep backwards compatability
+    if alternative == "two-sided":
+        T = min(r_plus, r_minus)
+    else:
+        T = r_plus
+    mn = count * (count + 1.) * 0.25
+    se = count * (count + 1.) * (2. * count + 1.)
+
+    if zero_method == "pratt":
+        r = r[d != 0]
+        # normal approximation needs to be adjusted, see Cureton (1967)
+        mn -= n_zero * (n_zero + 1.) * 0.25
+        se -= n_zero * (n_zero + 1.) * (2. * n_zero + 1.)
+
+    replist, repnum = find_repeats(r)
+    if repnum.size != 0:
+        # Correction for repeated elements.
+        se -= 0.5 * (repnum * (repnum * repnum - 1)).sum()
+
+    se = np.sqrt(se / 24)
+
+    # apply continuity correction if applicable
+    d = 0
+    if correction:
+        if alternative == "two-sided":
+            d = 0.5 * np.sign(T - mn)
+        elif alternative == "less":
+            d = -0.5
+        else:
+            d = 0.5
+
+    # compute statistic and p-value using normal approximation
+    z = (T - mn - d) / se
+    if alternative == "two-sided":
+        prob = 2. * distributions.norm.sf(abs(z))
+    elif alternative == "greater":
+        # large T = r_plus indicates x is greater than y; i.e.
+        # accept alternative in that case and return small p-value (sf)
+        prob = distributions.norm.sf(z)
+    else:
+        prob = distributions.norm.cdf(z)
+
+    return WilcoxonResult(T, prob)
 class Allactive_Classification(object):
     def __init__(self, param_file_list=None,metadata_file_list=None,
                      model_perf_filelist=None,me_cluster_data=None,
@@ -162,13 +260,13 @@ class Allactive_Classification(object):
         return perf_metric_df
     
     def broad_cre_lump_Pyr(self,cre_var):
-        pyr_select_list = ['Scnn1a-Tg3-Cre','Nr5a1-Cre',
+        pyr_select_list = ['Scnn1a-Tg3-Cre','Scnn1a-Tg2-Cre','Nr5a1-Cre',
                'Rbp4-Cre_KL100','Rorb-IRES2-Cre','Cux2-CreERT2']
-        if cre_var.startswith('Htr3a'):
+        if cre_var == 'Htr3a-Cre_NO152':
             return 'Htr3a'
-        elif cre_var.startswith('Pvalb'):
+        elif cre_var == 'Pvalb-IRES-Cre':
             return 'Pvalb'
-        elif cre_var.startswith('Sst'):
+        elif cre_var == 'Sst-IRES-Cre':
             return 'Sst'
         elif cre_var in pyr_select_list:
             return 'Pyr'
@@ -348,42 +446,75 @@ class Allactive_Classification(object):
         X_data = X_df.loc[:,feature_fields].values
         y_data = y_df['label_encoder'].values
         
-        X_train, X_test, y_train, y_test = train_test_split(X_data, y_data,\
-                        test_size=0.3, 
-                        stratify=y_data, random_state=0)
+        np.random.seed(0)
+        sampled_arr = np.random.choice(y_data,size=int(1e4))
+        unique, counts = np.unique(sampled_arr, return_counts=True)
+        counts_percentage = counts/np.sum(counts)*100
+        sampled_df = pd.DataFrame(data=counts_percentage,index= \
+                          le.inverse_transform(unique),columns=['percentage'])
         
-        svm_pipeline.fit(X_train, y_train)
-        y_pred_test = svm_pipeline.predict(X_test)
-        confusion_matrix_svm = confusion_matrix(y_test, y_pred_test)
-        svm_report = classification_report(y_test, y_pred_test)
-        score = accuracy_score(y_test, y_pred_test)*100
-        classes = le.inverse_transform(unique_labels(y_test, \
-                                        y_pred_test))
+        n_splits = 3
+        skf = StratifiedKFold(n_splits=n_splits,random_state=0) # K-fold train test split 
         
-        df_conf_svm = pd.DataFrame(confusion_matrix_svm, classes,
-              classes)
-        df_conf_svm=df_conf_svm.div(df_conf_svm.sum(axis=1),axis=0)
+        confusion_matrix_list = list()
+        score_list = list()
+        delta_chance = 0
+        for train_index,test_index in skf.split(X_data,y_data):
+            X_train, X_test = X_data[train_index], X_data[test_index]
+            y_train, y_test = y_data[train_index], y_data[test_index]
         
-        if plot_confusion_mat:
-            sns.set(style="whitegrid")
-            fig = plt.figure(figsize=(4,3))
-            cmap = sns.cubehelix_palette(light=1, as_cmap=True)
-            ax = sns.heatmap(df_conf_svm,cmap=cmap,alpha=0.8,linewidths=.1,
-                             linecolor='lightgrey',vmin=0,vmax=1)
-            fig.suptitle('Accuracy: %s %%'%score, fontsize = 10)
-            ax.set_ylabel('True Label',fontsize=8)
-            ax.set_xlabel('Predicted Label',fontsize=8)
-            plt.setp(ax.get_xticklabels(),fontsize=8,rotation=60,ha='right')
-            plt.setp(ax.get_yticklabels(),fontsize=8)
-            fig.savefig(conf_mat_figname,bbox_inches='tight')
-            plt.close(fig)
-        return score,confusion_matrix_svm,svm_report,df_conf_svm
+            svm_pipeline.fit(X_train, y_train)
+            y_pred_test = svm_pipeline.predict(X_test)
+            y_pred_chance = np.random.choice(y_test,len(y_test))
+            confusion_matrix_svm = confusion_matrix(y_test, y_pred_test)
+            
+            score = accuracy_score(y_test, y_pred_test)
+            chance_score = accuracy_score(y_test, y_pred_chance)
+            
+            score_list.append(score)
+            if score == max(score_list):
+                best_y_pred = y_pred_test
+                best_y = y_test
+             
+            classes = le.inverse_transform(unique_labels(y_test, \
+                                            y_pred_test))
+            
+            df_conf_svm = pd.DataFrame(confusion_matrix_svm, classes,
+                  classes)
+            df_conf_svm=df_conf_svm.div(df_conf_svm.sum(axis=1),axis=0)
+            confusion_matrix_list.append(df_conf_svm)
+            
+            
+            cm_svm_normalized = confusion_matrix_svm/np.sum(np.sum(confusion_matrix_svm))
+            cm_svm_normalized *= 100
+            sampled_df = sampled_df.reindex(index=classes)
+            delta_chance += score - chance_score
+
+            
+        score_avg = np.mean(score_list)*100
+        index,columns = confusion_matrix_list[0].index,\
+                    confusion_matrix_list[0].columns
+        conf_matrix = np.mean([df_.values for df_ in confusion_matrix_list],
+                                   axis=0)
+        confusion_matrix_df = pd.DataFrame(data=conf_matrix,index=index,
+                                           columns=columns)
+        
+        delta_chance = int(delta_chance/n_splits*100)
+        
+        
+        best_y_pred,best_y = le.inverse_transform(y_pred_test),\
+                                    le.inverse_transform(y_test)
+        
+        return int(score_avg),confusion_matrix_df,delta_chance,best_y,best_y_pred,\
+                sampled_df
             
     
     @staticmethod
-    def RF_classifier(X_df,y_df,feature_fields,target_field,color_dict,
-                  plot_confusion_mat=False,conf_mat_figname=None,
-                  plot_feat_imp=False,feat_imp_figname=None,):
+    def RF_classifier(X_df,y_df,feature_fields,target_field,
+#                  color_dict,
+#                  plot_confusion_mat=False,conf_mat_figname=None,
+#                  plot_feat_imp=False,feat_imp_figname=None
+                    ):
         clf = RandomForestClassifier(n_estimators=100, random_state=0)
         rf_pipeline = Pipeline([('scaler', StandardScaler()),
                                   ('random_forest', clf)])
@@ -393,85 +524,108 @@ class Allactive_Classification(object):
         X_data = X_df.loc[:,feature_fields].values
         y_data = y_df['label_encoder'].values
         
-        X_train, X_test, y_train, y_test = train_test_split(X_data, y_data,\
-                        test_size=0.3, 
-                        stratify=y_data, random_state=0)
-        rf_pipeline.fit(X_train, y_train)
-        y_pred_test = rf_pipeline.predict(X_test)
+        skf = StratifiedKFold(n_splits=3,random_state=0) # K-fold train test split 
         
-        confusion_matrix_rf = confusion_matrix(y_test, y_pred_test)
-        rf_report = classification_report(y_test, y_pred_test)
-        score = accuracy_score(y_test, y_pred_test)*100
-        classes = le.inverse_transform(unique_labels(y_test, \
+        confusion_matrix_list = list()
+        score_list = list()
+        feature_imp_df_list = list()
+        
+        for train_index,test_index in skf.split(X_data,y_data):
+            X_train, X_test = X_data[train_index], X_data[test_index]
+            y_train, y_test = y_data[train_index], y_data[test_index]
+            rf_pipeline.fit(X_train, y_train)
+            y_pred_test = rf_pipeline.predict(X_test)
+        
+            confusion_matrix_rf = confusion_matrix(y_test, y_pred_test)
+#            confusion_matrix_list.append(confusion_matrix_rf)
+            
+            score_list.append(accuracy_score(y_test, y_pred_test))
+            classes = le.inverse_transform(unique_labels(y_test, \
                                         y_pred_test))
-        df_conf_rf= pd.DataFrame(confusion_matrix_rf, classes,
+            df_conf_rf= pd.DataFrame(confusion_matrix_rf, classes,
                   classes)
-        df_conf_rf=df_conf_rf.div(df_conf_rf.sum(axis=1),axis=0)
+            df_conf_rf=df_conf_rf.div(df_conf_rf.sum(axis=1),axis=0)
+            confusion_matrix_list.append(df_conf_rf)
         
-        feature_imp = pd.Series(rf_pipeline.named_steps['random_forest'].feature_importances_,
+            feature_imp = pd.Series(rf_pipeline.named_steps['random_forest'].feature_importances_,
                         index=feature_fields).sort_values(ascending=False)
-        feature_fields_sorted = feature_imp.index.values
-        feature_dict = {'importance': [], 'param_name' : []}
-        for tree in rf_pipeline.named_steps['random_forest'].estimators_:
-            for i, param_name_ in enumerate(feature_fields_sorted):
-                sorted_idx = np.where(np.array(feature_fields) == param_name_)[0][0]
-                feature_dict['importance'].append(tree.feature_importances_[sorted_idx])
-                feature_dict['param_name'].append(param_name_)
-        feature_imp_df = pd.DataFrame(feature_dict)
+            feature_fields_sorted = feature_imp.index.values
+            feature_dict = {'importance': [], 'param_name' : []}
+            for tree in rf_pipeline.named_steps['random_forest'].estimators_:
+                for i, param_name_ in enumerate(feature_fields_sorted):
+                    sorted_idx = np.where(np.array(feature_fields) == param_name_)[0][0]
+                    feature_dict['importance'].append(tree.feature_importances_[sorted_idx])
+                    feature_dict['param_name'].append(param_name_)
+            feature_imp_df = pd.DataFrame(feature_dict)
+            feature_imp_df_list.append(feature_imp_df)
         
+#        if plot_confusion_mat:
+#            sns.set(style="whitegrid")
+#            fig = plt.figure(figsize=(4,3))
+#            
+#            cmap = sns.cubehelix_palette(light=1, as_cmap=True)
+#            ax = sns.heatmap(df_conf_rf,cmap=cmap,alpha=0.8,linewidths=.1,
+#                             linecolor='lightgrey',vmin=0,vmax=1)
+#            fig.suptitle('Accuracy: %s %%'%score, fontsize = 10)
+#            ax.set_ylabel('True Label',fontsize=8)
+#            ax.set_xlabel('Predicted Label',fontsize=8)
+#            plt.setp(ax.get_xticklabels(),fontsize=8,rotation=60,ha='right')
+#            plt.setp(ax.get_yticklabels(),fontsize=8)
+#            fig.savefig(conf_mat_figname,bbox_inches='tight')
+#            plt.close(fig)
+#        
+#        
+#        if plot_feat_imp:
+#            fig,ax = plt.subplots(1, figsize = (8,6))
+#            color_list = [color_dict[feature_field_] for feature_field_ in
+#                          feature_fields_sorted]
+#            
+#            feature_fields_cmap = [ckey for ckey in
+#                          color_dict.keys() if ckey in feature_fields_sorted]
+#            cmap_color_list = [color_dict[color_feat] for color_feat in 
+#                               feature_fields_cmap]
+#            my_cmap = ListedColormap(cmap_color_list)
+#            sm = ScalarMappable(cmap=my_cmap, norm=plt.Normalize(0,
+#                                     len(feature_fields_cmap)-1))
+#            sm.set_array([])
+#            ax = sns.barplot(x='param_name', y='importance', data= feature_imp_df,
+#                            order =feature_fields_sorted, 
+#                            palette=color_list,errwidth=1,ax = ax)
+#            ax.set_ylabel('Feature Importance Score')
+#            ax.set_xlabel('')
+#            ax.set_xticklabels(labels=feature_fields_sorted,
+#                               rotation=90,ha = 'center')
+#            cbar = plt.colorbar(sm,boundaries=np.arange(\
+#                                len(feature_fields_sorted)+1)-0.5)
+#            cbar.set_ticks(np.arange(len(feature_fields_cmap)))
+#            cbar.ax.set_yticklabels(feature_fields_cmap, fontsize=10)    
+#            fig.savefig(feat_imp_figname,bbox_inches='tight')
+#            plt.close(fig)
         
-        if plot_confusion_mat:
-            sns.set(style="whitegrid")
-            fig = plt.figure(figsize=(4,3))
-            
-            cmap = sns.cubehelix_palette(light=1, as_cmap=True)
-            ax = sns.heatmap(df_conf_rf,cmap=cmap,alpha=0.8,linewidths=.1,
-                             linecolor='lightgrey',vmin=0,vmax=1)
-            fig.suptitle('Accuracy: %s %%'%score, fontsize = 10)
-            ax.set_ylabel('True Label',fontsize=8)
-            ax.set_xlabel('Predicted Label',fontsize=8)
-            plt.setp(ax.get_xticklabels(),fontsize=8,rotation=60,ha='right')
-            plt.setp(ax.get_yticklabels(),fontsize=8)
-            fig.savefig(conf_mat_figname,bbox_inches='tight')
-            plt.close(fig)
+        score_avg = np.mean(score_list)*100
         
+        index,columns = confusion_matrix_list[0].index,\
+                    confusion_matrix_list[0].columns
+        conf_matrix = np.mean([df_.values for df_ in confusion_matrix_list],
+                                   axis=0)
+        confusion_matrix_df = pd.DataFrame(data=conf_matrix,index=index,
+                                           columns=columns)
         
-        if plot_feat_imp:
-            fig,ax = plt.subplots(1, figsize = (8,6))
-            color_list = [color_dict[feature_field_] for feature_field_ in
-                          feature_fields_sorted]
-            
-            feature_fields_cmap = [ckey for ckey in
-                          color_dict.keys() if ckey in feature_fields_sorted]
-            cmap_color_list = [color_dict[color_feat] for color_feat in 
-                               feature_fields_cmap]
-            my_cmap = ListedColormap(cmap_color_list)
-            sm = ScalarMappable(cmap=my_cmap, norm=plt.Normalize(0,
-                                     len(feature_fields_cmap)-1))
-            sm.set_array([])
-            ax = sns.barplot(x='param_name', y='importance', data= feature_imp_df,
-                            order =feature_fields_sorted, 
-                            palette=color_list,errwidth=1,ax = ax)
-            ax.set_ylabel('Feature Importance Score')
-            ax.set_xlabel('')
-            ax.set_xticklabels(labels=feature_fields_sorted,
-                               rotation=90,ha = 'center')
-            cbar = plt.colorbar(sm,boundaries=np.arange(\
-                                len(feature_fields_sorted)+1)-0.5)
-            cbar.set_ticks(np.arange(len(feature_fields_cmap)))
-            cbar.ax.set_yticklabels(feature_fields_cmap, fontsize=10)    
-            fig.savefig(feat_imp_figname,bbox_inches='tight')
-            plt.close(fig)
+        param_imp_df = pd.concat(feature_imp_df_list,sort=False,ignore_index=True)
+        param_group_dict = param_imp_df.groupby('param_name')['importance'].\
+                agg(np.median).to_dict()
+        params_sorted =  sorted(param_group_dict, key=param_group_dict.get,
+                                reverse=True)
+        delta_chance = int(score_avg - 100.0/len(index))
         
-        
-        return score,confusion_matrix_rf,rf_report,df_conf_rf,\
-                feature_imp_df
+        return int(score_avg),confusion_matrix_df,param_imp_df,\
+                    params_sorted,delta_chance
         
     
     @staticmethod
     def umap_embedding(X_df,y_df,feature_fields,
                        target_field,marker_field='Cell_id',
-                       col_var = None,figname='tsne_plot.pdf',
+                       col_var = None,figname='umap_plot.pdf',
                        figtitle = '',
                        **kwargs):
         
@@ -498,12 +652,16 @@ class Allactive_Classification(object):
         sorted_col = sorted(list(data[col_var].unique())) \
                     if col_var else None
         
-#        current_palette = sns.color_palette()
         if kwargs.get('palette'):
+            
             palette = kwargs.pop('palette')
+            if isinstance(palette,str):
+                color_list = sns.color_palette(palette,len(sorted_target))
+            elif isinstance(palette,dict):
+                color_list = [palette[tar_] for tar_ in sorted_target]
         else:
             palette = sns.color_palette()
-        color_list = sns.color_palette(palette,len(sorted_target))
+            color_list = sns.color_palette(palette,len(sorted_target))
         color_df_list = [color_list[sorted_target.index(hue_.split('.')[0])] \
                          for hue_ in sorted_hue_marker]
         
@@ -532,7 +690,6 @@ class Allactive_Classification(object):
         dummy_handles,all_labels = reformat_legend(axes,sorted_target,
                                            color_list,marker_size)
         for ax_ in axes.ravel():
-#            ax_.grid(False)
             ax_.axis('off')
             ax_.get_xaxis().set_visible(False)
             ax_.axes.get_yaxis().set_visible(False)
@@ -540,7 +697,7 @@ class Allactive_Classification(object):
         if kwargs.get('legend'):
             g.fig.tight_layout(rect=[0, 0.1, .95, 1])
             g.fig.legend(handles = dummy_handles, labels = all_labels,
-                         fontsize=16, loc= 'lower center',ncol=4)
+                         fontsize=16, loc= 'lower center',ncol=4,frameon=False)
 #        figtitle += ' (n=%s)'%len(data['Cell_id'].unique())
 #        g.fig.suptitle(figtitle,fontsize=16)
 #        
@@ -557,7 +714,8 @@ class Allactive_Classification(object):
                        **kwargs):
         
         tsne_pipeline = Pipeline([('scaling', StandardScaler()), \
-                     ('tsne',TSNE(n_components=2,random_state =0))])
+                     ('tsne',TSNE(n_components=2,perplexity=35,
+                                  random_state =0))])
             
         X_data = X_df.loc[:,feature_fields].values
         tsne_results = tsne_pipeline.fit_transform(X_data)
@@ -574,12 +732,16 @@ class Allactive_Classification(object):
         sorted_col = sorted(list(data[col_var].unique())) \
                     if col_var else None
         
-#        current_palette = sns.color_palette()
         if kwargs.get('palette'):
+            
             palette = kwargs.pop('palette')
+            if isinstance(palette,str):
+                color_list = sns.color_palette(palette,len(sorted_target))
+            elif isinstance(palette,dict):
+                color_list = [palette[tar_] for tar_ in sorted_target]
         else:
             palette = sns.color_palette()
-        color_list = sns.color_palette(palette,len(sorted_target))
+            color_list = sns.color_palette(palette,len(sorted_target))
         color_df_list = [color_list[sorted_target.index(hue_.split('.')[0])] \
                          for hue_ in sorted_hue_marker]
         
@@ -616,12 +778,12 @@ class Allactive_Classification(object):
         if kwargs.get('legend'):
             g.fig.tight_layout(rect=[0, 0.1, .95, 1])
             g.fig.legend(handles = dummy_handles, labels = all_labels,
-                         fontsize=16, loc= 'lower center',ncol=4)
+                         fontsize=16, loc= 'lower center',ncol=4,frameon=False)
 #        figtitle += ' (n=%s)'%len(data['Cell_id'].unique())
 #        g.fig.suptitle(figtitle,fontsize=16)
 #        
 
-        g.fig.savefig(figname, bbox_inches='tight',dpi=100)
+        g.fig.savefig(figname, bbox_inches='tight',dpi=500)
         plt.close(g.fig)
         
     @staticmethod
@@ -1125,4 +1287,15 @@ class Allactive_Classification(object):
         
         return (final_dict,cell_id)
     
+    
+    @staticmethod
+    def exp_protocols_to_dict(exp_feature_file):
+        exp_protocol_dict = utility.load_json(exp_feature_file)
+        cell_id = exp_feature_file.split('/')[-2]
+        final_dict={}
+        for exp_stim,exp_proto_dict in exp_protocol_dict.items():
+#            for key,val in exp_proto_dict['soma'].items():
+            final_dict[exp_stim] = exp_proto_dict['stimuli'][0]['amp']
+        
+        return (final_dict,cell_id)
         

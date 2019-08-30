@@ -8,6 +8,9 @@ from ateamopt.utils import utility
 import uncertainpy as un
 import operator
 from ateam.data import lims
+import multiprocessing as mp
+import sys,shutil
+
 
 def nrnsim_bpopt(**kwargs):
     opt = kwargs.pop('opt')
@@ -38,8 +41,26 @@ def nrnsim_bpopt(**kwargs):
 
 def main():
     
-    # config files with all the paths for Bluepyopt sim
-    cell_id = '483101699'
+    # Read sensitivity analysis config file
+    sens_config_file = sys.argv[-1]
+    sens_config_dict = utility.load_json(sens_config_file)
+    cell_id = sens_config_dict['Cell_id']
+    cpu_count = sens_config_dict['cpu_count'] if 'cpu_count'\
+            in sens_config_dict.keys() else mp.cpu_count()
+    perisomatic_sa = sens_config_dict.get('run_peri_analysis',False)
+    
+    # Parameters to vary (All-active) 
+    select_aa_param_path = sens_config_dict['select_aa_param_path'] # knobs
+    
+    # Parameters to vary (Perisomatic) 
+    if perisomatic_sa:
+        select_peri_param_path = sens_config_dict['select_peri_param_path'] # knobs
+    
+    select_feature_path = sens_config_dict['select_feature_path'] # knobs
+    param_mod_range = sens_config_dict.get('param_mod_range',.1) # knobs
+    mechanism_path = sens_config_dict['mechanism']
+    
+    # config files with all the paths for Bluepyopt sim    
     lr = lims.LimsReader()
     morph_path = lr.get_swc_path_from_lims(int(cell_id))
     
@@ -63,80 +84,25 @@ def main():
     
     # optimized parameters around which select parameters are varied
     optim_param_path_aa = '/allen/aibs/mat/ateam_shared/Mouse_Model_Fit_Metrics/'\
-    '{cell_id}/fitted_params/optim_param_{cell_id}.json'.\
+    '{cell_id}/fitted_params/optim_param_unformatted_{cell_id}.json'.\
+                    format(cell_id = cell_id)
+    if not os.path.exists(optim_param_path_aa):
+        optim_param_path_aa = '/allen/aibs/mat/ateam_shared/Mouse_Model_Fit_Metrics/'\
+            '{cell_id}/fitted_params/optim_param_{cell_id}_bpopt.json'.\
                     format(cell_id = cell_id)
     
-    optim_param_path_peri = None
-    
-    
-    # Parameters to vary (All-active)
-    sens_params_path_aa = 'select_params_aa.json' # knobs
-    
-    if not os.path.exists(sens_params_path_aa):
-        select_parameters = {'gbar_NaTs2_t':['somatic'],
-                             'gbar_NaTa_t' : ['axonal'],
-                             'gbar_Nap_Et2' : ['axonal','somatic'],
-                             'gbar_Kv3_1' : ['axonal','somatic'],
-                             'gbar_K_Tst' :  ['axonal','somatic'],
-                             'gbar_K_Pst' : ['axonal','somatic']
-                             }
-        utility.save_json(sens_params_path_aa,select_parameters)                         
-    
-    # Parameters to vary (Perisomatic)
-    sens_params_path_peri = 'select_params_peri.json' # knobs
-    if not os.path.exists(sens_params_path_peri):
-        select_parameters_peri = {'gbar_NaTs':['somatic'],
-                             'gbar_Nap' : ['somatic'],
-                             'gbar_Kv3_1' : ['somatic'],
-                             'gbar_K_T' :  ['somatic'],
-                             'gbar_K_P' : ['somatic']
-                             }
-        utility.save_json(sens_params_path_peri,select_parameters_peri)  
-    
-    
-    # Features 
-    efel_features_path = 'features_sobol.json' # knobs
-    
-    if os.path.exists(efel_features_path):
-        efel_features = utility.load_json(efel_features_path)
-    else:    
-        efel_features = ["AP_amplitude","AP_width",
-#                         "mean_frequency", 
-                         "adaptation_index2","ISI_CV", 
-                         "AHP_depth", "time_to_first_spike",
-                         "Spikecount"]
-        utility.save_json(efel_features_path,efel_features)    
-    
-    param_mod_range = .1 # knobs
-    
-    SA_obj_aa = SA_helper(optim_param_path_aa,sens_params_path_aa,param_mod_range,
+    SA_obj_aa = SA_helper(optim_param_path_aa,select_aa_param_path,param_mod_range,
                        opt_config_file)
-    SA_obj_peri = SA_helper(optim_param_path_peri,sens_params_path_peri,param_mod_range,
-                       opt_config_file)
-    
     
     _,protocol_path,mech_path,feature_path,\
         param_bound_path = SA_obj_aa.load_config(model_base_path)
         
-    _,_,mech_path_peri,_,\
-        param_bound_path_peri = SA_obj_peri.load_config(model_base_path,
-                                                    perisomatic=True)
-    
     # Make sure to get the parameter bounds big enough for BluePyOpt sim
     sens_param_bound_write_path_aa = "param_sensitivity_aa.json"
-    sens_param_bound_write_path_peri = "param_sensitivity_peri.json"
-    
     optim_param_aa = SA_obj_aa.create_sa_bound(param_bound_path,
-                                         sens_param_bound_write_path_aa)
-    optim_param_peri = SA_obj_peri.create_sa_bound_peri(param_bound_path_peri,
-                                         sens_param_bound_write_path_peri)
-    
+                                         sens_param_bound_write_path_aa)    
     param_dict_uc_aa = SA_obj_aa.create_sens_param_dict()
     parameters_aa ={key:optim_param_aa[val] for key,val in param_dict_uc_aa.items()}
-    
-    param_dict_uc_peri = SA_obj_peri.create_sens_param_dict()
-    parameters_peri ={key:optim_param_peri[val] for key,val in param_dict_uc_peri.items()}
-    
     eval_handler_aa = Bpopt_Evaluator(protocol_path, feature_path,
                                    morph_path, sens_param_bound_write_path_aa,
                                    mech_path,
@@ -145,14 +111,6 @@ def main():
     evaluator_aa = eval_handler_aa.create_evaluator()
     opt_aa = bpopt.optimisations.DEAPOptimisation(evaluator=evaluator_aa)
     
-    
-    eval_handler_peri = Bpopt_Evaluator(protocol_path, feature_path,
-                                   morph_path, sens_param_bound_write_path_peri,
-                                   mech_path_peri,
-                                   ephys_dir=None,
-                                   timed_evaluation = False)
-    evaluator_peri = eval_handler_peri.create_evaluator()
-    opt_peri = bpopt.optimisations.DEAPOptimisation(evaluator=evaluator_peri)
     
     stim_protocols = utility.load_json(protocol_path)
     stim_protocols = {key:val for key,val in stim_protocols.items() \
@@ -163,18 +121,15 @@ def main():
     
     stim_name= sorted_stim_tuple[-1][0] # knobs (the max amp)
     
-    # Check for compiled modfiles
+    # Copy compiled modfiles
     if not os.path.isdir('x86_64'):
         raise Exception('Compiled modfiles do not exist')
     
+    efel_features = utility.load_json(select_feature_path)
     un_features = un.EfelFeatures(features_to_run=efel_features)
     
     un_parameters_aa = un.Parameters(parameters_aa)
     un_parameters_aa.set_all_distributions(un.uniform(param_mod_range))
-    
-    un_parameters_peri= un.Parameters(parameters_peri)
-    un_parameters_peri.set_all_distributions(un.uniform(param_mod_range))
-    
     un_model_aa = un.Model(run=nrnsim_bpopt, interpolate=True,
                  labels=["Time (ms)", "Membrane potential (mV)"],
                  opt=opt_aa,stim_protocols =stim_protocols,
@@ -182,58 +137,81 @@ def main():
                  stim_name=stim_name,
                  optim_param=optim_param_aa)
     
-    un_model_peri = un.Model(run=nrnsim_bpopt, interpolate=True,
-                 labels=["Time (ms)", "Membrane potential (mV)"],
-                 opt=opt_peri,stim_protocols =stim_protocols,
-                 param_dict_uc = param_dict_uc_peri,
-                 stim_name=stim_name,
-                 optim_param=optim_param_peri)
     
     # Perform the uncertainty quantification
     UQ_aa = un.UncertaintyQuantification(un_model_aa,
                                       parameters=un_parameters_aa,
-                                      features=un_features)
-    UQ_peri = un.UncertaintyQuantification(un_model_peri,
-                                      parameters=un_parameters_peri,
-                                      features=un_features)
-    
-    
+                                      features=un_features)    
     data_folder = 'sensitivity_data'
     sa_filename_aa = 'sa_allactive_%s.h5'%cell_id
     sa_filename_aa_csv = 'sa_allactive_%s.csv'%cell_id
     sa_data_path_aa = os.path.join(data_folder,sa_filename_aa)
     sa_aa_csv_path = os.path.join(data_folder,sa_filename_aa_csv)
     
-    UQ_aa.quantify(seed=0,CPUs=32,data_folder=data_folder,
+    UQ_aa.quantify(seed=0,CPUs=cpu_count,data_folder=data_folder,
                    filename= sa_filename_aa)
-    
-    
-    
-    sa_filename_peri = 'sa_perisomatic_%s.h5'%cell_id
-    sa_filename_peri_csv = 'sa_perisomatic_%s.csv'%cell_id
-    sa_data_path_peri = os.path.join(data_folder,sa_filename_peri)
-    sa_peri_csv_path = os.path.join(data_folder,sa_filename_peri_csv)
-    
-    UQ_peri.quantify(seed=0,CPUs=32,data_folder=data_folder,
-                   filename= sa_filename_peri)
-    
-    
     _ = SA_obj_aa.save_analysis_data(sa_data_path_aa,
                                 filepath=sa_aa_csv_path)
-    
-    _ = SA_obj_peri.save_analysis_data(sa_data_path_peri,
-                                filepath=sa_peri_csv_path)
-    
+        
     cell_data_aa =  un.Data(sa_data_path_aa)
-    cell_data_peri =  un.Data(sa_data_path_peri)
-    
     SA_obj_aa.plot_sobol_analysis(cell_data_aa,analysis_path = \
                           'figures/sa_analysis_aa_%s.pdf'%cell_id,
                           palette='Set1')
-    SA_obj_peri.plot_sobol_analysis(cell_data_peri,analysis_path = \
-                          'figures/sa_analysis_peri_%s.pdf'%cell_id,
-                          palette='Set2')
-
-   
+    
+    # Perisomatic model
+    
+    if perisomatic_sa:
+    
+        try:
+            optim_param_path_peri = None
+            SA_obj_peri = SA_helper(optim_param_path_peri,select_peri_param_path,param_mod_range,
+                                   opt_config_file)
+            _,_,mech_path_peri,_,\
+                    param_bound_path_peri = SA_obj_peri.load_config(model_base_path,
+                                                                perisomatic=True)
+            
+            sens_param_bound_write_path_peri = "param_sensitivity_peri.json"
+            optim_param_peri = SA_obj_peri.create_sa_bound_peri(param_bound_path_peri,
+                                                     sens_param_bound_write_path_peri)
+            
+            param_dict_uc_peri = SA_obj_peri.create_sens_param_dict()
+            parameters_peri ={key:optim_param_peri[val] for key,val in param_dict_uc_peri.items()}
+            eval_handler_peri = Bpopt_Evaluator(protocol_path, feature_path,
+                                               morph_path, sens_param_bound_write_path_peri,
+                                               mech_path_peri,
+                                               ephys_dir=None,
+                                               timed_evaluation = False)
+            evaluator_peri = eval_handler_peri.create_evaluator()
+            opt_peri = bpopt.optimisations.DEAPOptimisation(evaluator=evaluator_peri)
+            un_parameters_peri= un.Parameters(parameters_peri)
+            un_parameters_peri.set_all_distributions(un.uniform(param_mod_range))
+            un_model_peri = un.Model(run=nrnsim_bpopt, interpolate=True,
+                             labels=["Time (ms)", "Membrane potential (mV)"],
+                             opt=opt_peri,stim_protocols =stim_protocols,
+                             param_dict_uc = param_dict_uc_peri,
+                             stim_name=stim_name,
+                             optim_param=optim_param_peri)
+            UQ_peri = un.UncertaintyQuantification(un_model_peri,
+                                                  parameters=un_parameters_peri,
+                                                  features=un_features)
+            sa_filename_peri = 'sa_perisomatic_%s.h5'%cell_id
+            sa_filename_peri_csv = 'sa_perisomatic_%s.csv'%cell_id
+            sa_data_path_peri = os.path.join(data_folder,sa_filename_peri)
+            sa_peri_csv_path = os.path.join(data_folder,sa_filename_peri_csv)
+            
+            UQ_peri.quantify(seed=0,CPUs=cpu_count,data_folder=data_folder,
+                           filename= sa_filename_peri)
+            _ = SA_obj_peri.save_analysis_data(sa_data_path_peri,
+                                            filepath=sa_peri_csv_path)
+            cell_data_peri =  un.Data(sa_data_path_peri)    
+            SA_obj_peri.plot_sobol_analysis(cell_data_peri,analysis_path = \
+                                      'figures/sa_analysis_peri_%s.pdf'%cell_id,
+                                      palette='Set2')
+        except Exception as e:
+            print(e)
+      
+        
+#    shutil.rmtree('x86_64')
+        
 if __name__ == '__main__':
     main()
