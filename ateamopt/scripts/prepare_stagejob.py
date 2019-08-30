@@ -133,7 +133,7 @@ def main(args):
     utility.save_json(stage_tracker_path,next_stage_job_props)
     
     # Create batch jobscript
-    if highlevel_job_props['dryrun'] or not any(substr in machine for substr in machine_match_patterns):
+    if not any(substr in machine for substr in machine_match_patterns):
         testJob = test_JobModule('batch_job.sh',job_config_path=job_config_path)
         
         testJob.script_generator(next_stage_job_config=next_stage_jobconfig)
