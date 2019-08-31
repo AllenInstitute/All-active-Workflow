@@ -126,7 +126,7 @@ def main(args):
     try:
         next_stage_jobconfig['stage_jobconfig']=next_stage_job_props.pop(0)
         next_stage_jobconfig['highlevel_jobconfig']=highlevel_job_props
-        
+        chainjobtemplate_path = 'job_templates/chainjob_template.sh'
     except:
         pass
     
@@ -137,7 +137,7 @@ def main(args):
         testJob = test_JobModule('batch_job.sh',job_config_path=job_config_path)
         
         testJob.script_generator(next_stage_job_config=next_stage_jobconfig)
-        chainjobtemplate_path = 'job_templates/chainjob_template.sh'
+        
     elif 'hpc-login' in machine:
         jobtemplate_path = 'job_templates/pbs_jobtemplate.sh'
         batch_job = PBS_JobModule(jobtemplate_path,job_config_path)
@@ -145,7 +145,8 @@ def main(args):
         
         analysis_job = PBS_JobModule(jobtemplate_path,job_config_path,
                          script_name='analyze_job.sh')
-        analysis_job.script_generator(analysis=True)
+        analysis_job.script_generator(analysis=True,
+                          next_stage_job_config=next_stage_jobconfig)
     elif 'cori' in machine:
         jobtemplate_path = 'job_templates/nersc_slurm_jobtemplate.sh'
         

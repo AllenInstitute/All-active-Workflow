@@ -15,9 +15,10 @@ def script_decorator(func):
     return func_wrapper
 
 
-dryrun_config = dict(offspring_size = 2,max_ngen= 2,cp_backup= None,
+dryrun_config = dict(offspring_size = 2,max_ngen= 2,cp_backup_dir= None,
             nengines= 2,nnodes=1,nnodes_analysis=1,nprocs=2,
-            nprocs_analysis=2,jobtime='10:00',jobtime_analysis='10:00')
+            nprocs_analysis=2,nengines_analysis= 2,
+            jobtime='10:00',jobtime_analysis='10:00')
 
 class JobModule(object):
 
@@ -234,9 +235,13 @@ class PBS_JobModule(JobModule):
     def script_generator(self,chain_job='chain_job.sh',**kwargs):
         job_config = utility.load_json(self.job_config_path)
         stage_jobconfig = job_config['stage_jobconfig']
+#        stage_jobconfig_str = {stage_key:(str(stage_val) if isinstance(stage_val,int)\
+#                else stage_val) for stage_key,stage_val in stage_jobconfig.items()}
+        
         highlevel_job_props = job_config['highlevel_jobconfig']
         
-        if highlevel_job_props['dryrun']:
+        if highlevel_job_props['dryrun'] or (kwargs.get('analysis') and \
+                             not stage_jobconfig['run_hof_analysis']):
             for option,option_val in dryrun_config.items():
                 if stage_jobconfig[option]:
                     stage_jobconfig[option] = option_val
@@ -274,25 +279,26 @@ class PBS_JobModule(JobModule):
           if kwargs.get('analysis') else batchjob_string.replace('jobtime',
           stage_jobconfig['jobtime']))
         batchjob_string = (batchjob_string.replace('nnodes',
-          stage_jobconfig['nnodes_analysis'])
+          str(stage_jobconfig['nnodes_analysis']))
           if kwargs.get('analysis') else batchjob_string.replace('nnodes',
-          stage_jobconfig['nnodes']))
+          str(stage_jobconfig['nnodes'])))
         batchjob_string = (batchjob_string.replace('nprocs',
-          stage_jobconfig['nprocs_analysis'])
+          str(stage_jobconfig['nprocs_analysis']))
           if kwargs.get('analysis') else batchjob_string.replace('nprocs',
-          stage_jobconfig['nprocs']))
+          str(stage_jobconfig['nprocs'])))
         batchjob_string = (batchjob_string.replace('nengines',
-          stage_jobconfig['nprocs_analysis'])
-          if kwargs.get('nengines_analysis') else batchjob_string.replace('nengines',
-          stage_jobconfig['nengines']))
+          str(stage_jobconfig['nprocs_analysis']))
+          if kwargs.get('analysis') else batchjob_string.replace('nengines',
+          str(stage_jobconfig['nengines'])))
         
          
         if kwargs.get('analysis'):
-            if stage_jobconfig['run_hof_analysis']:
-                batchjob_string = re.sub('# Run[\S\s]*$pids','',
+            batchjob_string = batchjob_string.replace('analysis_script',
+                          stage_jobconfig['analysis_script'])
+            batchjob_string = re.sub('# Run[\S\s]*pids','',
                                    batchjob_string) 
-            else:
-                batchjob_string = re.sub('# Configure[\S\s]*$pids','',
+            if not stage_jobconfig['run_hof_analysis']:
+                batchjob_string = re.sub('# Configure[\S\s]*pids','',
                                    batchjob_string) 
             if 'next_stage_job_config' in kwargs.keys():
                 if bool(kwargs['next_stage_job_config']):
