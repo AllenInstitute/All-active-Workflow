@@ -114,7 +114,7 @@ def main():
     obj_list_train_filename = 'analysis_params/hof_obj_train.pkl'
     obj_list_all_filename = 'analysis_params/hof_obj_all.pkl'
     feat_list_all_filename = 'analysis_params/hof_features_all.pkl'
-    obj_list_untrain_filename = 'analysis_params/hof_obj_untrain.pkl'
+    obj_list_test_filename = 'analysis_params/hof_obj_untrain.pkl'
     seed_indices_filename = 'analysis_params/seed_indices.pkl'
 
     score_list_train_filename = 'analysis_params/score_list_train.pkl'
@@ -158,13 +158,13 @@ def main():
                                                                 score_list_train)
         utility.save_pickle(feat_list_all_filename, feat_list_gen_sorted)
     
-    if not os.path.exists(obj_list_untrain_filename):    
+    if not os.path.exists(obj_list_test_filename):    
         analysis_handler._opt = opt_test
         obj_list_untrain = analysis_handler.get_response_scores(hof_response_list)
 
         obj_list_untrain_sorted = analysis_handler.organize_models(obj_list_untrain,
                                                                     score_list_train)
-        utility.save_pickle(obj_list_untrain_filename, obj_list_untrain_sorted)
+        utility.save_pickle(obj_list_test_filename, obj_list_untrain_sorted)
 
     analysis_handler._opt = opt_train
     
@@ -288,7 +288,7 @@ def main():
         model_perf_filename = 'Validation_Responses/fitness_metrics_'+cell_id+'.csv'
         pdf_pages = analysis_handler.hof_statistics(stim_mapfile, pdf_pages,
                            obj_list_all_filename, hof_responses_filename,
-                           obj_list_train_filename,obj_list_untrain_filename,
+                           obj_list_train_filename,obj_list_test_filename,
                            seed_indices_filename,spiketimes_exp_path,spiketimes_hof_path,
                            exp_variance_hof_path,cell_metadata,model_perf_filename)
     pdf_pages.close()

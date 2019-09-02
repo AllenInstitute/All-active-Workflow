@@ -2,7 +2,6 @@ import os
 import logging
 from subprocess import Popen, PIPE
 from ateamopt.utils import utility
-import glob
 import re
 
 logger = logging.getLogger(__name__)
@@ -163,13 +162,16 @@ class test_JobModule(JobModule):
             if option in stage_jobconfig:
                 stage_jobconfig[option] = option_val
         stage_jobconfig['ipyp_optim'] = False
-        
+        if isinstance(stage_jobconfig.get('seed'),list):
+            stage_jobconfig['seed'] = 1
         utility.save_json(self.job_config_path,job_config)
+        
+        
         testjob_string = '#!/bin/bash\n'
         testjob_string +='set -ex\n'
         testjob_string +='source activate %s\n'%highlevel_job_props['conda_env']
-        testjob_string += 'python %s --input_json %s\n'%\
-        (stage_jobconfig['main_script'],self.job_config_path)
+        testjob_string += 'python %s --job_config %s\n'%\
+                (stage_jobconfig['main_script'],self.job_config_path)
         testjob_string += 'python %s --input_json %s\n'\
                         %(stage_jobconfig['analysis_script'],self.job_config_path)
         
@@ -235,8 +237,6 @@ class PBS_JobModule(JobModule):
     def script_generator(self,chain_job='chain_job.sh',**kwargs):
         job_config = utility.load_json(self.job_config_path)
         stage_jobconfig = job_config['stage_jobconfig']
-#        stage_jobconfig_str = {stage_key:(str(stage_val) if isinstance(stage_val,int)\
-#                else stage_val) for stage_key,stage_val in stage_jobconfig.items()}
         
         highlevel_job_props = job_config['highlevel_jobconfig']
         
@@ -252,9 +252,14 @@ class PBS_JobModule(JobModule):
         with open(self.script_template,'r') as job_template:
             batchjob_string = job_template.read()
 
+        jobname = '%s.%s'%(os.path.basename(highlevel_job_props['job_dir']),
+                       stage_jobconfig['stage_name'])
+        seed_string = ''.join(['%s '%seed_ for seed_ in stage_jobconfig['seed']])
+        
         # High level job config
         batchjob_string = batchjob_string.replace('conda_env',
                           highlevel_job_props['conda_env'])
+        batchjob_string = batchjob_string.replace('jobname',jobname)
         
         # Stage Job config
         batchjob_string = batchjob_string.replace('jobscript_name',self.script_name)
@@ -272,6 +277,7 @@ class PBS_JobModule(JobModule):
                           stage_jobconfig['main_script'])
         batchjob_string = batchjob_string.replace('job_config_path',
                           self.job_config_path)
+        batchjob_string = batchjob_string.replace('seed_list',seed_string)
         
         # Job config analysis vs optimization 
         batchjob_string = (batchjob_string.replace('jobtime',
