@@ -6,9 +6,12 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-def filter_feat_proto_active(features_dict,protocols_dict,all_protocols_dict,
-                             select_dict, add_fi_kink = True,
-                             add_DB_check = True):
+select_feat_dict = {'spike_proto': 2,
+               'nospike_proto' :0}
+
+def filter_feat_proto_active(features_dict,protocols_dict,
+#                             add_fi_kink = True,add_DB_check = True,
+                             **kwargs):
     """
         Filter the features and protocols for the final
         stage of optimization
@@ -45,8 +48,8 @@ def filter_feat_proto_active(features_dict,protocols_dict,all_protocols_dict,
     non_spiking_proto_sorted = sorted(non_spiking_proto_dict,
                            key=non_spiking_proto_dict.__getitem__)
 
-    num_spike = select_dict['spike_proto'] # In descending order
-    num_nospike = select_dict['nospike_proto'] # in descending order
+    num_spike = select_feat_dict['spike_proto'] # In descending order
+    num_nospike = select_feat_dict['nospike_proto'] # in descending order
 
     # Select spiking proto
     try:
@@ -64,37 +67,33 @@ def filter_feat_proto_active(features_dict,protocols_dict,all_protocols_dict,
         logger.debug('Number of nonspiking protocols requested exceeds data')
         nonspiking_proto_select = non_spiking_proto_sorted
 
-    if add_fi_kink:
+    if kwargs.get('add_fi_kink'):
         spiking_proto_select.append(spiking_proto_sorted[0]) # the fist spiking stim
         nonspiking_proto_select.append(non_spiking_proto_sorted[-1]) # the last non-spiking stim
         spiking_proto_select = list(set(spiking_proto_select))
         nonspiking_proto_select = list(set(nonspiking_proto_select))
 
-    features_dict_filtered = {key:val for key,val in features_dict.items() \
+    train_features_dict = {key:val for key,val in features_dict.items() \
                               if key in spiking_proto_select+
                                       nonspiking_proto_select}
-    protocols_dict_filtered = {key:val for key,val in protocols_dict.items() \
+    train_protocols_dict = {key:val for key,val in protocols_dict.items() \
                               if key in spiking_proto_select+
                                           nonspiking_proto_select}
-    untrained_features_dict = {key:val for key,val in features_dict.items() \
+    test_features_dict = {key:val for key,val in features_dict.items() \
                               if key not in spiking_proto_select+
                                   nonspiking_proto_select}
     
     # For fI kink spiking proto only allow the following features
-    for u_key,u_val in untrained_features_dict.items():
-        u_val['soma'] = entries_to_remove(['depol_block',\
-                       'check_AISInitiation','Spikecount'],u_val['soma'])
-    
     # Remove everything other than basic features for the first spiking proto
     f_key_list = []        
-    for f_key,f_val in features_dict_filtered[spiking_proto_sorted[0]]['soma'].items():
+    for f_key,f_val in train_features_dict[spiking_proto_sorted[0]]['soma'].items():
         if f_key not in ['mean_frequency', 'depol_block',\
                        'check_AISInitiation']:
             f_key_list.append(f_key) 
-    features_dict_filtered[spiking_proto_sorted[0]]['soma'] =  entries_to_remove(\
-                 f_key_list,features_dict_filtered[spiking_proto_sorted[0]]['soma'])         
+    train_features_dict[spiking_proto_sorted[0]]['soma'] =  entries_to_remove(\
+                 f_key_list,train_features_dict[spiking_proto_sorted[0]]['soma'])         
             
-    if add_DB_check:
+    if kwargs.get('DB_check'):
         max_proto_key = spiking_proto_sorted[-1]
         max_amp = max([proto['amp'] for proto in protocols_dict[max_proto_key]['stimuli']])
         DB_proto_delay = max([proto['delay'] for proto in protocols_dict[max_proto_key]['stimuli']])
@@ -118,13 +117,13 @@ def filter_feat_proto_active(features_dict,protocols_dict,all_protocols_dict,
                 'depol_block' : [1.0,
                                  0.05]
                           }
-        features_dict_filtered['DB_check_DC'] = {'soma': DB_feature_dict}
-        protocols_dict_filtered['DB_check_DC'] = {'stimuli':DB_proto_dict}
-        all_protocols_dict['DB_check_DC'] = {'stimuli':DB_proto_dict}
+        train_features_dict['DB_check_DC'] = {'soma': DB_feature_dict}
+        train_protocols_dict['DB_check_DC'] = {'stimuli':DB_proto_dict}
+#        all_protocols_dict['DB_check_DC'] = {'stimuli':DB_proto_dict}
 
-    return features_dict_filtered,untrained_features_dict,\
-         protocols_dict_filtered,all_protocols_dict
-
+        return train_features_dict,test_features_dict,train_protocols_dict,DB_proto_dict
+    else:
+        return train_features_dict,test_features_dict,train_protocols_dict
 
 def filter_feat_proto_basic(features_dict,protocols_dict):
     features_dict = correct_voltage_feat_std(features_dict)
@@ -154,7 +153,7 @@ def filter_feat_proto_basic(features_dict,protocols_dict):
                       features_dict_filtered.items() if bool(val['soma'])}
     return features_dict_filtered,protocols_dict_filtered
 
-def filter_feat_proto_passive(features_dict,protocols_dict,*args):
+def filter_feat_proto_passive(features_dict,protocols_dict,**kwargs):
 
     features_dict = correct_voltage_feat_std(features_dict)
     spiking_proto = []
@@ -177,14 +176,17 @@ def correct_voltage_feat_std(features_dict,
                'decay_time_constant_after_stim']):
     feature_stat = defaultdict(list)
     feature_key = []
-    for feat_name in feature_correct_list:
-        for key,val in features_dict.items():
-            try:
-                if val['soma'][feat_name][1] == 0:
-                    feature_stat[feat_name].append(val['soma'][feat_name][0])
-                    feature_key.append(key)
-            except:
-                pass
+    
+    
+    for key,val in features_dict.items():
+        for feat_name in val['soma'].keys():
+            if feat_name in feature_correct_list:
+                try:
+                    if val['soma'][feat_name][1] == 0:
+                        feature_stat[feat_name].append(val['soma'][feat_name][0])
+                        feature_key.append(key)
+                except:
+                    pass
 
     feature_key = list(set(feature_key))
 

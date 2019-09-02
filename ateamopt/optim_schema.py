@@ -69,11 +69,11 @@ class Stage_JobConfig(ags.schemas.DefaultSchema):
     run_released_aa_comparison = ags.fields.Boolean(description="",default=True)
     ipyp_analysis = ags.fields.Boolean(description="",default=False)
     run_hof_analysis = ags.fields.Boolean(description="",default=False)
-#    run_ap_comparison = ags.fields.Boolean(description="",default=False)
-#    run_fi_comparison = ags.fields.Boolean(description="",default=False)
     calc_model_perf = ags.fields.Boolean(description="",default=False)
     model_postprocess = ags.fields.Boolean(description="",default=False)
     calc_time_statistics = ags.fields.Boolean(description="",default=False)
+    DB_check = ags.fields.Boolean(description="")
+    add_fi_kink = ags.fields.Boolean(description="")
     
 class JobConfig(ags.schemas.DefaultSchema):
     highlevel_jobconfig = ags.fields.Nested(Top_JobConfig)
@@ -98,8 +98,7 @@ class Stage_Launch_Config(ags.ArgSchema):
 class Optim_Config(ags.ArgSchema):
     highlevel_jobconfig = ags.fields.Nested(Top_JobConfig)
     stage_jobconfig = ags.fields.Nested(Stage_JobConfig)
-    seed = ags.fields.Int(description='',
-                              default=1)
+#    seed = ags.fields.Int(description='',default=1)
     parameters = ags.fields.InputFile(description="")
     mechanism = ags.fields.InputFile(description="")
     released_aa_mechanism = ags.fields.InputFile(description="",required=False,

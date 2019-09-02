@@ -41,7 +41,9 @@ def main(args):
     stage_feature_names_path = stage_jobconfig['stage_features']
     param_bounds_path = stage_jobconfig['stage_parameters']
     script_repo_dir = stage_jobconfig.get('script_repo_dir') 
-    run_peri_comparison = stage_jobconfig['run_peri_comparison']
+    DB_check = stage_jobconfig.get('DB_check')
+    add_fi_kink = stage_jobconfig.get('add_fi_kink')
+    
     
     filter_rule_func = getattr(filter_rules,stage_jobconfig['filter_rule'])
     all_features = utility.load_json(all_features_path)
@@ -50,8 +52,8 @@ def main(args):
     stage_feature_names = utility.load_json(stage_feature_names_path)['features']
     select_stim_names = []
     for stim_name in all_features.keys():
-        if any(stage_stimtype in stim_name for stage_stimtype in \
-                                          stage_stimtypes):
+        stim_type = stim_name.rsplit('_',1)[0]
+        if stim_type in stage_stimtypes:
             select_stim_names.append(stim_name)
     
     features_dict = defaultdict(lambda: defaultdict(lambda: defaultdict(dict)))
@@ -65,8 +67,18 @@ def main(args):
     protocols_dict = {proto_key:proto_val for proto_key,proto_val in all_protocols.\
                       items() if proto_key in select_stim_names}
     nwb_handler = NWB_Extractor(cell_id,nwb_path)
-    train_features,test_features,train_protocols = filter_rule_func(\
-                                           features_dict,protocols_dict)
+    
+    kwargs = {'DB_check':DB_check,'add_fi_kink':add_fi_kink}
+    if DB_check:
+        train_features,test_features,train_protocols,DB_proto_dict = filter_rule_func(\
+                                   features_dict,protocols_dict,**kwargs)
+        all_protocols['DB_check_DC'] = {'stimuli':DB_proto_dict}
+        utility.save_json(all_protocols_path,all_protocols)
+    else:
+        train_features,test_features,train_protocols = filter_rule_func(\
+                                   features_dict,protocols_dict,**kwargs)
+    
+    
     train_features_path,test_features_path,train_protocols_path = \
         nwb_handler.write_ephys_features(train_features,test_features,\
                              train_protocols)
