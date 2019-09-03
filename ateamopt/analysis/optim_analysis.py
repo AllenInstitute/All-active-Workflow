@@ -847,8 +847,7 @@ class Optim_Analyzer(object):
                 sweeps = []
                 for sweep_filename in stim_map[stim_name]['stimuli'][0]['sweep_filenames']:
                     sweep_fullpath = os.path.join(
-                        'preprocessed',
-                        sweep_filename)
+                        ephys_dir,sweep_filename)
     
                     data = np.loadtxt(sweep_fullpath)
                     time = data[:,0]
@@ -958,7 +957,9 @@ class Optim_Analyzer(object):
 
     def postprocess(self,stim_file,response_filename, pdf_pages,
                     exp_fi_path, model_fi_path,exp_AP_shape_path,model_AP_shape_path,
-                    model_type, ephys_dir= 'preprocessed/'):
+                    model_type):
+        
+        ephys_dir = self.highlevel_job_props['ephys_dir']
         with open(stim_file, 'r') as stim_map_file:
             stim_map_content = stim_map_file.read()
         reject_stimtype_list = ['LongDCSupra','Ramp', 'ShortDC',
@@ -1026,9 +1027,9 @@ class Optim_Analyzer(object):
                        hof_responses_filename,hof_obj_train_filename,
                        hof_obj_untrain_filename,seed_indices_filename,
                        spiketimes_exp_path,spiketimes_hof_path,
-                       exp_variance_hof_path,cell_metadata,model_perf_filename,
-                       ephys_dir='preprocessed/'):
+                       exp_variance_hof_path,cell_metadata,model_perf_filename):
         
+        ephys_dir = self.highlevel_job_props['ephys_dir']
         hof_obj_all_list = utility.load_pickle(hof_obj_all_filename)
         feature_list = list(set(list(map(lambda x:x.split('.')[-1], hof_obj_all_list[0].keys()))))
 
@@ -1144,27 +1145,6 @@ class Optim_Analyzer(object):
             utility.save_pickle(spiketimes_hof_path,spiketimes_hof)
 
         validation_df = pd.DataFrame(exp_variance_hof)
-#        validation_df_shortened = validation_df.loc[:,['Explained_Variance',
-#                                               'Feature_Average',
-#                                               'Feature_Average_Generalization']]
-
-#        # Clustermap of the metrics on the hall-of-fame indices
-#        try:
-#            validation_df_shortened = validation_df_shortened.dropna(axis='columns')
-#            seed_index = validation_df.pop('Seed')
-#            lut = dict(zip(seed_index.unique(), "rbgy"))
-#            row_colors = seed_index.map(lut)
-#            validation_arr = validation_df_shortened.values
-#            sns.set(style="darkgrid", font_scale=.95)
-#            g=sns.clustermap(validation_df_shortened,col_cluster = False,
-#                           standard_scale=1)
-#            g=sns.clustermap(validation_df_shortened, annot = validation_arr[np.array(g.dendrogram_row.reordered_ind)],
-#                        col_cluster = False, row_colors=row_colors, standard_scale=1)
-#            g.fig.suptitle('Model Selection',fontsize = 14)
-#            pdf_pages.savefig(g.fig)
-#            plt.close(g.fig)
-#        except Exception as e:
-#            logger.debug(e)
        
         exp_variance_hof_df_path = exp_variance_hof_path.replace('pkl','csv')
         validation_df.to_csv(exp_variance_hof_df_path)
