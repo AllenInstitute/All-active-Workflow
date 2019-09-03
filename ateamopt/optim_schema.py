@@ -54,8 +54,10 @@ class Stage_JobConfig(ags.schemas.DefaultSchema):
     nengines_analysis = ags.fields.Int(description="no. of ipyparallel engines")
     error_stream = ags.fields.Str(description="Direct error stream (PBS specific)") #'/dev/null'
     output_stream = ags.fields.Str(description="Direct output stream (PBS specific)")
-    error_stream_analysis = ags.fields.Str(description="Direct error stream (PBS specific)") #'/dev/null'
-    output_stream_analyis = ags.fields.Str(description="Direct output stream (PBS specific)")
+    error_stream_analysis = ags.fields.Str(description="Direct error stream"
+                       "(PBS specific)",default='/dev/null') #'/dev/null'
+    output_stream_analyis = ags.fields.Str(description="Direct output stream"
+                       "(PBS specific)",default='/dev/null')
     jobmem = ags.fields.Str(description="PBS specific")
     jobtime = ags.fields.Str(description="")#'00:30:00'
     jobtime_analysis = ags.fields.Str(description="")#'00:30:00'
