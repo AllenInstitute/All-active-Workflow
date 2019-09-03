@@ -76,7 +76,7 @@ class NwbExtractor(object):
         start_time, duration, amplitude, start_idx, end_idx = get_stim_characteristics(stimulus_trace, time)
         amplitude *= 1e12
         stim_stop = start_time + duration
-        stim_amp_start = amplitude
+        stim_amp_start = 1e12 * stimulus_trace[start_idx]
         stim_amp_end = amplitude
         tot_duration = time[-1]
         hold_curr = 0.0
