@@ -76,13 +76,14 @@ def main():
     release_param_write_path = args['released_aa_model']
     mech_release_write_path = args['released_aa_mechanism']
 
-    ipyp_analysis = stage_jobconfig['ipyp_analysis']
-    timeout = stage_jobconfig['timeout']
-    learn_eval_trend = stage_jobconfig['learn_eval_trend']
-    cp_dir = stage_jobconfig['cp_dir']
+    ipyp_analysis = stage_jobconfig.get('ipyp_analysis')
+
     
-    props = dict(timeout=timeout,axon_type=axon_type,
-                  ephys_dir=ephys_dir,learn_eval_trend=learn_eval_trend)
+    props = dict(axon_type=axon_type,ephys_dir=ephys_dir)
+    for prop in ['timeout','learn_eval_trend']:
+        if stage_jobconfig.get(prop):
+            props[prop] = stage_jobconfig.get(prop)
+    
     map_function = analyzer_map(ipyp_analysis)
     opt_train = get_opt_obj(all_protocols_path, train_features_path,
                                    morph_path, param_write_path,
@@ -94,7 +95,7 @@ def main():
                                    morph_path, param_write_path,
                                    mech_write_path,map_function,**props)
 
-    analysis_handler = Optim_Analyzer(args,opt_train)
+    analysis_handler = Optim_Analyzer(args,opt_all)
     best_model = analysis_handler.get_best_model() # Model with least training error
 
     aibs_params_modelname = 'fitted_params/optim_param_%s.json'%cell_id
@@ -106,7 +107,7 @@ def main():
                                     best_model[0])
     hof_model_params,seed_indices = analysis_handler.get_all_models()
     
-    if not stage_jobconfig['run_hof_analysis']:
+    if not stage_jobconfig.get('run_hof_analysis'):
         hof_model_params,seed_indices = best_model,[seed_indices[0]]
     
     hof_params_filename = 'analysis_params/hof_model_params.pkl'
@@ -122,6 +123,8 @@ def main():
     # Response for the entire hall of fame not arranged
     hof_response_list = analysis_handler.get_model_responses(hof_model_params,
                                                      hof_responses_filename)
+    
+    analysis_handler._opt = opt_train
     obj_list_train = analysis_handler.get_response_scores(hof_response_list)
     
     # Sort everything with respect to training error
@@ -160,11 +163,11 @@ def main():
     
     if not os.path.exists(obj_list_test_filename):    
         analysis_handler._opt = opt_test
-        obj_list_untrain = analysis_handler.get_response_scores(hof_response_list)
+        obj_list_test = analysis_handler.get_response_scores(hof_response_list)
 
-        obj_list_untrain_sorted = analysis_handler.organize_models(obj_list_untrain,
+        obj_list_test_sorted = analysis_handler.organize_models(obj_list_test,
                                                                     score_list_train)
-        utility.save_pickle(obj_list_test_filename, obj_list_untrain_sorted)
+        utility.save_pickle(obj_list_test_filename, obj_list_test_sorted)
 
     analysis_handler._opt = opt_train
     
@@ -199,8 +202,7 @@ def main():
                                    morph_path, release_param_write_path,
                                    mech_release_write_path,
                                    stub_axon = False,
-                                   do_replace_axon = True,
-                                   timed_evaluation = False)
+                                   do_replace_axon = True)
         evaluator_release = eval_handler_release.create_evaluator()
         opt_release = bpopt.optimisations.DEAPOptimisation(
                             evaluator=evaluator_release)
@@ -273,7 +275,7 @@ def main():
                                  exp_fi_path, model_fi_path,exp_AP_shape_path,model_AP_shape_path,
                                  model_type)
     
-    if stage_jobconfig['calc_model_perf']:    
+    if stage_jobconfig.get('calc_model_perf'):    
         spiketimes_exp_path ='Validation_Responses/spiketimes_exp_noise.pkl'
         spiketimes_noise_exp =  defaultdict(list)
         all_features = utility.load_json(all_features_path)
@@ -293,7 +295,7 @@ def main():
                            exp_variance_hof_path,cell_metadata,model_perf_filename)
     pdf_pages.close()
     
-    if stage_jobconfig['calc_time_statistics']:
+    if stage_jobconfig.get('calc_time_statistics'):
         time_by_gen_filename = 'time_info.txt'
         if os.path.exists(time_by_gen_filename):
             time_metrics_filename = 'time_metrics_%s.csv'%cell_id

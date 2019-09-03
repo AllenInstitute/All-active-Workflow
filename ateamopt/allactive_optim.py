@@ -1,4 +1,3 @@
-
 import os
 import socket
 from allensdk.core.cell_types_cache import CellTypesCache
@@ -7,12 +6,8 @@ import allensdk.api.queries.rma_api
 import shutil
 import logging
 from ateamopt.utils import utility
-import neurom as nm
-from neurom import morphmath as mm
 import numpy as np
-from neurom.core.types import tree_type_checker, NEURITES
 import glob
-
 
 logger = logging.getLogger(__name__)
 
@@ -21,34 +16,6 @@ class Allactive_Optim(object):
     def __init__(self,cell_id):
         self.cell_id = int(float(cell_id))
 
-    def save_morph_data(self,metadata):
-        morph_stats_filename = 'morph_stats_%s.json'%self.cell_id
-
-        if not os.path.exists(morph_stats_filename):
-            swc_path = metadata['swc_path']
-
-            #  load a neuron from an SWC file
-            nrn = nm.load_neuron(swc_path)
-
-            morph_stats = {}
-
-            morph_stats['Cell_id'] = self.cell_id
-            morph_stats['soma_suface'] = nm.get('soma_surface_areas', nrn)[0]
-            morph_stats['soma_radius'] = np.mean(nm.get('soma_radii', nrn))
-
-            # Morph stats
-            for nrn_type_ in NEURITES:
-
-                morph_stats['length' + '.' + str(nrn_type_).split('.')[1]] = np.sum(nm.get('segment_lengths',
-                                                           nrn, neurite_type=nrn_type_))
-                morph_stats['area' + '.' + str(nrn_type_).split('.')[1]] = sum(mm.segment_area(s)
-                           for s in nm.iter_segments(nrn,neurite_filter=tree_type_checker(nrn_type_)))
-                morph_stats['volume' + '.' + str(nrn_type_).split('.')[1]] = sum(mm.segment_volume(s)
-                            for s in nm.iter_segments(nrn,neurite_filter=tree_type_checker(nrn_type_)))
-                morph_stats['taper_rate' + '.' + str(nrn_type_).split('.')[1]] = \
-                            np.mean([mm.segment_taper_rate(s) for s in nm.iter_segments(nrn, neurite_filter=tree_type_checker(nrn_type_))])
-
-            utility.save_json(morph_stats_filename,morph_stats)
 
     def get_ephys_morphology(self,ctc,metadata):
         
@@ -161,9 +128,7 @@ class Allactive_Optim(object):
                 for i,metadata_key in enumerate(opt_metric_dict[model_type]):
                     cell_metadata[metadata_key] = model_metadata_select[i]
 
-        
- 
         utility.save_json(metadata_filename,cell_metadata)
-
+        
         return cell_metadata,metadata_filename
 

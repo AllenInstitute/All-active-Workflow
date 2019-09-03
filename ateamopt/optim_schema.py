@@ -45,8 +45,7 @@ class Stage_JobConfig(ags.schemas.DefaultSchema):
     max_ngen = ags.fields.Int(description='maximum number of generations',
                               default=2)
     seed = ags.fields.List(ags.fields.Int,description="")
-    timeout = ags.fields.Int(description="Simulation cut-off time in seconds",
-                             default=900)
+    timeout = ags.fields.Int(description="Simulation cut-off time in seconds")
     learn_eval_trend = ags.fields.Boolean(default=False,
         description='Modify the timeout based on evaluation\
         times of previous generation (Experimental)')
@@ -55,6 +54,8 @@ class Stage_JobConfig(ags.schemas.DefaultSchema):
     nengines_analysis = ags.fields.Int(description="no. of ipyparallel engines")
     error_stream = ags.fields.Str(description="Direct error stream (PBS specific)") #'/dev/null'
     output_stream = ags.fields.Str(description="Direct output stream (PBS specific)")
+    error_stream_analysis = ags.fields.Str(description="Direct error stream (PBS specific)") #'/dev/null'
+    output_stream_analyis = ags.fields.Str(description="Direct output stream (PBS specific)")
     jobmem = ags.fields.Str(description="PBS specific")
     jobtime = ags.fields.Str(description="")#'00:30:00'
     jobtime_analysis = ags.fields.Str(description="")#'00:30:00'
@@ -68,10 +69,10 @@ class Stage_JobConfig(ags.schemas.DefaultSchema):
     run_peri_comparison = ags.fields.Boolean(description="",default=False)
     run_released_aa_comparison = ags.fields.Boolean(description="",default=True)
     ipyp_analysis = ags.fields.Boolean(description="")
-    run_hof_analysis = ags.fields.Boolean(description="",default=False)
-    calc_model_perf = ags.fields.Boolean(description="",default=False)
+    run_hof_analysis = ags.fields.Boolean(description="")
+    calc_model_perf = ags.fields.Boolean(description="")
     model_postprocess = ags.fields.Boolean(description="",default=False)
-    calc_time_statistics = ags.fields.Boolean(description="",default=False)
+    calc_time_statistics = ags.fields.Boolean(description="")
     DB_check = ags.fields.Boolean(description="")
     add_fi_kink = ags.fields.Boolean(description="")
     

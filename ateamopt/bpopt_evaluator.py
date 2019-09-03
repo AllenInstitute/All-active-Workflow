@@ -32,7 +32,11 @@ class Bpopt_Evaluator(object):
                 feature_set.extend(feat_val['soma'].keys())
             self.AIS_check = True if 'check_AISInitiation' in \
                     list(set(feature_set)) else False
-        self.timed_evaluation = props.pop('timed_evaluation',True)
+        if any(timed_prop in props for timed_prop in ['timeout','learn_eval_trend']):
+            self.timed_evaluation = True
+        else:
+            self.timed_evaluation = False
+        
         self.axon_type = 'stub_axon'
         if props.pop('do_replace_axon',None):
             self.axon_type = 'bpopt_replaced_axon'
