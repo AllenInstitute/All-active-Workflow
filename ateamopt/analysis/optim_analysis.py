@@ -847,8 +847,7 @@ class Optim_Analyzer(object):
                 sweeps = []
                 for sweep_filename in stim_map[stim_name]['stimuli'][0]['sweep_filenames']:
                     sweep_fullpath = os.path.join(
-                        'preprocessed',
-                        sweep_filename)
+                        ephys_dir,sweep_filename)
     
                     data = np.loadtxt(sweep_fullpath)
                     time = data[:,0]
