@@ -115,7 +115,7 @@ def main():
     obj_list_train_filename = 'analysis_params/hof_obj_train.pkl'
     obj_list_all_filename = 'analysis_params/hof_obj_all.pkl'
     feat_list_all_filename = 'analysis_params/hof_features_all.pkl'
-    obj_list_test_filename = 'analysis_params/hof_obj_untrain.pkl'
+    obj_list_test_filename = 'analysis_params/hof_obj_test.pkl'
     seed_indices_filename = 'analysis_params/seed_indices.pkl'
 
     score_list_train_filename = 'analysis_params/score_list_train.pkl'

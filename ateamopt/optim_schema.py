@@ -56,7 +56,7 @@ class Stage_JobConfig(ags.schemas.DefaultSchema):
     output_stream = ags.fields.Str(description="Direct output stream (PBS specific)")
     error_stream_analysis = ags.fields.Str(description="Direct error stream"
                        "(PBS specific)",default='/dev/null') #'/dev/null'
-    output_stream_analyis = ags.fields.Str(description="Direct output stream"
+    output_stream_analysis = ags.fields.Str(description="Direct output stream"
                        "(PBS specific)",default='/dev/null')
     jobmem = ags.fields.Str(description="PBS specific")
     jobtime = ags.fields.Str(description="")#'00:30:00'
@@ -70,11 +70,11 @@ class Stage_JobConfig(ags.schemas.DefaultSchema):
     analysis_script = ags.fields.Str(description="",default='analyze_stagejob.py')
     run_peri_comparison = ags.fields.Boolean(description="",default=False)
     run_released_aa_comparison = ags.fields.Boolean(description="",default=True)
-    ipyp_analysis = ags.fields.Boolean(description="")
-    run_hof_analysis = ags.fields.Boolean(description="")
-    calc_model_perf = ags.fields.Boolean(description="")
+    ipyp_analysis = ags.fields.Boolean(description="",default=False)
+    run_hof_analysis = ags.fields.Boolean(description="",default=False)
+    calc_model_perf = ags.fields.Boolean(description="",default = False)
     model_postprocess = ags.fields.Boolean(description="",default=False)
-    calc_time_statistics = ags.fields.Boolean(description="")
+    calc_time_statistics = ags.fields.Boolean(description="",default=False)
     DB_check = ags.fields.Boolean(description="")
     add_fi_kink = ags.fields.Boolean(description="")
     
