@@ -43,7 +43,7 @@ def main(args):
     script_repo_dir = stage_jobconfig.get('script_repo_dir') 
     DB_check = stage_jobconfig.get('DB_check')
     add_fi_kink = stage_jobconfig.get('add_fi_kink')
-    
+    ipyp_analysis = stage_jobconfig.get('ipyp_analysis')
     
     filter_rule_func = getattr(filter_rules,stage_jobconfig['filter_rule'])
     all_features = utility.load_json(all_features_path)
@@ -155,9 +155,10 @@ def main(args):
         batch_job = PBS_JobModule(jobtemplate_path,job_config_path)
         batch_job.script_generator(next_stage_job_config=next_stage_jobconfig)
         
-        analysis_job = PBS_JobModule(jobtemplate_path,job_config_path,
+        if ipyp_analysis:
+            analysis_job = PBS_JobModule(jobtemplate_path,job_config_path,
                          script_name='analyze_job.sh')
-        analysis_job.script_generator(analysis=True,
+            analysis_job.script_generator(analysis=True,
                           next_stage_job_config=next_stage_jobconfig)
     elif 'cori' in machine:
         jobtemplate_path = 'job_templates/nersc_slurm_jobtemplate.sh'
@@ -183,7 +184,7 @@ def main(args):
         shutil.copy(analyze_jobscript_default,stage_jobdir)  
     
         chain_job = ChainSubJob(chainjobtemplate_path,next_stage_jobconfig_path)
-        chain_job.script_modifier()
+        chain_job.script_generator()
 
 if __name__ == '__main__':
     mod = ags.ArgSchemaParser(schema_type=Stage_Launch_Config)
