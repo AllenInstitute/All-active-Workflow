@@ -1,0 +1,64 @@
+#!/bin/bash
+
+set -ex
+
+while getopts ":f:r:c:m:" opt; do
+  case ${opt} in
+    f )
+      csv_file=$OPTARG
+      ;;
+    r )
+      script_repo=$OPTARG
+      ;;
+    c )
+      conda=$OPTARG
+      ;;
+    m )
+      max_jobs=$OPTARG
+      ;;
+    \? )
+      echo "Invalid option: $OPTARG" 1>&2
+      ;;
+    : )
+      echo "Invalid option: $OPTARG requires atleast 3 arguments" 1>&2
+      ;;
+  esac
+done
+shift $((OPTIND -1))
+
+# max_jobs=${max_jobs:=1}
+# script_repo=${script_repo:='/allen/aibs/mat/anin/software/All-active-Workflow/examples/optim_scripts/'}
+# conda=${conda:='ateam_opt'}
+
+
+index=0
+pids=""
+
+{
+    read  # Extra read to ignore header
+    while IFS=',' read -r cell_id me_type
+    do
+        if [ ! -d $cell_id ]; then
+          echo "Launching optimization for $cell_id"
+          if [ -z "$me_type" ]; then
+            nohup launch_optimjob --cell_id $cell_id --ext_scripts $script_repo --conda_env $conda > out$index.log 2> err$index.log &
+          else
+            nohup launch_optimjob --cell_id $cell_id --ext_scripts $script_repo --me_type $me_type --conda_env $conda > out$index.log 2> err$index.log &
+          fi
+          pids+="$! "
+          sleep 60
+          index=$(($index+1))
+          if [[ $index = $max_jobs ]]; then
+              break
+          fi
+        fi
+    done
+}< $csv_file
+
+# rm -rf err*.log out*.log
+echo "# of jobs submitted = $index"
+
+wait $pids
+
+
+

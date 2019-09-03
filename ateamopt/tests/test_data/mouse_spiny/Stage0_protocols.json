@@ -1,0 +1,242 @@
+{
+    "LongDC_36": {
+        "stimuli": [
+            {
+                "amp": -0.11000000216299999,
+                "amp_end": -0.11000000216299999,
+                "delay": 270.0,
+                "duration": 999.9949999999999,
+                "stim_end": 1269.995,
+                "sweep_filenames": [
+                    "LongDC_36.txt"
+                ],
+                "totduration": 7269.995,
+                "type": "SquarePulse"
+            }
+        ]
+    },
+    "LongDC_37": {
+        "stimuli": [
+            {
+                "amp": -0.0900000005077,
+                "amp_end": -0.0900000005077,
+                "delay": 270.0,
+                "duration": 999.9949999999999,
+                "stim_end": 1269.995,
+                "sweep_filenames": [
+                    "LongDC_37.txt"
+                ],
+                "totduration": 7269.995,
+                "type": "SquarePulse"
+            }
+        ]
+    },
+    "LongDC_38": {
+        "stimuli": [
+            {
+                "amp": -0.0699999988529,
+                "amp_end": -0.0699999988529,
+                "delay": 270.0,
+                "duration": 999.9949999999999,
+                "stim_end": 1269.995,
+                "sweep_filenames": [
+                    "LongDC_38.txt"
+                ],
+                "totduration": 7269.995,
+                "type": "SquarePulse"
+            }
+        ]
+    },
+    "LongDC_39": {
+        "stimuli": [
+            {
+                "amp": -0.0500000006676,
+                "amp_end": -0.0500000006676,
+                "delay": 270.0,
+                "duration": 999.9949999999999,
+                "stim_end": 1269.995,
+                "sweep_filenames": [
+                    "LongDC_39.txt"
+                ],
+                "totduration": 7269.995,
+                "type": "SquarePulse"
+            }
+        ]
+    },
+    "LongDC_40": {
+        "stimuli": [
+            {
+                "amp": -0.030000002482200003,
+                "amp_end": -0.030000002482200003,
+                "delay": 270.0,
+                "duration": 999.9949999999999,
+                "stim_end": 1269.995,
+                "sweep_filenames": [
+                    "LongDC_40.txt"
+                ],
+                "totduration": 7269.995,
+                "type": "SquarePulse"
+            }
+        ]
+    },
+    "LongDC_41": {
+        "stimuli": [
+            {
+                "amp": -0.00999999996004,
+                "amp_end": -0.00999999996004,
+                "delay": 270.0,
+                "duration": 999.9949999999999,
+                "stim_end": 1269.995,
+                "sweep_filenames": [
+                    "LongDC_41.txt"
+                ],
+                "totduration": 7269.995,
+                "type": "SquarePulse"
+            }
+        ]
+    },
+    "LongDC_42": {
+        "stimuli": [
+            {
+                "amp": 0.00999999996004,
+                "amp_end": 0.00999999996004,
+                "delay": 270.0,
+                "duration": 999.9949999999999,
+                "stim_end": 1269.995,
+                "sweep_filenames": [
+                    "LongDC_42.txt"
+                ],
+                "totduration": 7269.995,
+                "type": "SquarePulse"
+            }
+        ]
+    },
+    "LongDC_43": {
+        "stimuli": [
+            {
+                "amp": 0.030000002482200003,
+                "amp_end": 0.030000002482200003,
+                "delay": 270.0,
+                "duration": 999.9949999999999,
+                "stim_end": 1269.995,
+                "sweep_filenames": [
+                    "LongDC_43.txt"
+                ],
+                "totduration": 7269.995,
+                "type": "SquarePulse"
+            }
+        ]
+    },
+    "LongDC_44": {
+        "stimuli": [
+            {
+                "amp": 0.0500000006676,
+                "amp_end": 0.0500000006676,
+                "delay": 270.0,
+                "duration": 999.9949999999999,
+                "stim_end": 1269.995,
+                "sweep_filenames": [
+                    "LongDC_44.txt"
+                ],
+                "totduration": 7269.995,
+                "type": "SquarePulse"
+            }
+        ]
+    },
+    "LongDC_45": {
+        "stimuli": [
+            {
+                "amp": 0.0699999988529,
+                "amp_end": 0.0699999988529,
+                "delay": 270.0,
+                "duration": 999.9949999999999,
+                "stim_end": 1269.995,
+                "sweep_filenames": [
+                    "LongDC_45.txt"
+                ],
+                "totduration": 7269.995,
+                "type": "SquarePulse"
+            }
+        ]
+    },
+    "LongDC_46": {
+        "stimuli": [
+            {
+                "amp": 0.0900000005077,
+                "amp_end": 0.0900000005077,
+                "delay": 270.0,
+                "duration": 999.9949999999999,
+                "stim_end": 1269.995,
+                "sweep_filenames": [
+                    "LongDC_46.txt"
+                ],
+                "totduration": 7269.995,
+                "type": "SquarePulse"
+            }
+        ]
+    },
+    "LongDC_47": {
+        "stimuli": [
+            {
+                "amp": 0.11000000216299999,
+                "amp_end": 0.11000000216299999,
+                "delay": 270.0,
+                "duration": 999.9949999999999,
+                "stim_end": 1269.995,
+                "sweep_filenames": [
+                    "LongDC_47.txt"
+                ],
+                "totduration": 7269.995,
+                "type": "SquarePulse"
+            }
+        ]
+    },
+    "LongDC_48": {
+        "stimuli": [
+            {
+                "amp": 0.12999999687799998,
+                "amp_end": 0.12999999687799998,
+                "delay": 270.0,
+                "duration": 999.9949999999999,
+                "stim_end": 1269.995,
+                "sweep_filenames": [
+                    "LongDC_48.txt"
+                ],
+                "totduration": 7269.995,
+                "type": "SquarePulse"
+            }
+        ]
+    },
+    "LongDC_57": {
+        "stimuli": [
+            {
+                "amp": 0.139999997706,
+                "amp_end": 0.139999997706,
+                "delay": 270.0,
+                "duration": 999.9949999999999,
+                "stim_end": 1269.995,
+                "sweep_filenames": [
+                    "LongDC_57.txt"
+                ],
+                "totduration": 5269.995,
+                "type": "SquarePulse"
+            }
+        ]
+    },
+    "LongDC_73": {
+        "stimuli": [
+            {
+                "amp": 0.15999999936099998,
+                "amp_end": 0.15999999936099998,
+                "delay": 270.0,
+                "duration": 999.9949999999999,
+                "stim_end": 1269.995,
+                "sweep_filenames": [
+                    "LongDC_73.txt"
+                ],
+                "totduration": 5269.995,
+                "type": "SquarePulse"
+            }
+        ]
+    }
+}
