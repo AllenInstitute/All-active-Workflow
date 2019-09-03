@@ -87,11 +87,9 @@ def save_optimization_time(time_by_gen_filename,time_metrics_filename,
        outp.write('#Generations %s: %s seconds'%(counter,total))
     print('{} Generations took: {} seconds'.format(counter,total))
     
-    cell_id = cell_metadata['Cell_id']
-    machine = cell_metadata['Machine']
+    cell_id = cell_metadata['cell_id']
     time_metrics = pd.DataFrame({
                         'cell_id' : [cell_id for i in range(len(time_vec))],
-                        'machine' : [machine for i in range(len(time_vec))],
                         'time' : time_vec
                         })
     time_metrics.to_csv(time_metrics_filename) 

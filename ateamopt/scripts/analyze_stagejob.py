@@ -283,7 +283,9 @@ def main():
             if 'Noise' in stim_:
                 if 'peak_time' in feat['soma'].keys():
                     spiketimes_noise_exp[stim_].append(feat['soma']['peak_time'][2])
-                
+        if len(spiketimes_noise_exp.keys()) > 0:
+            utility.create_filepath(spiketimes_exp_path)
+            utility.save_pickle(spiketimes_exp_path,spiketimes_noise_exp)        
         
         spiketimes_hof_path = 'Validation_Responses/spiketimes_model_noise.pkl'
         exp_variance_hof_path = 'Validation_Responses/exp_variance_hof.pkl'
