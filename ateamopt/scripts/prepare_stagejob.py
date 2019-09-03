@@ -12,6 +12,7 @@ import argschema as ags
 from ateamopt.optim_schema import Stage_Launch_Config
 from collections import defaultdict
 
+
 logger = logging.getLogger()
 
 def main(args):
@@ -53,7 +54,8 @@ def main(args):
     select_stim_names = []
     for stim_name in all_features.keys():
         stim_type = stim_name.rsplit('_',1)[0]
-        if stim_type in stage_stimtypes:
+        stim_type_aibs = utility.aibs_stimname_map_inv[stim_type]
+        if stim_type_aibs in stage_stimtypes:
             select_stim_names.append(stim_name)
     
     features_dict = defaultdict(lambda: defaultdict(lambda: defaultdict(dict)))

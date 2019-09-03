@@ -16,7 +16,7 @@ def filter_feat_proto_active(features_dict,protocols_dict,
         Filter the features and protocols for the final
         stage of optimization
     """
-    features_dict = correct_voltage_feat_std(features_dict)
+#    features_dict = correct_voltage_feat_std(features_dict)
     spiking_proto_dict = OrderedDict()
     non_spiking_proto_dict =  OrderedDict()
     training_stimtype_reject = ['LongDCSupra','Ramp','Short_Square_Triple','Noise']
@@ -155,7 +155,7 @@ def filter_feat_proto_basic(features_dict,protocols_dict):
 
 def filter_feat_proto_passive(features_dict,protocols_dict,**kwargs):
 
-    features_dict = correct_voltage_feat_std(features_dict)
+#    features_dict = correct_voltage_feat_std(features_dict)
     spiking_proto = []
     for feat_key,feat_val in features_dict.items():
         if feat_val['soma']['Spikecount'][0] > 0:
@@ -180,19 +180,20 @@ def correct_voltage_feat_std(features_dict,
     
     for key,val in features_dict.items():
         for feat_name in val['soma'].keys():
-            if feat_name in feature_correct_list:
-                try:
-                    if val['soma'][feat_name][1] == 0:
-                        feature_stat[feat_name].append(val['soma'][feat_name][0])
-                        feature_key.append(key)
-                except:
-                    pass
+            if val['soma'][feat_name][1] == 0:
+                if feat_name in feature_correct_list:
+                    feature_stat[feat_name].append(val['soma'][feat_name][0])
+                    feature_key.append(key)
+                else:
+                    mean = val['soma'][feat_name][0]
+                    val['soma'][feat_name][1] = 0.05*mean if mean != 0 else .05
 
     feature_key = list(set(feature_key))
 
     for feat_key in feature_key:
         for feat_name in feature_correct_list:
-            features_dict[feat_key]['soma'][feat_name][1] = \
+            if feat_name in features_dict[feat_key]['soma'].keys():
+                features_dict[feat_key]['soma'][feat_name][1] = \
                     np.std(feature_stat[feat_name])
 
     return features_dict

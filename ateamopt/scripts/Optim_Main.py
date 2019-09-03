@@ -44,25 +44,26 @@ def create_optimizer(job_config,seed):
 
     seed = os.getenv('BLUEPYOPT_SEED', seed)
 
-    # load the configuration paths
+    # load the configuration paths    
     
-    morph_path = highlevel_job_props['swc_path']
-    axon_type = highlevel_job_props['axon_type']
     ephys_dir = highlevel_job_props['ephys_dir']
-    
+    morph_path = highlevel_job_props['swc_path']
     protocol_path = job_config['train_protocols']
     mech_path = job_config['mechanism']
     feature_path = job_config['train_features']
     param_path = job_config['parameters']
     
-    timeout = stage_jobconfig['timeout']
-    learn_eval_trend = stage_jobconfig['learn_eval_trend']
+    axon_type = highlevel_job_props.get('axon_type')
+    
+    props = {}
+    for prop in ['timeout','learn_eval_trend']:
+        if stage_jobconfig.get(prop):
+            props[prop] = stage_jobconfig.get(prop)
     
     
     eval_handler = Bpopt_Evaluator(protocol_path, feature_path, morph_path,
-                                    param_path, mech_path, timeout = timeout,
-                                    learn_eval_trend = learn_eval_trend,
-                                    axon_type=axon_type,ephys_dir=ephys_dir)
+                                    param_path, mech_path, axon_type=axon_type,
+                                    ephys_dir=ephys_dir,**props)
     evaluator = eval_handler.create_evaluator()
 
     opt = bpopt.optimisations.DEAPOptimisation(

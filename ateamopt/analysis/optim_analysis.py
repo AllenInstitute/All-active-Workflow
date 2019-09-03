@@ -1174,19 +1174,16 @@ class Optim_Analyzer(object):
             pdf_pages.savefig(g.fig)
             plt.close(g.fig)
 
-        fitness_metrics = pd.DataFrame({'species' : [cell_metadata['Species']],
-                    'cell_id' : [cell_metadata['Cell_id']],
-                    'layer' : [cell_metadata['Layer']],
-                    'area' : [cell_metadata['Area']],
-                    'cre_line' : [cell_metadata['Cre_line']],
-                    'dendrite_type' : [cell_metadata['Dendrite_type']],
+        fitness_metrics = pd.DataFrame({
+                    'cell_id' : [cell_metadata['cell_id']],
                     'feature_avg_train' : [exp_variance_hof[0]['Feature_Average']],
                     'feature_avg_generalization' : [exp_variance_hof[0]['Feature_Average_Generalization']],
-                    'feature_avg_released_allactive' : [cell_metadata['Feature_avg_Released_AllActive']],
-                    'feature_avg_peri' : [cell_metadata['Feature_avg_Peri']],
+                    'feature_avg_released_allactive':[cell_metadata.get('Feature_avg_Released_AllActive')],
+                    'feature_avg_peri' : [cell_metadata.get('Feature_avg_Peri')],
                     'explained_variance' : [exp_variance_hof[0]['Explained_Variance']],
-                    'explained_variance_released_allactive' : [cell_metadata['Explained_variance_Released_AllActive']],
-                    'explained_variance_peri' : [cell_metadata['Explained_variance_Peri']],
+                    'explained_variance_released_allactive' : [cell_metadata.\
+                                               get('Explained_variance_Released_AllActive')],
+                    'explained_variance_peri' : [cell_metadata.get('Explained_variance_Peri')],
                     })
         
         utility.create_filepath(model_perf_filename)    

@@ -9,6 +9,7 @@ from ateamopt.jobscript.jobmodule import ChainSubJob
 import argschema as ags
 from ateamopt.optim_schema import Launch_Config
 from ateamopt.optim_config_rules import correct_voltage_feat_std
+from ateamopt.morph_handler import Morph_handler
 
 logger = logging.getLogger()
 
@@ -68,7 +69,9 @@ def create_optim_job(args):
         cty_props.update(highlevel_job_props)
         optim_proc = Allactive_Optim(cell_id)
         cell_metadata,cell_metadata_path = optim_proc.save_cell_metadata(**cty_props)
-        optim_proc.save_morph_data(cell_metadata)
+        morph_stats_filename = 'morph_stats_%s.json'%cell_id
+        morph_handler = Morph_handler(cell_metadata['swc_path'],cell_id=cell_id)
+        morph_handler.save_morph_data(morph_stats_filename)
     
     elif len(cell_metadata_path) == 1:
         cell_metadata_path = cell_metadata_path[0]

@@ -265,10 +265,6 @@ class PBS_JobModule(JobModule):
         batchjob_string = batchjob_string.replace('jobscript_name',self.script_name)
         batchjob_string = batchjob_string.replace('jobmem',
                           stage_jobconfig['jobmem'])
-        batchjob_string = batchjob_string.replace('error_stream',
-                          stage_jobconfig['error_stream'])
-        batchjob_string = batchjob_string.replace('output_stream',
-                          stage_jobconfig['output_stream'])
         batchjob_string = batchjob_string.replace('ipyp_db',
                           stage_jobconfig['ipyp_db'])
         batchjob_string = batchjob_string.replace('qos',
@@ -278,12 +274,20 @@ class PBS_JobModule(JobModule):
         batchjob_string = batchjob_string.replace('job_config_path',
                           self.job_config_path)
         batchjob_string = batchjob_string.replace('seed_list',seed_string)
+        batchjob_string = batchjob_string.replace('analysis_script',
+                          stage_jobconfig['analysis_script'])
         
         # Job config analysis vs optimization 
         batchjob_string = (batchjob_string.replace('jobtime',
           stage_jobconfig['jobtime_analysis'])
           if kwargs.get('analysis') else batchjob_string.replace('jobtime',
           stage_jobconfig['jobtime']))
+        batchjob_string = (batchjob_string.replace('error_stream',
+             stage_jobconfig['error_stream_analysis']) if kwargs.get('analysis')
+            else batchjob_string.replace('error_stream',stage_jobconfig['error_stream']))
+        batchjob_string = (batchjob_string.replace('output_stream',
+             stage_jobconfig['output_stream_analysis']) if kwargs.get('analysis')
+            else batchjob_string.replace('output_stream',stage_jobconfig['output_stream']))
         batchjob_string = (batchjob_string.replace('nnodes',
           str(stage_jobconfig['nnodes_analysis']))
           if kwargs.get('analysis') else batchjob_string.replace('nnodes',
@@ -299,8 +303,6 @@ class PBS_JobModule(JobModule):
         
          
         if kwargs.get('analysis'):
-            batchjob_string = batchjob_string.replace('analysis_script',
-                          stage_jobconfig['analysis_script'])
             batchjob_string = re.sub('# Run[\S\s]*pids','',
                                    batchjob_string) 
             if not stage_jobconfig['run_hof_analysis']:
@@ -308,8 +310,10 @@ class PBS_JobModule(JobModule):
                                    batchjob_string) 
          
         if 'next_stage_job_config' in kwargs.keys():
-                if bool(kwargs['next_stage_job_config']):
-                    batchjob_string += 'bash %s\n'%chain_job
+            if bool(kwargs['next_stage_job_config']):
+                if (kwargs.get('analysis') and stage_jobconfig.get('ipyp_analysis'))\
+                    or not kwargs.get('analysis'):
+                        batchjob_string += 'bash %s\n'%chain_job
         with open(self.script_name, "w") as batchjob_script:
             batchjob_script.write(batchjob_string)
 

@@ -47,6 +47,16 @@ aibs_stimname_map = {
                         'Noise 2': 'Noise_2',
                     }
 
+aibs_stimname_map_inv = {
+                        'LongDC':'Long Square',
+                        'Ramp':'Ramp',
+                        'LongDCSupra': 'Square - 2s Suprathreshold',
+                        'Short_Square_Triple':'Short Square - Triple',
+                        'Ramp to Rheobase': 'RampRheo',
+                        'Noise_1':'Noise 1',
+                        'Noise_2':'Noise 2'
+                    }
+
 bpopt_current_play_stimtypes = ['Short Square - Triple', 'Noise 1', 'Noise 2']
 
 rev_potential = {'ena' : 53, 'ek' : -107}
