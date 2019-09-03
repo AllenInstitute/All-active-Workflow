@@ -16,8 +16,8 @@ def script_decorator(func):
 
 dryrun_config = dict(offspring_size = 2,max_ngen= 2,cp_backup_dir= None,
             nengines= 2,nnodes=1,nnodes_analysis=1,nprocs=2,
-            nprocs_analysis=2,nengines_analysis= 2,
-            jobtime='10:00',jobtime_analysis='10:00')
+            nprocs_analysis=4,nengines_analysis= 4,
+            jobtime='10:00',jobtime_analysis='1:00:00')
 
 class JobModule(object):
 
@@ -254,6 +254,9 @@ class PBS_JobModule(JobModule):
 
         jobname = '%s.%s'%(os.path.basename(highlevel_job_props['job_dir']),
                        stage_jobconfig['stage_name'])
+        if kwargs.get('analysis'):
+            jobname += '.analysis'
+        
         seed_string = ''.join(['%s '%seed_ for seed_ in stage_jobconfig['seed']])
         
         # High level job config
