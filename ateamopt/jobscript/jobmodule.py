@@ -241,9 +241,9 @@ class PBS_JobModule(JobModule):
         highlevel_job_props = job_config['highlevel_jobconfig']
         
         if highlevel_job_props['dryrun'] or (kwargs.get('analysis') and \
-                             not stage_jobconfig['run_hof_analysis']):
+                             not stage_jobconfig.get('run_hof_analysis')):
             for option,option_val in dryrun_config.items():
-                if stage_jobconfig[option]:
+                if stage_jobconfig.get(option):
                     stage_jobconfig[option] = option_val
             
         utility.save_json(self.job_config_path,job_config)
@@ -314,6 +314,12 @@ class PBS_JobModule(JobModule):
                 if (kwargs.get('analysis') and stage_jobconfig.get('ipyp_analysis'))\
                     or not kwargs.get('analysis'):
                         batchjob_string += 'bash %s\n'%chain_job
+        
+        if not kwargs.get('analysis') and stage_jobconfig.get('ipyp_analysis'):
+            batchjob_string = re.sub('# Analyze[\S\s]*.json','qsub analyze_job.sh',
+                                   batchjob_string) 
+            
+            
         with open(self.script_name, "w") as batchjob_script:
             batchjob_script.write(batchjob_string)
 
