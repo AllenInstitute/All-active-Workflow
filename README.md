@@ -10,10 +10,11 @@ $ cd /allen/aibs/mat/ateam_shared/optimization_software
 $ sh add_shared_conda.sh
 $ source activate ateam_opt
 $ launch_optimjob --help # Look at the options
-$ launch_optimjob --cell_id xyz --ext_scripts /allen/aibs/mat/anin/software/All-active-Workflow/examples/optim_scripts 
-$ launch_optimjob --cell_id xyz --ext_scripts /allen/aibs/mat/anin/software/All-active-Workflow/examples/optim_scripts --me_type ME_Exc_1 # launch jobs by passing me type
-$ script_repo='/allen/aibs/mat/anin/software/All-active-Workflow/examples/optim_scripts'
-$ submit_opt_jobs -f cell_data.csv -r $script_repo -c ateam_opt -m 2 # Launching multiple jobs from a csv file
+$ launch_optimjob --input_json job_config.json 
+[//]: # ($ launch_optimjob --cell_id xyz --ext_scripts /allen/aibs/mat/anin/software/All-active-Workflow/examples/optim_scripts --me_type ME_Exc_1 # launch jobs by passing me type)
+[//]: # ($ script_repo='/allen/aibs/mat/anin/software/All-active-Workflow/examples/optim_scripts')
+[//]: # ($ submit_opt_jobs -f cell_data.csv -r $script_repo -c ateam_opt -m 2 # Launching multiple jobs from a csv file)
+
 ```
 * NERSC Cori - using shared conda environment
 ```sh

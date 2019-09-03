@@ -1,0 +1,108 @@
+{
+    "cty_config": {
+        "cell_id": "548494556",
+        "e_type": "Exc",
+        "me_type": ""
+    },
+    "job_config": {
+        "highlevel_jobconfig": {
+            "job_dir": "Human_trial",
+            "conda_env": "ateam_opt",
+            "nwb_path": "",
+            "swc_path": "",
+            "nwb_type": "standard",
+            "axon_type": "stub_axon",
+            "ephys_dir": "ephys_data",
+            "non_standard_nwb": false,
+            "acceptable_stimtypes": [
+                "Long Square",
+                "Noise 1",
+                "Noise 2"
+            ],
+            "feature_names_path": "feature_set_all.json",
+            "dryrun": true,
+            "compiled_modfiles_dir": "x86_64"
+        },
+        "stage_jobconfig": [
+            {
+                "stage_name": "Stage0",
+                "stage_stimtypes": [
+                    "Long Square"
+                ],
+                "stage_features": "feature_set_stage0.json",
+                "stage_parameters": "param_bounds_stage0.json",
+                "cp_dir": "checkpoint",
+                "filter_rule": "filter_feat_proto_passive",
+                "nengines": 256,
+                "nnodes": 16,
+                "qos": "celltypes",
+                "nprocs": 16,
+                "error_stream": "job.err",
+                "output_stream": "job.out",
+                "jobmem": "100g",
+                "jobtime": "5:00:00",
+                "ipyp_db": "nodb",
+                "seed": [
+                    1
+                ]
+            },
+            {
+                "stage_name": "Stage1",
+                "stage_stimtypes": [
+                    "Long Square"
+                ],
+                "stage_features": "feature_set_stage1.json",
+                "stage_parameters": "param_bounds_stage1.json",
+                "filter_rule": "filter_feat_proto_passive",
+                "nengines": 256,
+                "nnodes": 16,
+                "qos": "celltypes",
+                "nprocs": 16,
+                "error_stream": "job.err",
+                "output_stream": "job.out",
+                "jobmem": "100g",
+                "jobtime": "5:00:00",
+                "ipyp_db": "nodb",
+                "seed": [
+                    1
+                ]
+            },
+            {
+                "stage_name": "Stage2",
+                "stage_stimtypes": [
+                    "Long Square"
+                ],
+                "stage_features": "feature_set_stage2.json",
+                "stage_parameters": "param_bounds_stage2.json",
+                "filter_rule": "filter_feat_proto_active",
+                "nengines": 256,
+                "nnodes": 16,
+                "qos": "celltypes",
+                "nprocs": 16,
+                "error_stream": "/dev/null",
+                "output_stream": "/dev/null",
+                "jobmem": "100g",
+                "jobtime": "5:00:00",
+                "nengines_analysis": 10,
+                "nnodes_analysis": 1,
+                "nprocs_analysis": 10,
+                "jobtime_analysis": "30:00",
+                "ipyp_db": "nodb",
+                "seed": [
+                    1,
+                    2
+                ],
+                "run_hof_analysis": true,
+                "run_peri_comparison": true,
+                "DB_check": true,
+                "add_fi_kink": true,
+                "calc_model_perf": true,
+                "ipyp_analysis": true,
+                "error_stream_analysis": "analysis.err",
+                "output_stream_analysis": "analysis.out",
+                "model_postprocess": true,
+                "calc_time_statistics": true
+            }
+        ]
+    }
+}
