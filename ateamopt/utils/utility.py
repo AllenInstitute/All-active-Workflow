@@ -7,6 +7,9 @@ import ateamopt.template as templ
 import pickle
 import allensdk.core.swc as swc
 import ateamopt.scripts as pyscripts
+import logging
+
+logger = logging.getLogger(__name__)
 
 bpopt_section_map = {
                       'soma':'somatic',
@@ -43,6 +46,18 @@ aibs_stimname_map = {
                         'Noise 1': 'Noise_1',
                         'Noise 2': 'Noise_2',
                     }
+
+aibs_stimname_map_inv = {
+                        'LongDC':'Long Square',
+                        'Ramp':'Ramp',
+                        'LongDCSupra': 'Square - 2s Suprathreshold',
+                        'Short_Square_Triple':'Short Square - Triple',
+                        'Ramp to Rheobase': 'RampRheo',
+                        'Noise_1':'Noise 1',
+                        'Noise_2':'Noise 2'
+                    }
+
+bpopt_current_play_stimtypes = ['Short Square - Triple', 'Noise 1', 'Noise 2']
 
 rev_potential = {'ena' : 53, 'ek' : -107}
 
@@ -106,24 +121,33 @@ def load_json(path):
     return json_data
 
 def load_pickle(path):
-    with open(path,'rb') as pickle_read:
-        pickle_data=pickle.load(pickle_read)
-        
+    try:
+        with open(path,'rb') as pickle_read:
+            pickle_data=pickle.load(pickle_read)
+    except:
+        with open(path, 'rb') as f:
+            u = pickle._Unpickler(f)
+            u.encoding = 'latin1'
+            pickle_data = u.load()
+        logger.debug('solving python 2-3 pickling incompatibility')
     return pickle_data
 
 
-def downsample_ephys_data(time,response,downsample_interval=5):
+def downsample_ephys_data(time,stim,response,downsample_interval=5):
     
     time_end = time[-1]
+    stim_end = stim[-1]
     response_end = response[-1]
                 
     time = time[::downsample_interval]
+    stim = stim[::downsample_interval]
     response = response[::downsample_interval]
     if time_end != time[-1]:
         time = np.append(time,time_end)
+        stim = np.append(stim,stim_end)
         response = np.append(response,response_end)
         
-    return time,response
+    return time,stim,response
 
 def check_swc_for_apical(morph_path):
     morphology = swc.read_swc(morph_path)
@@ -140,11 +164,19 @@ def remove_entries_dict(dict_, entries):
     return dict_
 
 def locate_template_file(rel_file_path):
-    file_path = pkg_resources.resource_filename(templ.__name__, rel_file_path)
+    try:
+        file_path = pkg_resources.resource_filename(templ.__name__, 
+                                                    rel_file_path)
+    except:
+        file_path = None
     return file_path
 
 def locate_script_file(rel_file_path):
-    file_path = pkg_resources.resource_filename(pyscripts.__name__, rel_file_path)
+    try:
+        file_path = pkg_resources.resource_filename(pyscripts.__name__,
+                                                    rel_file_path)
+    except:
+        file_path = None
     return file_path
 
 

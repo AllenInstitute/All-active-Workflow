@@ -1,129 +1,130 @@
-#!/usr/bin/env python2
-# -*- coding: utf-8 -*-
-"""
-Created on Mon Feb  5 15:40:38 2018
-
-@author: anin
-"""
 
 import bluepyopt as bpopt
-import argparse
 import logging
 import os
-import sys
-import textwrap
+import argparse
 from datetime import datetime
 from ateamopt.utils import utility
+import shutil
 from ateamopt.bpopt_evaluator import Bpopt_Evaluator
 
 
-logging.basicConfig(level=logging.DEBUG) 
 logger = logging.getLogger()
 
 
-
-def create_optimizer(args):
+def create_optimizer(job_config,seed):
     '''returns configured bluepyopt.optimisations.DEAPOptimisation'''
 
-    if args.ipyparallel:
+    stage_jobconfig = job_config['stage_jobconfig']
+    highlevel_job_props = job_config['highlevel_jobconfig']
+    
+
+    if stage_jobconfig['ipyp_optim']:
         from ipyparallel import Client
         rc = Client(profile=os.getenv('IPYTHON_PROFILE'))
-        
+
         logger.debug('Using ipyparallel with %d engines', len(rc))
         lview = rc.load_balanced_view()
 
         def mapper(func, it):
             start_time = datetime.now()
             ret = lview.map_sync(func, it)
-            if args.start or args.continu:
-                logger.debug('Generation took %s', datetime.now() - start_time)
-            
+            logger.debug('Generation took %s', datetime.now() - start_time)
+
             # Save timing information for each generation
             f =  open('time_info.txt','a')
             f.write('%s\n'%(datetime.now() - start_time))
             f.close()
-                        
+
             return ret
 
         map_function = mapper
     else:
         map_function = None
-               
-    seed = os.getenv('BLUEPYOPT_SEED', args.seed)    
+
+    seed = os.getenv('BLUEPYOPT_SEED', seed)
+
+    # load the configuration paths    
     
-    # load the configuration paths   
-    path_data=utility.load_json(args.config_path)
+    ephys_dir = highlevel_job_props['ephys_dir']
+    morph_path = highlevel_job_props['swc_path']
+    protocol_path = job_config['train_protocols']
+    mech_path = job_config['mechanism']
+    feature_path = job_config['train_features']
+    param_path = job_config['parameters']
     
-    morph_path = path_data['morphology']
-    protocol_path = path_data['protocols']
-    mech_path = path_data['mechanism']
-    feature_path = path_data['features']
-    param_path = path_data['parameters']
-    eval_handler = Bpopt_Evaluator(protocol_path, feature_path, morph_path, 
-                                    param_path, mech_path)
+    axon_type = highlevel_job_props.get('axon_type')
+    
+    props = {}
+    for prop in ['timeout','learn_eval_trend']:
+        if stage_jobconfig.get(prop):
+            props[prop] = stage_jobconfig.get(prop)
+    
+    
+    eval_handler = Bpopt_Evaluator(protocol_path, feature_path, morph_path,
+                                    param_path, mech_path, axon_type=axon_type,
+                                    ephys_dir=ephys_dir,**props)
     evaluator = eval_handler.create_evaluator()
-    
+
     opt = bpopt.optimisations.DEAPOptimisation(
             evaluator=evaluator,
             map_function=map_function,
             seed=seed)
     return opt
-    
 
 def get_parser():
-    parser = argparse.ArgumentParser(
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        description='AIBS single neuron optimization',
-        epilog=textwrap.dedent('''\
-    The folling environment variables are considered:
-    IPYTHON_PROFILE: if set, used as the path to the ipython profile
-    BLUEPYOPT_SEED: The seed used for initial randomization
-        '''))
-    parser.add_argument('--start', action="store_true")
-    parser.add_argument('--continu', action="store_true", default=False)
-    parser.add_argument('--checkpoint', required=False, default=None,
-                        help='Checkpoint pickle to avoid recalculation')
-    parser.add_argument('--config_path', required=False, default='config_file.json',
-                        help='For user defined configuration path for optimization')
-    parser.add_argument('--offspring_size', type=int, required=False, default=2,
-                        help='number of individuals in offspring')
-    parser.add_argument('--max_ngen', type=int, required=False, default=2,
-                        help='maximum number of generations')
-    parser.add_argument('--compile', action="store_true")
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--job_config', required=True, 
+                        help='Job config path')
     parser.add_argument('--seed', type=int, default=1,
                         help='Seed to use for optimization')
-    parser.add_argument('--ipyparallel', action="store_true", default=False,
-                        help='Use ipyparallel')
-    parser.add_argument('-v', '--verbose', action='count', dest='verbose',
-                        default=0, help='-v for INFO, -vv for DEBUG')
-
     return parser
 
-    
-    
-def main(): 
+def main():
     """Main"""
     args = get_parser().parse_args()
-
-    if args.verbose > 2:
-        sys.exit('cannot be more verbose than -vv')
-    logging.basicConfig(level=(logging.WARNING,
-                               logging.INFO,
-                               logging.DEBUG)[args.verbose],
-                               stream=sys.stdout)
-    opt = create_optimizer(args)
-
-    if args.compile:
-        logger.debug('Doing compile')
-        os.system('nrnivmodl modfiles/')
-
-    if args.start or args.continu:
-        logger.debug('Doing start or continue')
-        opt.run(max_ngen=args.max_ngen,
-                offspring_size=args.offspring_size,
-                continue_cp=args.continu,
-                cp_filename=args.checkpoint)
-        
     
+    seed = args.seed
+    job_config_path = args.job_config
+    job_config = utility.load_json(job_config_path)
+    
+    stage_jobconfig = job_config['stage_jobconfig']
+    highlevel_job_props = job_config['highlevel_jobconfig']
+    
+    logging.basicConfig(level=highlevel_job_props['log_level'])
+    
+    opt = create_optimizer(job_config,seed)
+    
+    
+    cp_file = os.path.join(stage_jobconfig['cp_dir'],'seed%s.pkl'%seed)
+    utility.create_filepath(cp_file)
+    if stage_jobconfig.get('cp_backup_dir'):
+        cp_backup_file = os.path.join(stage_jobconfig['cp_backup_dir'],'seed%s.pkl'%seed)
+        utility.create_filepath(cp_backup_file)
+    else:
+        cp_backup_file = None
+    cp_backup_frequency = stage_jobconfig['cp_backup_frequency']
+    max_ngen = stage_jobconfig['max_ngen']
+    offspring_size = stage_jobconfig['offspring_size']
+    
+    continue_cp = os.path.exists(cp_file)
+    logger.debug('Doing start or continue')
+    
+    if os.path.exists(cp_file):
+        try:
+            _ = utility.load_pickle(cp_file)
+        except:
+            logger.debug('Checkpoint file is corrupt! Looking for backup')
+            if cp_backup_file and os.path.exists(cp_backup_file):
+                shutil.copyfile(cp_backup_file,cp_file)
+        
+    opt.run(max_ngen=max_ngen,
+            offspring_size=offspring_size,
+            continue_cp=continue_cp,
+            cp_filename=cp_file,
+            cp_backup=cp_backup_file,
+            cp_backup_frequency=cp_backup_frequency)
+
+
 if __name__ == '__main__':
     main()
