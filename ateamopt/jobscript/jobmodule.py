@@ -57,7 +57,7 @@ class ChainSubJob(JobModule):
         self.job_config_path = job_config_path
         
   
-    def script_modifier(self):
+    def script_generator(self):
         all_config = utility.load_json(self.job_config_path)
         stage_jobconfig = all_config['stage_jobconfig']
         highlevel_job_props = all_config['highlevel_jobconfig']
@@ -112,32 +112,32 @@ class ChainSubJob(JobModule):
             self.adjust_template('echo ${RES##* }', '',partial_match = True)
         
 
-    def script_generator(self):
-        # Adjusting the job based on machine
-        job_config = utility.load_json(self.job_config_path)
-        machine = job_config['machine']
-        if 'cori' in machine:
-            self.adjust_template('#SBATCH -p prod', '#SBATCH -q regular')
-            self.adjust_template('#SBATCH -C cpu|nvme', '#SBATCH -C haswell')
-            self.adjust_template('#SBATCH -A proj36','#SBATCH -L SCRATCH')
-            Path_append ='export PATH="/global/common/software/m2043/AIBS_Opt/software/x86_64/bin:$PATH"'
-            self.adjust_template('source activate %s'%self.conda_env, Path_append,
-                                      add = True)
-            # HDF5 file locking
-            HDF5_cmd = "export HDF5_USE_FILE_LOCKING=FALSE"
-            self.adjust_template('source activate %s'%self.conda_env,
-                                  HDF5_cmd,add = True)
-
-        elif 'hpc-login' in machine:
-            self.adjust_template('cp -r $SCRIPT_REPO/modfiles $STAGE_DIR/',
-                             'cp -r $SCRIPT_REPO/x86_64 $STAGE_DIR/',add = True)
-            self.adjust_template('nrnivmodl modfiles/',
-                     '\techo "Loading compiled modfiles"',partial_match = True)
-            
-
-        elif self.submit_cmd == 'bash':
-            self.adjust_template('RES=$(sh batch_job.sh)', 'sh batch_job.sh')
-            self.adjust_template('echo ${RES##* }', '',partial_match = True)
+#    def script_generator(self):
+#        # Adjusting the job based on machine
+#        job_config = utility.load_json(self.job_config_path)
+#        machine = job_config['machine']
+#        if 'cori' in machine:
+#            self.adjust_template('#SBATCH -p prod', '#SBATCH -q regular')
+#            self.adjust_template('#SBATCH -C cpu|nvme', '#SBATCH -C haswell')
+#            self.adjust_template('#SBATCH -A proj36','#SBATCH -L SCRATCH')
+#            Path_append ='export PATH="/global/common/software/m2043/AIBS_Opt/software/x86_64/bin:$PATH"'
+#            self.adjust_template('source activate %s'%self.conda_env, Path_append,
+#                                      add = True)
+#            # HDF5 file locking
+#            HDF5_cmd = "export HDF5_USE_FILE_LOCKING=FALSE"
+#            self.adjust_template('source activate %s'%self.conda_env,
+#                                  HDF5_cmd,add = True)
+#
+#        elif 'hpc-login' in machine:
+#            self.adjust_template('cp -r $SCRIPT_REPO/modfiles $STAGE_DIR/',
+#                             'cp -r $SCRIPT_REPO/x86_64 $STAGE_DIR/',add = True)
+#            self.adjust_template('nrnivmodl modfiles/',
+#                     '\techo "Loading compiled modfiles"',partial_match = True)
+#            
+#
+#        elif self.submit_cmd == 'bash':
+#            self.adjust_template('RES=$(sh batch_job.sh)', 'sh batch_job.sh')
+#            self.adjust_template('echo ${RES##* }', '',partial_match = True)
 
 
     def run_job(self):
@@ -306,14 +306,10 @@ class PBS_JobModule(JobModule):
             if not stage_jobconfig['run_hof_analysis']:
                 batchjob_string = re.sub('# Configure[\S\s]*pids','',
                                    batchjob_string) 
-            if 'next_stage_job_config' in kwargs.keys():
+         
+        if 'next_stage_job_config' in kwargs.keys():
                 if bool(kwargs['next_stage_job_config']):
                     batchjob_string += 'bash %s\n'%chain_job
-                    
-        else:
-            batchjob_string = re.sub('# Analyze[\S\s]*.json','',
-                                   batchjob_string) 
-            
         with open(self.script_name, "w") as batchjob_script:
             batchjob_script.write(batchjob_string)
 

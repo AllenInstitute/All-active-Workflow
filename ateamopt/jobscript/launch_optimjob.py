@@ -127,7 +127,7 @@ def create_optim_job(args):
     jobtemplate_path = 'job_templates/chainjob_template.sh'
     
     chain_job = ChainSubJob(jobtemplate_path,stage_level_jobconfig_path)
-    chain_job.script_modifier()
+    chain_job.script_generator()
 
     chain_job.run_job()
 

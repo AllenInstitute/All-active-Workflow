@@ -67,7 +67,7 @@ class Stage_JobConfig(ags.schemas.DefaultSchema):
     analysis_script = ags.fields.Str(description="",default='analyze_stagejob.py')
     run_peri_comparison = ags.fields.Boolean(description="",default=False)
     run_released_aa_comparison = ags.fields.Boolean(description="",default=True)
-    ipyp_analysis = ags.fields.Boolean(description="",default=False)
+    ipyp_analysis = ags.fields.Boolean(description="")
     run_hof_analysis = ags.fields.Boolean(description="",default=False)
     calc_model_perf = ags.fields.Boolean(description="",default=False)
     model_postprocess = ags.fields.Boolean(description="",default=False)
