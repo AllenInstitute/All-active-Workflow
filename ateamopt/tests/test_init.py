@@ -1,6 +1,6 @@
 from unittest import TestCase
 import os
-from ateamopt.nwb_extractor import NWB_Extractor
+from ateamopt.nwb_extractor import NwbExtractor
 from ateamopt.model_parameters import AllActive_Model_Parameters
 from ateamopt.utils import utility
 from ateamopt.optim_config_rules import filter_feat_proto_passive,\
@@ -110,7 +110,7 @@ class Test_Model(TestCase):
         # Mouse spiny
         cell_id_spiny = self.mouse_spiny_id 
         
-        nwb_handler_spiny = NWB_Extractor(cell_id_spiny,nwb_search_pattern=cell_id_spiny)
+        nwb_handler_spiny = NwbExtractor(cell_id_spiny,nwb_search_pattern=cell_id_spiny)
         acceptable_stimtypes = ['Long Square']
         ephys_dir = os.path.join(self.mouse_spiny_path,'mouse_spiny_ephys')
         ephys_data_path,stimmap_filename = \
@@ -139,7 +139,7 @@ class Test_Model(TestCase):
         # Mouse aspiny
         cell_id_aspiny = self.mouse_aspiny_id 
         
-        nwb_handler_aspiny = NWB_Extractor(cell_id_aspiny,nwb_search_pattern=cell_id_aspiny)
+        nwb_handler_aspiny = NwbExtractor(cell_id_aspiny,nwb_search_pattern=cell_id_aspiny)
         acceptable_stimtypes = ['Long Square']
         ephys_dir = os.path.join(self.mouse_aspiny_path,'mouse_aspiny_ephys')
         ephys_data_path,stimmap_filename = \

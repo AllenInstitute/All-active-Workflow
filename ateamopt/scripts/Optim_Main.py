@@ -63,7 +63,7 @@ def create_optimizer(job_config,seed):
     
     eval_handler = Bpopt_Evaluator(protocol_path, feature_path, morph_path,
                                     param_path, mech_path, axon_type=axon_type,
-                                    ephys_dir=ephys_dir,**props)
+                                    ephys_dir=ephys_dir, **props)
     evaluator = eval_handler.create_evaluator()
 
     opt = bpopt.optimisations.DEAPOptimisation(
