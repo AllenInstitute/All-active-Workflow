@@ -1,6 +1,7 @@
 import os
-from ateamopt.allactive_optim import Allactive_Optim
-from ateamopt.nwb_extractor import NWB_Extractor
+import argparse
+from ateamopt.nwb_extractor import NwbExtractor
+import ateamopt.cell_data as cell_data
 from ateamopt.utils import utility
 import logging
 import glob
@@ -67,8 +68,7 @@ def create_optim_job(args):
     
     if len(cell_metadata_path) == 0:
         cty_props.update(highlevel_job_props)
-        optim_proc = Allactive_Optim(cell_id)
-        cell_metadata,cell_metadata_path = optim_proc.save_cell_metadata(**cty_props)
+        cell_metadata,cell_metadata_path = cell_data.save_cell_metadata(**cty_props)
         morph_stats_filename = 'morph_stats_%s.json'%cell_id
         morph_handler = MorphHandler(cell_metadata['swc_path'],cell_id=cell_id)
         morph_handler.save_morph_data(morph_stats_filename)
@@ -87,7 +87,7 @@ def create_optim_job(args):
     
     highlevel_job_props['nwb_path'] = cell_metadata['nwb_path']
     highlevel_job_props['swc_path'] = cell_metadata['swc_path']
-    nwb_handler = NWB_Extractor(cell_id,highlevel_job_props['nwb_path'])
+    nwb_handler = NwbExtractor(cell_id, nwb_path=highlevel_job_props['nwb_path'])
     ephys_data_path,stimmap_filename = nwb_handler.save_cell_data\
             (acceptable_stimtypes,non_standard_nwb=non_standard_nwb,
              ephys_dir=ephys_dir)

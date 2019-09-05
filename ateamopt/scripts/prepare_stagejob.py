@@ -1,6 +1,6 @@
 import os,sys
 import glob
-from ateamopt.nwb_extractor import NWB_Extractor
+from ateamopt.nwb_extractor import NwbExtractor
 from ateamopt.model_parameters import AllActive_Model_Parameters
 from ateamopt.utils import utility
 import ateamopt.optim_config_rules as filter_rules
@@ -68,7 +68,7 @@ def main(args):
     
     protocols_dict = {proto_key:proto_val for proto_key,proto_val in all_protocols.\
                       items() if proto_key in select_stim_names}
-    nwb_handler = NWB_Extractor(cell_id,nwb_path)
+    nwb_handler = NwbExtractor(cell_id, nwb_path=nwb_path)
     
     kwargs = {'depol_block_check':depol_block_check,'add_fi_kink':add_fi_kink}
     if depol_block_check:
