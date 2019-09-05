@@ -99,7 +99,7 @@ job_config_dict = {
                     'seed' : [1,2],
                     'run_hof_analysis' : True,
                     'run_peri_comparison' :True,
-                    'DB_check' : True,
+                    'depol_block_check' : True,
                     'add_fi_kink' : True,
                     'calc_model_perf' : True,
                     'ipyp_analysis' : True,

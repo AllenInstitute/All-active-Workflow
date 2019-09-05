@@ -42,7 +42,7 @@ def main(args):
     stage_feature_names_path = stage_jobconfig['stage_features']
     param_bounds_path = stage_jobconfig['stage_parameters']
     script_repo_dir = stage_jobconfig.get('script_repo_dir') 
-    DB_check = stage_jobconfig.get('DB_check')
+    depol_block_check = stage_jobconfig.get('depol_block_check')
     add_fi_kink = stage_jobconfig.get('add_fi_kink')
     ipyp_analysis = stage_jobconfig.get('ipyp_analysis')
     
@@ -70,10 +70,11 @@ def main(args):
                       items() if proto_key in select_stim_names}
     nwb_handler = NWB_Extractor(cell_id,nwb_path)
     
-    kwargs = {'DB_check':DB_check,'add_fi_kink':add_fi_kink}
-    if DB_check:
+    kwargs = {'depol_block_check':depol_block_check,'add_fi_kink':add_fi_kink}
+    if depol_block_check:
         train_features,test_features,train_protocols,DB_proto_dict = filter_rule_func(\
                                    features_dict,protocols_dict,**kwargs)
+        # also append DB check info to all_protocols json and save
         all_protocols['DB_check_DC'] = {'stimuli':DB_proto_dict}
         utility.save_json(all_protocols_path,all_protocols)
     else:

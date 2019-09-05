@@ -94,7 +94,7 @@
                 ],
                 "run_hof_analysis": true,
                 "run_peri_comparison": true,
-                "DB_check": true,
+                "depol_block_check": true,
                 "add_fi_kink": true,
                 "calc_model_perf": true,
                 "ipyp_analysis": true,

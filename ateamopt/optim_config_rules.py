@@ -93,7 +93,7 @@ def filter_feat_proto_active(features_dict,protocols_dict,
     train_features_dict[spiking_proto_sorted[0]]['soma'] =  entries_to_remove(\
                  f_key_list,train_features_dict[spiking_proto_sorted[0]]['soma'])         
             
-    if kwargs.get('DB_check'):
+    if kwargs.get('depol_block_check'):
         max_proto_key = spiking_proto_sorted[-1]
         max_amp = max([proto['amp'] for proto in protocols_dict[max_proto_key]['stimuli']])
         DB_proto_delay = max([proto['delay'] for proto in protocols_dict[max_proto_key]['stimuli']])
