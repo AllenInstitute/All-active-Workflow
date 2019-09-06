@@ -191,7 +191,7 @@ def correct_voltage_feat_std(features_dict,
                     feature_key.append(key)
                 else:
                     mean = val['soma'][feat_name][0]
-                    val['soma'][feat_name][1] = 0.05*mean if mean != 0 else .05
+                    val['soma'][feat_name][1] = 0.05*np.abs(mean) if mean != 0 else .05
 
     feature_key = list(set(feature_key))
 
