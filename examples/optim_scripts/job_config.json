@@ -10,7 +10,6 @@
             "conda_env": "ateam_opt",
             "nwb_path": "",
             "swc_path": "",
-            "nwb_type": "standard",
             "axon_type": "stub_axon",
             "ephys_dir": "ephys_data",
             "non_standard_nwb": false,

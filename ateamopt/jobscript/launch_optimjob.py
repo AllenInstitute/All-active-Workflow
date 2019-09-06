@@ -1,5 +1,5 @@
 import os
-import argparse
+import ateamopt
 from ateamopt.nwb_extractor import NwbExtractor
 import ateamopt.cell_data as cell_data
 from ateamopt.utils import utility
@@ -11,6 +11,8 @@ import argschema as ags
 from ateamopt.optim_schema import Launch_Config
 from ateamopt.optim_config_rules import correct_voltage_feat_std
 from ateamopt.morph_handler import MorphHandler
+import subprocess
+import bluepyopt
 
 logger = logging.getLogger()
 
@@ -41,7 +43,6 @@ def create_optim_job(args):
         stage_job_props[ii] = convert_paths(stage_job_prop)
     highlevel_job_props = convert_paths(highlevel_job_props)
     
-    
     try:
         job_dir = os.path.join(os.getcwd(),highlevel_job_props['job_dir'])
     except:
@@ -63,6 +64,20 @@ def create_optim_job(args):
     utility.save_json(cty_config_path,cty_props)
     utility.save_json(job_config_path,args['job_config'])
 
+    try:
+        ateamopt_dir = os.path.join(os.path.dirname(ateamopt.__file__),os.pardir)
+        ateamopt_commitID = subprocess.check_output(["git", "describe","--tags"],cwd=ateamopt_dir).strip()
+        ateamopt_commitID = ateamopt_commitID.decode() if isinstance(ateamopt_commitID,bytes) else ateamopt_commitID
+        cty_props['ateamopt_tag'] = ateamopt_commitID
+    except Exception as e:
+        logger.debug(e)
+    try:
+        bluepyopt_dir = os.path.join(os.path.dirname(bluepyopt.__file__),os.pardir)
+        bpopt_commitID = subprocess.check_output(["git", "describe","--tags"],cwd=bluepyopt_dir).strip()
+        bpopt_commitID = bpopt_commitID.decode() if isinstance(bpopt_commitID,bytes) else bpopt_commitID
+        cty_props['bluepyopt_tag'] = bpopt_commitID
+    except:
+        pass
     
     cell_metadata_path = glob.glob('cell_metadata*.json')
     
