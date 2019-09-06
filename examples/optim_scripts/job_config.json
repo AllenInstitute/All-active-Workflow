@@ -8,8 +8,6 @@
         "highlevel_jobconfig": {
             "job_dir": "Human_trial",
             "conda_env": "ateam_opt",
-            "nwb_path": "",
-            "swc_path": "",
             "axon_type": "stub_axon",
             "ephys_dir": "ephys_data",
             "non_standard_nwb": false,
