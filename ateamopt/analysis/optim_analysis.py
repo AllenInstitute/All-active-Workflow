@@ -170,14 +170,10 @@ class Optim_Analyzer(object):
     
     def create_bpopt_param_template(self,param_list):
         opt = self._opt
-        bpopt_section_map_inv = utility.bpopt_section_map_inv
-
         optimized_param_dict = {key:param_list[i] for i,key in \
                             enumerate(opt.evaluator.param_names)}
 
-        param_dict = {key.split('.')[0]+'.'+
-                     bpopt_section_map_inv[key.split('.')[1]] : optimized_param_dict[key]
-                                            for key in optimized_param_dict.keys()}
+        param_dict = {key : optimized_param_dict[key] for key in optimized_param_dict.keys()}
 
         return param_dict
 
