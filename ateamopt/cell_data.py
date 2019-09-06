@@ -16,13 +16,16 @@ except:
 
 logger = logging.getLogger(__name__)
 
-def save_cell_metadata(cell_id, **cell_metadata):
+def save_cell_metadata(**cell_metadata):
+    cell_id = cell_metadata["cell_id"]
     metadata_filename = 'cell_metadata_%s.json' % cell_id
+
+    # TODO: maybe move this to launch_optimjob?
     machine_name = socket.gethostname()
     machine_name = 'aws' if machine_name == 'master' else machine_name
     cell_metadata['machine'] = machine_name
 
-    data_source = props["data_source"]
+    data_source = cell_metadata["data_source"]
     if data_source=="web":
         cell_metadata.update(get_data_web(cell_id))
     elif data_source=="lims":

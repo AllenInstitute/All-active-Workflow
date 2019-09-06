@@ -347,10 +347,11 @@ class AllActive_Model_Parameters(object):
                               release_params,release_param_write_path,
                               opt_config_filename = 'config_file.json',
                               **kwargs):
-        """Writes a bunch of paths to json. Can also hack to write other keys for the Evaluator"""
-
-        path_dict =  dict()
-        path_dict['morphology'] = morph_path
+        if not os.path.exists(opt_config_filename):
+            path_dict =  dict()
+        else:
+            path_dict = utility.load_json(opt_config_filename)
+        
         path_dict['parameters'] = param_write_path
         path_dict['mechanism'] = mech_write_path
         path_dict['released_aa_mechanism'] = mech_release_write_path
