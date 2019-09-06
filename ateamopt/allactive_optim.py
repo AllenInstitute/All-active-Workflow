@@ -51,7 +51,7 @@ class Allactive_Optim(object):
 #                 'Feature_avg_Released_AllActive', 'Explained_variance_Released_AllActive',
 #                 'Feature_avg_Peri','Explained_variance_Peri','machine','Axon_type']
 
-        cell_metadata = {'cell_id':props.get('cell_id')}
+        cell_metadata = {prop_key:props.get(prop_key) for prop_key in ['cell_id','ateamopt_tag','bluepyopt_tag']}
         
         
         template_model_dict = {'all_active' :491455321,

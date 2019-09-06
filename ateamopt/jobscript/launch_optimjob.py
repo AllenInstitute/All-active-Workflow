@@ -43,16 +43,6 @@ def create_optim_job(args):
         stage_job_props[ii] = convert_paths(stage_job_prop)
     highlevel_job_props = convert_paths(highlevel_job_props)
     
-    ateamopt_dir = os.path.join(os.path.dirname(ateamopt.__file__),os.pardir)
-    ateamopt_commitID = subprocess.check_output(["git", "describe","--tags"],cwd=ateamopt_dir).strip()
-    ateamopt_commitID = ateamopt_commitID.decode() if isinstance(ateamopt_commitID,bytes) else ateamopt_commitID
-    highlevel_job_props['ateamopt_tag'] = ateamopt_commitID
-    
-    bluepyopt_dir = os.path.join(os.path.dirname(bluepyopt.__file__),os.pardir)
-    bpopt_commitID = subprocess.check_output(["git", "describe","--tags"],cwd=bluepyopt_dir).strip()
-    bpopt_commitID = bpopt_commitID.decode() if isinstance(bpopt_commitID,bytes) else bpopt_commitID
-    highlevel_job_props['bluepyopt_tag'] = bpopt_commitID
-    
     try:
         job_dir = os.path.join(os.getcwd(),highlevel_job_props['job_dir'])
     except:
@@ -74,6 +64,20 @@ def create_optim_job(args):
     utility.save_json(cty_config_path,cty_props)
     utility.save_json(job_config_path,args['job_config'])
 
+    try:
+        ateamopt_dir = os.path.join(os.path.dirname(ateamopt.__file__),os.pardir)
+        ateamopt_commitID = subprocess.check_output(["git", "describe","--tags"],cwd=ateamopt_dir).strip()
+        ateamopt_commitID = ateamopt_commitID.decode() if isinstance(ateamopt_commitID,bytes) else ateamopt_commitID
+        cty_props['ateamopt_tag'] = ateamopt_commitID
+    except Exception as e:
+        logger.debug(e)
+    try:
+        bluepyopt_dir = os.path.join(os.path.dirname(bluepyopt.__file__),os.pardir)
+        bpopt_commitID = subprocess.check_output(["git", "describe","--tags"],cwd=bluepyopt_dir).strip()
+        bpopt_commitID = bpopt_commitID.decode() if isinstance(bpopt_commitID,bytes) else bpopt_commitID
+        cty_props['bluepyopt_tag'] = bpopt_commitID
+    except:
+        pass
     
     cell_metadata_path = glob.glob('cell_metadata*.json')
     
@@ -97,8 +101,8 @@ def create_optim_job(args):
     non_standard_nwb = highlevel_job_props['non_standard_nwb']
     acceptable_stimtypes = highlevel_job_props['acceptable_stimtypes']
     
-    highlevel_job_props['nwb_path'] = cell_metadata['nwb_path']
-    highlevel_job_props['swc_path'] = cell_metadata['swc_path']
+    highlevel_job_props['nwb_path'] = cell_metadata.get('nwb_path') or highlevel_job_props.get('nwb_path')
+    highlevel_job_props['swc_path'] = cell_metadata.get('swc_path') or highlevel_job_props.get('swc_path')
     nwb_handler = NWB_Extractor(cell_id,highlevel_job_props['nwb_path'])
     ephys_data_path,stimmap_filename = nwb_handler.save_cell_data\
             (acceptable_stimtypes,non_standard_nwb=non_standard_nwb,
