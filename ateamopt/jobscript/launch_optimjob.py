@@ -1,4 +1,5 @@
 import os
+import ateamopt
 from ateamopt.allactive_optim import Allactive_Optim
 from ateamopt.nwb_extractor import NWB_Extractor
 from ateamopt.utils import utility
@@ -10,6 +11,8 @@ import argschema as ags
 from ateamopt.optim_schema import Launch_Config
 from ateamopt.optim_config_rules import correct_voltage_feat_std
 from ateamopt.morph_handler import Morph_handler
+import subprocess
+import bluepyopt
 
 logger = logging.getLogger()
 
@@ -40,6 +43,15 @@ def create_optim_job(args):
         stage_job_props[ii] = convert_paths(stage_job_prop)
     highlevel_job_props = convert_paths(highlevel_job_props)
     
+    ateamopt_dir = os.path.join(os.path.dirname(ateamopt.__file__),os.pardir)
+    ateamopt_commitID = subprocess.check_output(["git", "describe","--tags"],cwd=ateamopt_dir).strip()
+    ateamopt_commitID = ateamopt_commitID.decode() if isinstance(ateamopt_commitID,bytes) else ateamopt_commitID
+    highlevel_job_props['ateamopt_tag'] = ateamopt_commitID
+    
+    bluepyopt_dir = os.path.join(os.path.dirname(bluepyopt.__file__),os.pardir)
+    bpopt_commitID = subprocess.check_output(["git", "describe","--tags"],cwd=bluepyopt_dir).strip()
+    bpopt_commitID = bpopt_commitID.decode() if isinstance(bpopt_commitID,bytes) else bpopt_commitID
+    highlevel_job_props['bluepyopt_tag'] = bpopt_commitID
     
     try:
         job_dir = os.path.join(os.getcwd(),highlevel_job_props['job_dir'])
