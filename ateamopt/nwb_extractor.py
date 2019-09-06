@@ -580,23 +580,15 @@ class NwbExtractor(object):
                              train_protocols, base_dir='config/', **kwargs):
         cell_name = self.cell_id
         train_features_write_path = kwargs.get('train_features_write_path') or \
-            base_dir+cell_name+'/train_features.json'
+                os.path.join(base_dir,cell_name,'train_features.json')
         test_features_write_path = kwargs.get('test_features_write_path') \
-            or base_dir+cell_name+'/test_features.json'
-#        all_features_write_path = kwargs.get('all_features_write_path') \
-#            or base_dir+cell_name+'/all_features.json'
+            or os.path.join(base_dir,cell_name,'test_features.json')
         train_protocols_write_path = kwargs.get('protocols_write_path') \
-            or base_dir+cell_name+'/train_protocols.json'
-#        all_protocols_write_path = kwargs.get('all_protocols_write_path') \
-#            or base_dir+cell_name+'/all_protocols.json'
-
+            or os.path.join(base_dir,cell_name,'train_protocols.json')    
         utility.create_filepath(train_protocols_write_path)
-
-        utility.save_json(train_features_write_path, train_features)
-        utility.save_json(test_features_write_path, test_features)
-#        utility.save_json(all_features_write_path,all_features)
-        utility.save_json(train_protocols_write_path, train_protocols)
-#        utility.save_json(all_protocols_write_path,all_protocols)
-
-        return train_features_write_path, test_features_write_path,\
-            train_protocols_write_path
+        utility.save_json(train_features_write_path,train_features)
+        utility.save_json(test_features_write_path,test_features)
+        utility.save_json(train_protocols_write_path,train_protocols)
+        
+        return train_features_write_path,test_features_write_path,\
+                train_protocols_write_path

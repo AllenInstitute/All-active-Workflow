@@ -68,6 +68,7 @@ def correct_junction_potential(data,junction_potential):
 
 def reverse_junction_potential_correction(data,junction_potential): # For release to web
     return data-junction_potential # Assumes junction potential negative (AIBS specific)
+    
 
 def create_dirpath(path):
     if not os.path.exists(path):
