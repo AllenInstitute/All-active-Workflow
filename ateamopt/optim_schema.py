@@ -9,34 +9,35 @@ class Top_JobConfig(ags.schemas.DefaultSchema):
     conda_env = ags.fields.Str(description="")
     nwb_path = ags.fields.InputFile(description="")
     swc_path = ags.fields.InputFile(description="")
-    data_source = ags.fields.OptionList(description="", 
-        options=['lims','web','local'], default='web')
+    data_source = ags.fields.OptionList(description="",
+                                        options=['lims', 'web', 'local'], default='web')
     axon_type = ags.fields.Str(description="")
     ephys_dir = ags.fields.Str(description="")
     non_standard_nwb = ags.fields.Boolean(description="")
     acceptable_stimtypes = ags.fields.List(ags.fields.Str, description="")
     feature_names_path = ags.fields.InputFile(description="")
-    email = ags.fields.List(ags.fields.Email,description="") 
+    email = ags.fields.List(ags.fields.Email, description="")
     stimmap_file = ags.fields.Str(description="")
     machine = ags.fields.Str(description="")
-    log_level = ags.fields.LogLevel(description='',default='DEBUG')
+    log_level = ags.fields.LogLevel(description='', default='DEBUG')
     all_features_path = ags.fields.Str(description="")
-    all_protocols_path =ags.fields.Str(description="")
+    all_protocols_path = ags.fields.Str(description="")
     dryrun = ags.fields.Boolean(default=False,
-        description='Run a small optimization for testing - overrides a number of jobconfig fields.')
+                                description='Run a small optimization for testing - overrides a number of jobconfig fields.')
     script_repo_dir = ags.fields.InputDir(description="")
     modfiles_dir = ags.fields.InputDir(description="")
     compiled_modfiles_dir = ags.fields.InputDir(description="")
-    
+
 
 class Stage_JobConfig(ags.schemas.DefaultSchema):
     stage_name = ags.fields.Str(description="")
     qos = ags.fields.Str(description="")
-    stage_stimtypes = ags.fields.List(ags.fields.Str,description="")
-    filter_rule =  ags.fields.Str(description="")
+    stage_stimtypes = ags.fields.List(ags.fields.Str, description="")
+    filter_rule = ags.fields.Str(description="")
     stage_features = ags.fields.InputFile(description="")
     stage_parameters = ags.fields.InputFile(description="")
-    AP_initiation_zone= ags.fields.OptionList(description="",options=['axon','soma'],default='soma')
+    AP_initiation_zone = ags.fields.OptionList(
+        description="", options=['axon', 'soma'], default='soma')
     cp_dir = ags.fields.Str(description="", default='checkpoints')
     cp_backup_dir = ags.fields.Str(
         description="", default=None, allow_none=True)

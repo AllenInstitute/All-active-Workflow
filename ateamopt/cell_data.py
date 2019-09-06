@@ -16,6 +16,7 @@ except:
 
 logger = logging.getLogger(__name__)
 
+
 def save_cell_metadata(**cell_metadata):
     cell_id = cell_metadata["cell_id"]
     metadata_filename = 'cell_metadata_%s.json' % cell_id
@@ -26,17 +27,18 @@ def save_cell_metadata(**cell_metadata):
     cell_metadata['machine'] = machine_name
 
     data_source = cell_metadata["data_source"]
-    if data_source=="web":
+    if data_source == "web":
         cell_metadata.update(get_data_web(cell_id))
-    elif data_source=="lims":
+    elif data_source == "lims":
         cell_metadata.update(get_data_lims(cell_id))
 
     cell_metadata.update(cell_props(cell_id))
     cell_metadata.update(model_props(cell_id))
 
     utility.save_json(metadata_filename, cell_metadata)
-        
+
     return cell_metadata, metadata_filename
+
 
 def get_data_lims(cell_id):
     lr = lims.LimsReader()
@@ -49,13 +51,15 @@ def get_data_web(cell_id):
     metadata = {}
     ctc.get_ephys_data(cell_id)
     nwb_path = os.path.abspath(
-            utility.get_filepath_for_exten('.nwb')[0])
+        utility.get_filepath_for_exten('.nwb')[0])
     ctc.get_reconstruction(cell_id)
     swc_path = os.path.abspath(
-            utility.get_filepath_for_exten('.swc')[0])
+        utility.get_filepath_for_exten('.swc')[0])
     return {"nwb_path": nwb_path, "swc_path": swc_path}
 
 # TODO: pull from lims, get_cells_df
+
+
 def cell_props(cell_id):
     cell_metadata = {}
     ctc = CellTypesCache(manifest_file='cell_types/manifest.json')
@@ -89,12 +93,12 @@ def model_props(cell_id):
             bp.cache_data(
                 model_id, working_directory=model_dir[model_type])
             model_metadata = api.model_query("NeuronalModelRun",
-                                                criteria="[neuronal_model_id$eq%s]" % model_id)
+                                             criteria="[neuronal_model_id$eq%s]" % model_id)
             model_metadata_select = [model_metadata[0]['rheobase_feature_average'],
-                                        model_metadata[0]['explained_variance_ratio']]
+                                     model_metadata[0]['explained_variance_ratio']]
 
             model_path = glob.glob('%s/*fit*.json' %
-                                    model_dir[model_type])[0]
+                                   model_dir[model_type])[0]
             for file_ in glob.glob('%s/*' % model_dir[model_type]):
                 if file_ != model_path:
                     try:
@@ -113,11 +117,11 @@ def model_props(cell_id):
 
 # Formatting specs
 template_model_dict = {'all_active': 491455321,
-                        'perisomatic': 329230710}
+                       'perisomatic': 329230710}
 
 opt_metric_dict = {'all_active': ['Feature_avg_Released_AllActive',
-                                    'Explained_variance_Released_AllActive'],
-                    'perisomatic': ['Feature_avg_Peri', 'Explained_variance_Peri']}
+                                  'Explained_variance_Released_AllActive'],
+                   'perisomatic': ['Feature_avg_Peri', 'Explained_variance_Peri']}
 
 model_dir = {'all_active': 'released_aa_model',
-                'perisomatic': 'peri_model'}
+             'perisomatic': 'peri_model'}
