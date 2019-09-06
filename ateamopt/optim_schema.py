@@ -24,8 +24,7 @@ class Top_JobConfig(ags.schemas.DefaultSchema):
     script_repo_dir = ags.fields.InputDir(description="")
     modfiles_dir = ags.fields.InputDir(description="")
     compiled_modfiles_dir = ags.fields.InputDir(description="")
-    ateamopt_tag = ags.fields.Str(description="")
-    bluepyopt_tag = ags.fields.Str(description="")
+    
 
 class Stage_JobConfig(ags.schemas.DefaultSchema):
     stage_name = ags.fields.Str(description="")
