@@ -6,8 +6,8 @@ efel.getFeatureNames()
 class Top_JobConfig(ags.schemas.DefaultSchema):
     job_dir = ags.fields.Str(description="")
     conda_env = ags.fields.Str(description="")
-    nwb_path = ags.fields.Str(description="")
-    swc_path = ags.fields.Str(description="")
+    nwb_path = ags.fields.InputFile(description="")
+    swc_path = ags.fields.InputFile(description="")
     axon_type = ags.fields.Str(description="")
     ephys_dir = ags.fields.Str(description="")
     non_standard_nwb = ags.fields.Boolean(description="")
@@ -24,6 +24,8 @@ class Top_JobConfig(ags.schemas.DefaultSchema):
     script_repo_dir = ags.fields.InputDir(description="")
     modfiles_dir = ags.fields.InputDir(description="")
     compiled_modfiles_dir = ags.fields.InputDir(description="")
+    ateamopt_tag = ags.fields.Str(description="")
+    bluepyopt_tag = ags.fields.Str(description="")
 
 class Stage_JobConfig(ags.schemas.DefaultSchema):
     stage_name = ags.fields.Str(description="")
@@ -75,7 +77,7 @@ class Stage_JobConfig(ags.schemas.DefaultSchema):
     calc_time_statistics = ags.fields.Boolean(description="",default=False)
     DB_check = ags.fields.Boolean(description="")
     add_fi_kink = ags.fields.Boolean(description="")
-    AP_initiation_flag= ags.fields.OptionList(description="",options=['axon','soma'],default='soma')
+    AP_initiation_zone= ags.fields.OptionList(description="",options=['axon','soma'],default='soma')
     
 class JobConfig(ags.schemas.DefaultSchema):
     highlevel_jobconfig = ags.fields.Nested(Top_JobConfig)
