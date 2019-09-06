@@ -41,6 +41,8 @@ def main(args):
     stage_stimtypes = stage_jobconfig['stage_stimtypes']
     stage_feature_names_path = stage_jobconfig['stage_features']
     param_bounds_path = stage_jobconfig['stage_parameters']
+    ap_init_flag = stage_jobconfig['AP_initiation_zone']
+    ap_init_feature = 'check_AISInitiation'
     script_repo_dir = stage_jobconfig.get('script_repo_dir') 
     DB_check = stage_jobconfig.get('DB_check')
     add_fi_kink = stage_jobconfig.get('add_fi_kink')
@@ -51,6 +53,13 @@ def main(args):
     all_protocols = utility.load_json(all_protocols_path)
     
     stage_feature_names = utility.load_json(stage_feature_names_path)['features']
+    # AP init flag is prioritized over feature set file
+    if ap_init_flag == 'soma':
+        if ap_init_feature in stage_feature_names:stage_feature_names.remove(ap_init_feature)
+    elif ap_init_flag == 'axon':
+        if ap_init_feature not in stage_feature_names:stage_feature_names.append(ap_init_feature)
+    
+    
     select_stim_names = []
     for stim_name in all_features.keys():
         stim_type = stim_name.rsplit('_',1)[0]

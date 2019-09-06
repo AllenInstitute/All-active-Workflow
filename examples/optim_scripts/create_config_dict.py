@@ -27,8 +27,6 @@ job_config_dict = {
                 {  
                     'job_dir': 'Human_trial',
                     'conda_env' : 'ateam_opt',
-                    'nwb_path' : '',
-                    'swc_path' : '',
                     'axon_type' : 'stub_axon', # biological
                     'ephys_dir' : 'ephys_data',
                     'non_standard_nwb': False,
