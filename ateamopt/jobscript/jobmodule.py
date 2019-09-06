@@ -155,6 +155,7 @@ class test_JobModule(JobModule):
         self.job_config_path = job_config_path
 
     def script_generator(self,chain_job='chain_job.sh',**kwargs):
+        # Force change of certain config properties
         job_config = utility.load_json(self.job_config_path)
         stage_jobconfig = job_config['stage_jobconfig']
         highlevel_job_props = job_config['highlevel_jobconfig']
@@ -162,8 +163,8 @@ class test_JobModule(JobModule):
             if option in stage_jobconfig:
                 stage_jobconfig[option] = option_val
         stage_jobconfig['ipyp_optim'] = False
-        if isinstance(stage_jobconfig.get('seed'),list):
-            stage_jobconfig['seed'] = 1
+        stage_jobconfig['ipyp_analysis'] = False
+        stage_jobconfig['seed'] = [1]
         utility.save_json(self.job_config_path,job_config)
         
         
