@@ -6,7 +6,7 @@ import allensdk.api.queries.rma_api
 import shutil
 import logging
 from ateamopt.utils import utility
-import numpy as np
+from ateam.data import lims
 import glob
 
 logger = logging.getLogger(__name__)
@@ -17,30 +17,30 @@ class Allactive_Optim(object):
         self.cell_id = int(float(cell_id))
 
 
-    def get_ephys_morphology(self,ctc,metadata):
+    def get_ephys_morphology(self,ctc,metadata,**kwargs):
         
         # download/retrieve ephys data and sweep metadata
-        if metadata['nwb_path'] == '':
+        if not kwargs.get('nwb_path'):
             if 'hpc' in metadata['machine']: 
+                lr = lims.LimsReader()
                 logger.debug('Retrieving files from network')
-#                nwb_path = 'network_loc'
-                ctc.get_ephys_data(self.cell_id)
+                nwb_path = lr.get_nwb_path_from_lims(int(self.cell_id),get_sdk_version=True)
+
             else:
                 ctc.get_ephys_data(self.cell_id)
-            
-            nwb_path = os.path.abspath(utility.get_filepath_for_exten('.nwb')[0])
+                nwb_path = os.path.abspath(utility.get_filepath_for_exten('.nwb')[0])
             metadata['nwb_path'] = nwb_path
 
         # download/retrieve morphology
-        if metadata['swc_path'] == '':
-            if 'hpc' in metadata['machine']: 
+        if not kwargs.get('swc_path'):
+            if 'hpc' in metadata['machine']:
+                lr = lims.LimsReader()
                 logger.debug('Retrieving files from network')
-#                swc_path = 'network_loc'
-                ctc.get_reconstruction(self.cell_id)
+                swc_path = lr.get_swc_path_from_lims(int(self.cell_id))
+
             else:
                 ctc.get_reconstruction(self.cell_id)
-            
-            swc_path =  os.path.abspath(utility.get_filepath_for_exten('.swc')[0])
+                swc_path =  os.path.abspath(utility.get_filepath_for_exten('.swc')[0])
             metadata['swc_path'] = swc_path
         return metadata
 
@@ -51,7 +51,7 @@ class Allactive_Optim(object):
 #                 'Feature_avg_Released_AllActive', 'Explained_variance_Released_AllActive',
 #                 'Feature_avg_Peri','Explained_variance_Peri','machine','Axon_type']
 
-        cell_metadata = props
+        cell_metadata = {'cell_id':props.get('cell_id')}
         
         
         template_model_dict = {'all_active' :491455321,
@@ -74,7 +74,7 @@ class Allactive_Optim(object):
         metadata_list = list(filter(lambda x: x['id'] == cell_id, cells))
         if metadata_list:
             cell_metadata.update(metadata_list[0])
-        cell_metadata = self.get_ephys_morphology(ctc,cell_metadata)
+        cell_metadata = self.get_ephys_morphology(ctc,cell_metadata,**props)
 
         
 

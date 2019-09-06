@@ -41,7 +41,7 @@ def main(args):
     stage_stimtypes = stage_jobconfig['stage_stimtypes']
     stage_feature_names_path = stage_jobconfig['stage_features']
     param_bounds_path = stage_jobconfig['stage_parameters']
-    ap_init_flag = stage_jobconfig['AP_initiation_flag']
+    ap_init_flag = stage_jobconfig['AP_initiation_zone']
     ap_init_feature = 'check_AISInitiation'
     script_repo_dir = stage_jobconfig.get('script_repo_dir') 
     DB_check = stage_jobconfig.get('DB_check')
