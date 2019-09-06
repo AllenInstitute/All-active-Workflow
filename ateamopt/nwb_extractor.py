@@ -13,6 +13,7 @@ from ateamopt.optim_config_rules import correct_voltage_feat_std
 import logging
 logger = logging.getLogger(__name__)
 
+
 class NwbExtractor(object):
 
     def __init__(self, cell_id, nwb_path, junc_potential=-14, temp=34):
@@ -580,15 +581,15 @@ class NwbExtractor(object):
                              train_protocols, base_dir='config/', **kwargs):
         cell_name = self.cell_id
         train_features_write_path = kwargs.get('train_features_write_path') or \
-                os.path.join(base_dir,cell_name,'train_features.json')
+            os.path.join(base_dir, cell_name, 'train_features.json')
         test_features_write_path = kwargs.get('test_features_write_path') \
-            or os.path.join(base_dir,cell_name,'test_features.json')
+            or os.path.join(base_dir, cell_name, 'test_features.json')
         train_protocols_write_path = kwargs.get('protocols_write_path') \
-            or os.path.join(base_dir,cell_name,'train_protocols.json')    
+            or os.path.join(base_dir, cell_name, 'train_protocols.json')
         utility.create_filepath(train_protocols_write_path)
-        utility.save_json(train_features_write_path,train_features)
-        utility.save_json(test_features_write_path,test_features)
-        utility.save_json(train_protocols_write_path,train_protocols)
-        
-        return train_features_write_path,test_features_write_path,\
-                train_protocols_write_path
+        utility.save_json(train_features_write_path, train_features)
+        utility.save_json(test_features_write_path, test_features)
+        utility.save_json(train_protocols_write_path, train_protocols)
+
+        return train_features_write_path, test_features_write_path,\
+            train_protocols_write_path

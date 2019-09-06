@@ -10,37 +10,37 @@ logger = logging.getLogger(__name__)
 
 class Bpopt_Evaluator(object):
 
-    def __init__(self, protocol_path,feature_path,
-                 morph_path, param_path, mech_path,ephys_dir='preprocessed',
+    def __init__(self, protocol_path, feature_path,
+                 morph_path, param_path, mech_path, ephys_dir='preprocessed',
                  **props):
         """
         do_replace_axon : bluepyopt axon replace code, diameter taken
         from swc file
         """
         self.morph_path = morph_path if morph_path else None
-        self.protocol_path=protocol_path if protocol_path else None
+        self.protocol_path = protocol_path if protocol_path else None
         self.feature_path = feature_path if feature_path else None
-        self.param_path=param_path if param_path else None
-        self.mech_path=mech_path if mech_path else None
+        self.param_path = param_path if param_path else None
+        self.mech_path = mech_path if mech_path else None
         self.ephys_dir = ephys_dir
         self.AIS_check = False
 
         if self.feature_path:
             feature_definitions = utility.load_json(self.feature_path)
             feature_set = []
-            for feat_key,feat_val in feature_definitions.items():
+            for feat_key, feat_val in feature_definitions.items():
                 feature_set.extend(feat_val['soma'].keys())
             self.AIS_check = True if 'check_AISInitiation' in \
-                    list(set(feature_set)) else False
-        if any(timed_prop in props for timed_prop in ['timeout','learn_eval_trend']):
+                list(set(feature_set)) else False
+        if any(timed_prop in props for timed_prop in ['timeout', 'learn_eval_trend']):
             self.timed_evaluation = True
         else:
             self.timed_evaluation = False
-        
+
         self.axon_type = 'stub_axon'
-        if props.pop('do_replace_axon',None):
+        if props.pop('do_replace_axon', None):
             self.axon_type = 'bpopt_replaced_axon'
-        
+
         self.eval_props = props
 
     def define_mechanisms(self):
@@ -135,15 +135,13 @@ class Bpopt_Evaluator(object):
 
         return parameters
 
-
     def define_morphology(self):
         """Define morphology"""
 
         morph_path = self.morph_path
         return ephys.morphologies.NrnFileMorphology(morph_path,
-            stub_axon=self.axon_type =='stub_axon',
-            do_replace_axon = self.axon_type !='stub_axon')
-
+                                                    stub_axon=self.axon_type == 'stub_axon',
+                                                    do_replace_axon=self.axon_type != 'stub_axon')
 
     def model_builder(self):
         """Create cell model"""
@@ -155,7 +153,6 @@ class Bpopt_Evaluator(object):
             params=self.define_parameters())
 
         return cell
-
 
     def define_protocols(self):
         """Define protocols"""
@@ -204,7 +201,8 @@ class Bpopt_Evaluator(object):
                             seclist_name=recording_definition['seclist_name'])
                         var = recording_definition['var']
                         recording = ephys.recordings.CompRecording(
-                            name='%s.%s.%s' % (protocol_name, location.name, var),
+                            name='%s.%s.%s' % (
+                                protocol_name, location.name, var),
                             location=location,
                             variable=recording_definition['var'])
 
@@ -226,18 +224,18 @@ class Bpopt_Evaluator(object):
                 elif stimulus_definition['type'] == 'RampPulse':
                     stimuli.append(ephys.stimuli.NrnRampPulse(
                         ramp_amplitude_start=stimulus_definition['amp'],
-                        ramp_amplitude_end = stimulus_definition['amp_end'],
+                        ramp_amplitude_end=stimulus_definition['amp_end'],
                         ramp_delay=stimulus_definition['delay'],
                         ramp_duration=stimulus_definition['duration'],
                         location=soma_loc,
                         total_duration=stimulus_definition['totduration']))
                     recordings = [somav_recording]
-                elif stimulus_definition['type'] in ['TriBlip','Noise']:
+                elif stimulus_definition['type'] in ['TriBlip', 'Noise']:
                     try:
                         sweep_file = os.path.join(ephys_dir,
-                                          stimulus_definition['sweep_filenames'][0])
-                        stim_play_time = np.loadtxt(sweep_file)[:,0]
-                        stim_play_current = np.loadtxt(sweep_file)[:,2]
+                                                  stimulus_definition['sweep_filenames'][0])
+                        stim_play_time = np.loadtxt(sweep_file)[:, 0]
+                        stim_play_current = np.loadtxt(sweep_file)[:, 2]
                         stimuli.append(ephys.stimuli.NrnCurrentPlayStimulus(
                             current_points=stim_play_current,
                             time_points=stim_play_time,
@@ -252,8 +250,7 @@ class Bpopt_Evaluator(object):
 
         return protocols
 
-
-    def define_fitness_calculator(self,fitness_protocols):
+    def define_fitness_calculator(self, fitness_protocols):
         """Define fitness calculator"""
 
         # TODO: add bAP stimulus
@@ -263,12 +260,14 @@ class Bpopt_Evaluator(object):
             for location, features in locations.items():
 
                 for efel_feature_name, meanstd in features.items():
-                    feature_name = '%s.%s.%s' % (protocol_name, location, efel_feature_name)
+                    feature_name = '%s.%s.%s' % (
+                        protocol_name, location, efel_feature_name)
                     if self.AIS_check:
                         recording_names = {'': '%s.%s.v' % (protocol_name, location),
-                                       'location_AIS' : '%s.AIS.v' %protocol_name}
+                                           'location_AIS': '%s.AIS.v' % protocol_name}
                     else:
-                        recording_names = {'': '%s.%s.v' % (protocol_name, location)}
+                        recording_names = {
+                            '': '%s.%s.v' % (protocol_name, location)}
                     stimulus = fitness_protocols[protocol_name].stimuli[0]
                     if 'Ramp' in protocol_name:
                         stim_start = stimulus.ramp_delay
@@ -302,14 +301,13 @@ class Bpopt_Evaluator(object):
                         max_score=250)
 
                     objective = ephys.objectives.SingletonObjective(
-                    feature_name,
-                    feature)
+                        feature_name,
+                        feature)
                     objectives.append(objective)
 
         fitcalc = ephys.objectivescalculators.ObjectivesCalculator(objectives)
 
         return fitcalc
-
 
     def create_evaluator(self):
         """Setup"""
@@ -324,19 +322,19 @@ class Bpopt_Evaluator(object):
                        if not param.frozen]
 
         sim = ephys.simulators.NrnSimulator()
-        
+
         if self.timed_evaluation:
-            kwargs={}
-            for key,val in self.eval_props.items():
+            kwargs = {}
+            for key, val in self.eval_props.items():
                 if val:
-                    kwargs[key] = val 
-                    
+                    kwargs[key] = val
+
             return ephys.evaluators.CellEvaluatorTimed(
                 cell_model=cell,
                 param_names=param_names,
                 fitness_protocols=fitness_protocols,
                 fitness_calculator=fitness_calculator,
-                sim=sim,**kwargs)
+                sim=sim, **kwargs)
         else:
             return ephys.evaluators.CellEvaluator(
                 cell_model=cell,
@@ -344,4 +342,3 @@ class Bpopt_Evaluator(object):
                 fitness_protocols=fitness_protocols,
                 fitness_calculator=fitness_calculator,
                 sim=sim)
-
