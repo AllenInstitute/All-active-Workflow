@@ -13,17 +13,17 @@ class Top_JobConfig(ags.schemas.DefaultSchema):
     non_standard_nwb = ags.fields.Boolean(description="")
     acceptable_stimtypes = ags.fields.List(ags.fields.Str,description="")
     feature_names_path = ags.fields.InputFile(description="")
-    email = ags.fields.List(ags.fields.Email,description="",required=False) 
+    email = ags.fields.List(ags.fields.Email,description="") 
     stimmap_file = ags.fields.Str(description="")
     machine = ags.fields.Str(description="")
     log_level = ags.fields.LogLevel(description='',default='DEBUG')
-    all_features_path = ags.fields.Str(description="",required=False)
-    all_protocols_path =ags.fields.Str(description="",required=False)
+    all_features_path = ags.fields.Str(description="")
+    all_protocols_path =ags.fields.Str(description="")
     dryrun = ags.fields.Boolean(default=False,
         description='Run a small optimization for testing')
-    script_repo_dir = ags.fields.InputDir(description="",required=False)
-    modfiles_dir = ags.fields.InputDir(description="",required=False)
-    compiled_modfiles_dir = ags.fields.InputDir(description="",required=False)
+    script_repo_dir = ags.fields.InputDir(description="")
+    modfiles_dir = ags.fields.InputDir(description="")
+    compiled_modfiles_dir = ags.fields.InputDir(description="")
 
 class Stage_JobConfig(ags.schemas.DefaultSchema):
     stage_name = ags.fields.Str(description="")
@@ -63,7 +63,7 @@ class Stage_JobConfig(ags.schemas.DefaultSchema):
     nnodes_analysis = ags.fields.Int(description="")
     nprocs = ags.fields.Int(description="")
     nprocs_analysis = ags.fields.Int(description="")
-    ipyp_db = ags.fields.OptionList(description="",options=['nodb','sqlitedb'])
+    ipyp_db = ags.fields.OptionList(description="",options=['nodb','sqlitedb'],default='nodb')
     main_script = ags.fields.Str(description="",default='Optim_Main.py')
     analysis_script = ags.fields.Str(description="",default='analyze_stagejob.py')
     run_peri_comparison = ags.fields.Boolean(description="",default=False)
@@ -75,6 +75,7 @@ class Stage_JobConfig(ags.schemas.DefaultSchema):
     calc_time_statistics = ags.fields.Boolean(description="",default=False)
     DB_check = ags.fields.Boolean(description="")
     add_fi_kink = ags.fields.Boolean(description="")
+    AP_initiation_flag= ags.fields.OptionList(description="",options=['axon','soma'],default='soma')
     
 class JobConfig(ags.schemas.DefaultSchema):
     highlevel_jobconfig = ags.fields.Nested(Top_JobConfig)
