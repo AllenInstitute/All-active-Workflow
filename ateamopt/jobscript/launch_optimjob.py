@@ -9,10 +9,11 @@ import shutil
 from ateamopt.jobscript.jobmodule import ChainSubJob
 import argschema as ags
 from ateamopt.optim_schema import Launch_Config
-from ateamopt.optim_config_rules import correct_voltage_feat_std
+from ateamopt.optim_config_rules import correct_feat_statistics
 from ateamopt.morph_handler import Morph_handler
 import subprocess
 import bluepyopt
+import pandas as pd
 
 logger = logging.getLogger()
 
@@ -79,6 +80,10 @@ def create_optim_job(args):
     except:
         pass
     
+    # pickling consistency depends on pandas version
+    pd_version = pd.__version__
+    cty_props['pandas_version'] = pd_version
+    
     cell_metadata_path = glob.glob('cell_metadata*.json')
     
     if len(cell_metadata_path) == 0:
@@ -111,7 +116,7 @@ def create_optim_job(args):
     protocol_dict,feature_dict = nwb_handler.get_efeatures_all(feature_names_path,
                                           ephys_data_path,stimmap_filename)
     
-    feature_dict = correct_voltage_feat_std(feature_dict)
+    feature_dict = correct_feat_statistics(feature_dict,protocol_dict)
     all_protocols_filename = os.path.join(ephys_data_path,'all_protocols.json')
     all_features_filename = os.path.join(ephys_data_path,'all_features.json')
     utility.save_json(all_protocols_filename,protocol_dict)

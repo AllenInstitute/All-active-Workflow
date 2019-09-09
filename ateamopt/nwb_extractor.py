@@ -415,22 +415,22 @@ class NWB_Extractor(object):
 
             for feature_name in stim_features:
                 # For one feature, a list with values for every sweep
-                feature_values = [np.nanmean(trace_dict[feature_name])
+                feature_values_over_trials = [trace_dict[feature_name].tolist() for trace_dict 
+                                              in feature_results if trace_dict[feature_name] is not None]
+                feature_mean_over_trials = [np.nanmean(trace_dict[feature_name])
                                   for trace_dict in feature_results
                                   if trace_dict[feature_name] is not None]
-                if len(feature_values) == 0:
+                if len(feature_mean_over_trials) == 0:
                     continue
                 else:
-                    mean = np.nanmean(feature_values)
-                    std = np.nanstd(feature_values)
+                    mean = np.nanmean(feature_mean_over_trials)
+                    std = np.nanstd(feature_mean_over_trials)
                     
                 if feature_name == 'peak_time':
-                    feature_values = [trace_dict[feature_name].tolist() for trace_dict 
-                                      in feature_results]
                     mean,std = None,None
                 
                 features_meanstd[stim_name]['soma'][
-                    feature_name] = [mean , std,feature_values]
+                    feature_name] = [mean, std, feature_values_over_trials]
                 
         return stim_map,features_meanstd
                 
