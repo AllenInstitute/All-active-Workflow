@@ -33,9 +33,11 @@ def main(args):
     cell_metadata = utility.load_json(path_to_cell_metadata)
     cell_id = cell_metadata['cell_id']
     peri_model_id = cell_metadata.get('peri_model_id')
+    released_aa_model_path = cell_metadata.get('model_path_all_active')
     released_aa_model_id = cell_metadata.get('released_aa_model_id')
-
+    
     nwb_path = highlevel_job_props['nwb_path']
+    swc_path = highlevel_job_props['swc_path']
     all_features_path = highlevel_job_props['all_features_path']
     all_protocols_path = highlevel_job_props['all_protocols_path']
 
@@ -48,8 +50,11 @@ def main(args):
     depol_block_check = stage_jobconfig.get('depol_block_check')
     add_fi_kink = stage_jobconfig.get('add_fi_kink')
     ipyp_analysis = stage_jobconfig.get('ipyp_analysis')
+    param_bound_tolerance = stage_jobconfig.get('adjust_param_bounds_prev')
+    prev_stage_path = stage_jobconfig.get('prev_stage_path')
+    
+    filter_rule_func = getattr(filter_rules,stage_jobconfig['filter_rule'])
 
-    filter_rule_func = getattr(filter_rules, stage_jobconfig['filter_rule'])
     all_features = utility.load_json(all_features_path)
     all_protocols = utility.load_json(all_protocols_path)
 
@@ -99,18 +104,24 @@ def main(args):
                                          train_protocols)
 
     # Create the parameter bounds for the optimization
-    model_params_handler = AllActive_Model_Parameters(cell_id)
-
-    model_params, model_params_release = model_params_handler.get_opt_params(
-        param_bounds_path)
-    param_write_path, released_aa_param_write_path, released_aa_params =\
-        model_params_handler.write_params_opt(
-            model_params, model_params_release)
-
-    model_mechs, model_mechs_release = model_params_handler.get_opt_mechanism(model_params,
-                                                                              model_params_release, param_bounds_path)
-    mech_write_path, mech_release_write_path = model_params_handler.write_mechanisms_opt(model_mechs,
-                                                                                         model_mechs_release)
+    if prev_stage_path:
+        prev_stage_model_path = os.path.join(prev_stage_path,'fitted_params','optim_param_%s_compact.json'
+                                         %cell_id)
+    else:
+        prev_stage_model_path = None
+    model_params_handler = AllActive_Model_Parameters(cell_id,swc_path=swc_path,
+                                  prev_stage_model_path = prev_stage_model_path,
+                                  released_aa_model_path=released_aa_model_path)
+    
+    model_params,model_params_release= model_params_handler.get_opt_params(param_bounds_path,
+                                                       prev_stage_tolerance=param_bound_tolerance)
+    param_write_path,released_aa_param_write_path,released_aa_params=\
+                        model_params_handler.write_params_opt(model_params,model_params_release)
+    
+    model_mechs,model_mechs_release = model_params_handler.get_opt_mechanism(model_params,\
+                        model_params_release,param_bounds_path)
+    mech_write_path,mech_release_write_path = model_params_handler.write_mechanisms_opt(model_mechs,\
+                        model_mechs_release)
 
     props = {}
     if peri_model_id:
@@ -152,8 +163,10 @@ def main(args):
 
     next_stage_jobconfig = {}
     try:
-        next_stage_jobconfig['stage_jobconfig'] = next_stage_job_props.pop(0)
-        next_stage_jobconfig['highlevel_jobconfig'] = highlevel_job_props
+        next_stage_jobconfig['stage_jobconfig']=next_stage_job_props.pop(0)
+        next_stage_jobconfig['highlevel_jobconfig']=highlevel_job_props
+        next_stage_jobconfig['stage_jobconfig']['prev_stage_path'] = os.getcwd()
+
         chainjobtemplate_path = 'job_templates/chainjob_template.sh'
     except:
         pass

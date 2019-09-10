@@ -77,6 +77,7 @@ class Stage_JobConfig(ags.schemas.DefaultSchema):
     nnodes_analysis = ags.fields.Int(description="")
     nprocs = ags.fields.Int(description="")
     nprocs_analysis = ags.fields.Int(description="")
+
     error_stream = ags.fields.Str(
         description="Direct error stream (PBS specific)")  # '/dev/null'
     output_stream = ags.fields.Str(
@@ -101,7 +102,10 @@ class Stage_JobConfig(ags.schemas.DefaultSchema):
     # for now, specify
     depol_block_check = ags.fields.Boolean(description="", default=False)
     add_fi_kink = ags.fields.Boolean(description="", default=True)
-
+    
+    adjust_param_bounds_prev = ags.fields.Float(description="Relax the bounds for parameters fitted"
+                                                "in previous stage",default=0.5)
+    prev_stage_path = ags.fields.Str(description="")
 
 class JobConfig(ags.schemas.DefaultSchema):
     highlevel_jobconfig = ags.fields.Nested(Top_JobConfig)

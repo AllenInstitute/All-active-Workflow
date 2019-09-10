@@ -1,6 +1,8 @@
 from collections import OrderedDict
 from collections import defaultdict
 import numpy as np
+import statsmodels.api as sm
+
 
 import logging
 logger = logging.getLogger(__name__)
@@ -204,13 +206,56 @@ def correct_voltage_feat_std(features_dict,
     return features_dict
 
 
-def adjust_param_bounds(model_param, model_param_prev, tolerance=0.5):
-    lb_, ub_ = model_param['bounds']
+def correct_feat_statistics(features_dict, protocols_dict, feat_reject_list=['peak_time']):
+    
+    feature_stat = defaultdict(list)
+    protocol_stat = defaultdict(list)
+    proto_dict = {}
+    for key,val in features_dict.items():
+        for feat_name in val['soma'].keys():
+            if feat_name not in feat_reject_list:
+                feature_val_list = val['soma'][feat_name][-1]
+                stim_amp = protocols_dict[key]['stimuli'][0]['amp']
+                for feat_list in feature_val_list:
+                    feature_stat[feat_name].extend(feat_list)
+                    protocol_stat[feat_name].extend([stim_amp]*len(feat_list))
+                proto_dict[stim_amp] = key
+
+    feature_keys = list(set(feature_stat.keys()))
+
+    for feat_name in feature_keys:
+        feature_vals = feature_stat[feat_name]
+        protocol_vals = protocol_stat[feat_name]
+        model = sm.OLS(feature_vals, sm.add_constant(protocol_vals))
+        results = model.fit()
+        for key,val in features_dict.items():
+            if feat_name in val['soma'].keys() and len(val['soma'][feat_name][-1]) == 1:
+                stim_amp = protocols_dict[key]['stimuli'][0]['amp']
+                predicted_se_mean = (results.get_prediction([1,stim_amp]).se_mean[0] or 
+                            0.05*np.abs(val['soma'][feat_name][0]) or 0.05)
+                features_dict[key]['soma'][feat_name][1] = predicted_se_mean
+            elif feat_name in val['soma'].keys():
+                se_mean = (val['soma'][feat_name][1] or 
+                            0.05*np.abs(val['soma'][feat_name][0]) or 0.05)
+                features_dict[key]['soma'][feat_name][1] = se_mean
+                
+    return features_dict
+
+
+
+def adjust_param_bounds(model_param, model_param_prev,tolerance=0.5):
+    lb_,ub_ = model_param['bounds']
     value = model_param_prev['value']
-    lb = max(value - tolerance*abs(value), lb_)
-    ub = min(value + tolerance*abs(value), ub_)
-    adjusted_bound = [lb, ub]
-    model_param['bounds'] = adjusted_bound
+    if tolerance > 0:
+        lb = max(value - tolerance*abs(value),lb_)
+        ub = min(value + tolerance*abs(value),ub_)
+        adjusted_bound = [lb,ub]
+        model_param['bounds'] = adjusted_bound
+    elif tolerance == 0: # freeze parameters for next stage
+        del model_param['bounds']
+        model_param['value'] = value
+    else:
+        raise Exception('Tolerance for parameter bounds has to be positive')
     return model_param
 
 
