@@ -10,7 +10,7 @@ from ateamopt.jobscript.jobmodule import ChainSubJob
 import argschema as ags
 from ateamopt.optim_schema import Launch_Config
 from ateamopt.optim_config_rules import correct_feat_statistics
-from ateamopt.morph_handler import Morph_handler
+from ateamopt.morph_handler import MorphHandler
 import subprocess
 import bluepyopt
 import pandas as pd
