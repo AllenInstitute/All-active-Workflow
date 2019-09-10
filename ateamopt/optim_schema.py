@@ -77,6 +77,9 @@ class Stage_JobConfig(ags.schemas.DefaultSchema):
     DB_check = ags.fields.Boolean(description="")
     add_fi_kink = ags.fields.Boolean(description="")
     AP_initiation_zone= ags.fields.OptionList(description="",options=['axon','soma'],default='soma')
+    adjust_param_bounds_prev = ags.fields.Float(description="Relax the bounds for parameters fitted"
+                                                "in previous stage",default=0.5)
+    prev_stage_path = ags.fields.Str(description="") 
     
 class JobConfig(ags.schemas.DefaultSchema):
     highlevel_jobconfig = ags.fields.Nested(Top_JobConfig)

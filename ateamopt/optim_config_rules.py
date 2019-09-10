@@ -239,10 +239,16 @@ def correct_feat_statistics(features_dict, protocols_dict, feat_reject_list=['pe
 def adjust_param_bounds(model_param, model_param_prev,tolerance=0.5):
     lb_,ub_ = model_param['bounds']
     value = model_param_prev['value']
-    lb = max(value - tolerance*abs(value),lb_)
-    ub = min(value + tolerance*abs(value),ub_)
-    adjusted_bound = [lb,ub]
-    model_param['bounds'] = adjusted_bound
+    if tolerance > 0:
+        lb = max(value - tolerance*abs(value),lb_)
+        ub = min(value + tolerance*abs(value),ub_)
+        adjusted_bound = [lb,ub]
+        model_param['bounds'] = adjusted_bound
+    elif tolerance == 0: # freeze parameters for next stage
+        del model_param['bounds']
+        model_param['value'] = value
+    else:
+        raise Exception('Tolerance for parameter bounds has to be positive')
     return model_param
 
 def entries_to_remove(entries, the_dict):
