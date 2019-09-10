@@ -8,8 +8,6 @@
         "highlevel_jobconfig": {
             "job_dir": "Human_trial",
             "conda_env": "ateam_opt",
-            "nwb_path": "",
-            "swc_path": "",
             "axon_type": "stub_axon",
             "ephys_dir": "ephys_data",
             "non_standard_nwb": false,
@@ -93,7 +91,7 @@
                 ],
                 "run_hof_analysis": true,
                 "run_peri_comparison": true,
-                "DB_check": true,
+                "depol_block_check": true,
                 "add_fi_kink": true,
                 "calc_model_perf": true,
                 "ipyp_analysis": true,
