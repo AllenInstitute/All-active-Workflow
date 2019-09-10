@@ -20,6 +20,7 @@ logger = logging.getLogger(__name__)
 def save_cell_metadata(**cell_metadata):
     cell_id = cell_metadata["cell_id"]
     metadata_filename = 'cell_metadata_%s.json' % cell_id
+    ctc = CellTypesCache(manifest_file='cell_types/manifest.json')
 
     # TODO: maybe move this to launch_optimjob?
     machine_name = socket.gethostname()
@@ -28,11 +29,11 @@ def save_cell_metadata(**cell_metadata):
 
     data_source = cell_metadata["data_source"]
     if data_source == "web":
-        cell_metadata.update(get_data_web(cell_id))
+        cell_metadata.update(get_data_web(cell_id,ctc))
     elif data_source == "lims":
         cell_metadata.update(get_data_lims(cell_id))
 
-    cell_metadata.update(cell_props(cell_id))
+    cell_metadata.update(cell_props(cell_id,ctc))
     cell_metadata.update(model_props(cell_id))
 
     utility.save_json(metadata_filename, cell_metadata)
@@ -47,12 +48,11 @@ def get_data_lims(cell_id):
     return {"nwb_path": nwb_path, "swc_path": swc_path}
 
 
-def get_data_web(cell_id):
-    metadata = {}
-    ctc.get_ephys_data(cell_id)
+def get_data_web(cell_id,ctc):
+    ctc.get_ephys_data(int(cell_id))
     nwb_path = os.path.abspath(
         utility.get_filepath_for_exten('.nwb')[0])
-    ctc.get_reconstruction(cell_id)
+    ctc.get_reconstruction(int(cell_id))
     swc_path = os.path.abspath(
         utility.get_filepath_for_exten('.swc')[0])
     return {"nwb_path": nwb_path, "swc_path": swc_path}
@@ -60,9 +60,9 @@ def get_data_web(cell_id):
 # TODO: pull from lims, get_cells_df
 
 
-def cell_props(cell_id):
+def cell_props(cell_id,ctc):
     cell_metadata = {}
-    ctc = CellTypesCache(manifest_file='cell_types/manifest.json')
+    
     cells = ctc.get_cells()
     metadata_list = list(filter(lambda x: x['id'] == cell_id, cells))
     if metadata_list:

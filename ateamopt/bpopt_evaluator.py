@@ -12,6 +12,7 @@ class Bpopt_Evaluator(object):
 
     def __init__(self, protocol_path, feature_path,
                  morph_path, param_path, mech_path, ephys_dir='preprocessed',
+                 skip_features=['peak_time'],
                  **props):
         """
         do_replace_axon : bluepyopt axon replace code, diameter taken
@@ -24,6 +25,7 @@ class Bpopt_Evaluator(object):
         self.mech_path = mech_path if mech_path else None
         self.ephys_dir = ephys_dir
         self.AIS_check = False
+        self.skip_features = skip_features
 
         if self.feature_path:
             feature_definitions = utility.load_json(self.feature_path)
@@ -260,50 +262,51 @@ class Bpopt_Evaluator(object):
             for location, features in locations.items():
 
                 for efel_feature_name, meanstd in features.items():
-                    feature_name = '%s.%s.%s' % (
-                        protocol_name, location, efel_feature_name)
-                    if self.AIS_check:
-                        recording_names = {'': '%s.%s.v' % (protocol_name, location),
-                                           'location_AIS': '%s.AIS.v' % protocol_name}
-                    else:
-                        recording_names = {
-                            '': '%s.%s.v' % (protocol_name, location)}
-                    stimulus = fitness_protocols[protocol_name].stimuli[0]
-                    if 'Ramp' in protocol_name:
-                        stim_start = stimulus.ramp_delay
-                        duration = stimulus.ramp_duration
-                    elif 'DC' in protocol_name:
-                        stim_start = stimulus.step_delay
-                        duration = stimulus.step_duration
-
-                    if location == 'soma':
-                        threshold = -20
-                    elif 'dend' in location:
-                        threshold = -55
-
-                    if protocol_name == 'bAP':
-                        stim_end = stimulus.total_duration
-    #                    stim_end = stimulus.step_delay + stimulus.step_duration
-
-                    else:
-                        stim_end = stim_start + duration
-
-                    feature = ephys.efeatures.eFELFeature(
-                        feature_name,
-                        efel_feature_name=efel_feature_name,
-                        recording_names=recording_names,
-                        stim_start=stim_start,
-                        stim_end=stim_end,
-                        exp_mean=meanstd[0],
-                        exp_std=meanstd[1],
-                        threshold=threshold,
-                        force_max_score=True,
-                        max_score=250)
-
-                    objective = ephys.objectives.SingletonObjective(
-                        feature_name,
-                        feature)
-                    objectives.append(objective)
+                    if efel_feature_name not in self.skip_features:
+                        feature_name = '%s.%s.%s' % (
+                            protocol_name, location, efel_feature_name)
+                        if self.AIS_check:
+                            recording_names = {'': '%s.%s.v' % (protocol_name, location),
+                                               'location_AIS': '%s.AIS.v' % protocol_name}
+                        else:
+                            recording_names = {
+                                '': '%s.%s.v' % (protocol_name, location)}
+                        stimulus = fitness_protocols[protocol_name].stimuli[0]
+                        if 'Ramp' in protocol_name:
+                            stim_start = stimulus.ramp_delay
+                            duration = stimulus.ramp_duration
+                        elif 'DC' in protocol_name:
+                            stim_start = stimulus.step_delay
+                            duration = stimulus.step_duration
+    
+                        if location == 'soma':
+                            threshold = -20
+                        elif 'dend' in location:
+                            threshold = -55
+    
+                        if protocol_name == 'bAP':
+                            stim_end = stimulus.total_duration
+        #                    stim_end = stimulus.step_delay + stimulus.step_duration
+    
+                        else:
+                            stim_end = stim_start + duration
+    
+                        feature = ephys.efeatures.eFELFeature(
+                            feature_name,
+                            efel_feature_name=efel_feature_name,
+                            recording_names=recording_names,
+                            stim_start=stim_start,
+                            stim_end=stim_end,
+                            exp_mean=meanstd[0],
+                            exp_std=meanstd[1],
+                            threshold=threshold,
+                            force_max_score=True,
+                            max_score=250)
+    
+                        objective = ephys.objectives.SingletonObjective(
+                            feature_name,
+                            feature)
+                        objectives.append(objective)
 
         fitcalc = ephys.objectivescalculators.ObjectivesCalculator(objectives)
 

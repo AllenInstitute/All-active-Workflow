@@ -256,6 +256,7 @@ class Optim_Analyzer(object):
 
         for param,val in param_dict.items():
             param_name,sect = param.split('.')
+            sect = sect if sect in bpopt_section_map else bpopt_section_map_inv[sect]
             try:
                 param_match = list(filter(lambda x:x['param_name'] == param_name \
                               and x['sectionlist'] == bpopt_section_map[sect],

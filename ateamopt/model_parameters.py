@@ -4,42 +4,26 @@ import re
 import logging
 from collections import defaultdict
 import os
+from ateamopt.optim_config_rules import adjust_param_bounds
 
 logger = logging.getLogger(__name__)
 
 
 class AllActive_Model_Parameters(object):
 
-    def __init__(self, cell_id, temp=34, v_init=-80, swc_path=None,
-                 released_aa_model_pattern='fit_aa_parameters',
-                 prev_model_pattern='fit_opt', model_param_extension='.json'):
+    def __init__(self,cell_id,temp=34,v_init=-80,swc_path=None,prev_stage_model_path=None,
+                 released_aa_model_path=None):
+
 
         self.cell_id = cell_id
         self.v_init = v_init
         self.temperature = temp
         self._swc_path = swc_path
-
-        model_path_list = utility.get_filepath_for_exten(model_param_extension)
-
-        # Parameter file for a released all-active model
-        # (has to match name fit_aa_parameters.json)
-        release_param_path_ = [str_path for str_path in model_path_list if
-                               released_aa_model_pattern in str_path]
-        try:
-            self.release_param_path = release_param_path_[0]
-        except:
-            self.release_param_path = None
+        self.release_param_path = released_aa_model_path
 
         # Parameter file from previous stage
-        prev_stage_model_path_ = [str_path for str_path in model_path_list if
-                                  prev_model_pattern in str_path]
-        try:
-            self.prev_stage_model_path = prev_stage_model_path_[0]
-        except:
-            self.prev_stage_model_path = None
-
-        self.no_apical = utility.check_swc_for_apical(self.swc_path) \
-            if self.swc_path else False
+        self.prev_stage_model_path = prev_stage_model_path
+        self.no_apical = utility.check_swc_for_apical(self.swc_path) if self.swc_path else False
 
     @property
     def swc_path(self):
@@ -76,8 +60,7 @@ class AllActive_Model_Parameters(object):
 
         return active_params, Ih_params, passive_params, all_params_dict, ena_sect, ek_sect
 
-    def get_opt_params(self, param_bounds_path, adjust_param_rule=None):
-
+    def get_opt_params(self,param_bounds_path,prev_stage_tolerance=None):
         section_map = utility.bpopt_section_map
         params_dict = utility.load_json(param_bounds_path)
         _, _, _, all_params_dict,\
@@ -107,16 +90,16 @@ class AllActive_Model_Parameters(object):
 
         # Adjust parameter bounds from previous stage
 
-        if self.prev_stage_model_path and adjust_param_rule:
+        if self.prev_stage_model_path and prev_stage_tolerance:
             model_params_prev = self.load_params_prev_stage(section_map)
-            for model_param_dict in model_params_prev:
-                unique_param = model_param_dict['param_name']+'.' +\
-                    model_param_dict['sectionlist']
-                model_param_opt_entry = list(filter(lambda x: x['param_name']+'.' +
-                                                    x['sectionlist'] == unique_param, model_params_opt))[0]
+            for model_param_dict  in model_params_prev:
+                unique_param = model_param_dict['param_name']+'.'+\
+                                    model_param_dict['sectionlist']
+                model_param_opt_entry = list(filter(lambda x: x['param_name']+'.'+\
+                                    x['sectionlist'] == unique_param, model_params_opt))[0]
 
-                model_param_opt_entry = adjust_param_rule(
-                    model_param_opt_entry, model_param_dict)
+                model_param_opt_entry = adjust_param_bounds(model_param_opt_entry,model_param_dict,
+                                                          prev_stage_tolerance)
 
         # Add reversal potential if Na, K currents are present
 
