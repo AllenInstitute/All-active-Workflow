@@ -101,7 +101,8 @@ def main():
     aibs_params_modelname = 'fitted_params/optim_param_%s.json'%cell_id
     analysis_handler.save_params_aibs_format(aibs_params_modelname,
                                     best_model[0],expand_params = True)
-
+    aibs_params_compact_modelname = 'fitted_params/optim_param_%s_compact.json'%cell_id
+    analysis_handler.save_params_aibs_format(aibs_params_compact_modelname,best_model[0])
     bpopt_params_modelname = 'fitted_params/optim_param_%s_bpopt.json'%cell_id
     analysis_handler.save_params_bpopt_format(bpopt_params_modelname,
                                     best_model[0])
