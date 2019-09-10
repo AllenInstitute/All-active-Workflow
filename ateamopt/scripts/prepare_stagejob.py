@@ -33,15 +33,9 @@ def main(args):
     cell_metadata = utility.load_json(path_to_cell_metadata)
     cell_id = cell_metadata['cell_id']
     peri_model_id = cell_metadata.get('peri_model_id')
-<<<<<<< HEAD
     released_aa_model_path = cell_metadata.get('model_path_all_active')
-    
-    
-         
-=======
     released_aa_model_id = cell_metadata.get('released_aa_model_id')
-
->>>>>>> b7caf13fcfa09218758859f48afa6c596f58294c
+    
     nwb_path = highlevel_job_props['nwb_path']
     swc_path = highlevel_job_props['swc_path']
     all_features_path = highlevel_job_props['all_features_path']
