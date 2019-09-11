@@ -48,11 +48,7 @@ def get_opt_obj(protocols_path, features_path, morph_path, param_path,
     return opt
 
 
-def main():
-
-    mod = ags.ArgSchemaParser(schema_type=Optim_Config)
-    args = mod.args
-
+def main(args):
     stage_jobconfig = args['stage_jobconfig']
     highlevel_job_props = args['highlevel_jobconfig']
 
@@ -81,9 +77,9 @@ def main():
     ipyp_analysis = stage_jobconfig.get('ipyp_analysis')
 
     props = dict(axon_type=axon_type, ephys_dir=ephys_dir)
-    for prop in ['timeout', 'learn_eval_trend']:
-        if stage_jobconfig.get(prop):
-            props[prop] = stage_jobconfig.get(prop)
+#    for prop in ['timeout', 'learn_eval_trend']:
+#        if stage_jobconfig.get(prop):
+#            props[prop] = stage_jobconfig.get(prop)
 
     map_function = analyzer_map(ipyp_analysis)
     opt_train = get_opt_obj(all_protocols_path, train_features_path,
@@ -204,7 +200,8 @@ def main():
                                                morph_path, release_param_write_path,
                                                mech_release_write_path,
                                                stub_axon=False,
-                                               do_replace_axon=True)
+                                               do_replace_axon=True,
+                                               ephys_dir=ephys_dir)
         evaluator_release = eval_handler_release.create_evaluator()
         opt_release = bpopt.optimisations.DEAPOptimisation(
             evaluator=evaluator_release)
@@ -271,14 +268,14 @@ def main():
         utility.save_pickle(features_peri_filename, features_peri)
 
         pdf_pages = analysis_handler.plot_grid_Response(resp_filename,
-                                                        resp_peri_filename,
-                                                        stim_mapfile, pdf_pages, resp_comparison=model_type)
+                        resp_peri_filename,stim_mapfile, pdf_pages, 
+                        resp_comparison=model_type)
         if stage_jobconfig['model_postprocess']:
             model_fi_path = 'Validation_Responses/fI_peri_%s.pkl' % cell_id
             model_AP_shape_path = 'Validation_Responses/AP_shape_peri_%s.pkl' % cell_id
-            pdf_pages = analysis_handler.postprocess(stim_mapfile, resp_peri_filename, pdf_pages,
-                                                     exp_fi_path, model_fi_path, exp_AP_shape_path, model_AP_shape_path,
-                                                     model_type)
+            pdf_pages = analysis_handler.postprocess(stim_mapfile, resp_peri_filename, 
+                        pdf_pages, exp_fi_path, model_fi_path, exp_AP_shape_path, 
+                        model_AP_shape_path, model_type)
 
     if stage_jobconfig.get('calc_model_perf'):
         spiketimes_exp_path = 'Validation_Responses/spiketimes_exp_noise.pkl'
@@ -311,4 +308,5 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    mod = ags.ArgSchemaParser(schema_type=Optim_Config)
+    main(mod.args)

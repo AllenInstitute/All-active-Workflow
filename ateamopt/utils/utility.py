@@ -33,9 +33,9 @@ bpopt_stimtype_map = {
     'Ramp': 'RampPulse',
     'Square - 2s Suprathreshold': 'SquarePulse',
     'Ramp to Rheobase': 'RampPulse',
-                        'Short Square - Triple': 'TriBlip',
-                        'Noise 1': 'Noise',
-                        'Noise 2': 'Noise'
+    'Short Square - Triple': 'TriBlip',
+    'Noise 1': 'Noise',
+    'Noise 2': 'Noise'
 }
 
 aibs_stimname_map = {
