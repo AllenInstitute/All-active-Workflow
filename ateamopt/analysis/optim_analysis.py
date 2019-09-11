@@ -104,7 +104,8 @@ class Optim_Analyzer(object):
 
     @staticmethod
     def organize_models(param_list, score_list_train):
-        param_list_arranged = [x for _,x in sorted(zip(score_list_train,param_list))]
+        param_list_arranged = [x for _,x in sorted(zip(score_list_train,
+                                       param_list), key=lambda pair: pair[0])]
         return param_list_arranged
 
 

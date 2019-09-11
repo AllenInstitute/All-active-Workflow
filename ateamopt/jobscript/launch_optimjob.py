@@ -116,10 +116,14 @@ def create_optim_job(args):
 
     highlevel_job_props['nwb_path'] = cell_metadata['nwb_path']
     highlevel_job_props['swc_path'] = cell_metadata['swc_path']
-    nwb_handler = NwbExtractor(
-        cell_id, nwb_path=highlevel_job_props['nwb_path'])
-    ephys_data_path, stimmap_filename = nwb_handler.save_cell_data(acceptable_stimtypes, non_standard_nwb=non_standard_nwb,
-                                                                   ephys_dir=ephys_dir)
+    nwb_handler = NwbExtractor(cell_id, nwb_path=highlevel_job_props['nwb_path'])
+    data_source = highlevel_job_props["data_source"]
+    if data_source == "lims":
+        ephys_data_path, stimmap_filename = nwb_handler.save_cell_data(acceptable_stimtypes, 
+                                   non_standard_nwb=non_standard_nwb,ephys_dir=ephys_dir)
+    else:
+        ephys_data_path, stimmap_filename = nwb_handler.save_cell_data_web(acceptable_stimtypes, 
+                                   non_standard_nwb=non_standard_nwb,ephys_dir=ephys_dir)
     feature_names_path = highlevel_job_props['feature_names_path']
     protocol_dict,feature_dict = nwb_handler.get_efeatures_all(feature_names_path,
                                           ephys_data_path,stimmap_filename)
