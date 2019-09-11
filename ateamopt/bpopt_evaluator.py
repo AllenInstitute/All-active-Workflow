@@ -189,7 +189,8 @@ class Bpopt_Evaluator(object):
                 location=AIS_loc,
                 variable='v')
 
-            if self.AIS_check:
+            if self.AIS_check: 
+                # Only for Square pulses (AIS recording removed for others later)
                 recordings = [somav_recording, AIS_recording]
             else:
                 recordings = [somav_recording]
@@ -231,7 +232,8 @@ class Bpopt_Evaluator(object):
                         ramp_duration=stimulus_definition['duration'],
                         location=soma_loc,
                         total_duration=stimulus_definition['totduration']))
-                    recordings = [somav_recording]
+                    # TODO: Pass this through config file possibly
+                    recordings = [somav_recording] # Removing AIS recording
                 elif stimulus_definition['type'] in ['TriBlip', 'Noise']:
                     try:
                         sweep_file = os.path.join(ephys_dir,
@@ -242,7 +244,8 @@ class Bpopt_Evaluator(object):
                             current_points=stim_play_current,
                             time_points=stim_play_time,
                             location=soma_loc))
-                        recordings = [somav_recording]
+                        # TODO: Pass this through config file possibly
+                        recordings = [somav_recording] # Removing AIS recording
                     except Exception as e:
                         logger.debug(e)
             protocols[protocol_name] = ephys.protocols.SweepProtocol(
