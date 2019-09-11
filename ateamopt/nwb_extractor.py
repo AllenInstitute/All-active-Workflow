@@ -484,14 +484,17 @@ class NwbExtractor(object):
         cell_name = self.cell_id
 
         feature_map = utility.load_json(feature_set_filename)
-        stim_features = feature_map['features']  # Features to extract
+        
         features_meanstd = defaultdict(
             lambda: defaultdict(
                 lambda: defaultdict(dict)))
         stim_map = self.get_stim_map(
             os.path.join(ephys_data_path, stimmap_filename))
         for stim_name in stim_map.keys():
-
+            stim_type = utility.aibs_stimname_map_inv[stim_name.rsplit('_',1)[0]]
+            stim_features = feature_map.get(stim_type)  # Features to extract
+            if not stim_features:
+                continue
             logger.debug("\n### Getting features from %s of cell %s ###\n"
                          % (stim_name, cell_name))
 

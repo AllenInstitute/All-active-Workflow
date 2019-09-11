@@ -206,7 +206,8 @@ def correct_voltage_feat_std(features_dict,
     return features_dict
 
 
-def correct_feat_statistics(features_dict, protocols_dict, feat_reject_list=['peak_time']):
+def correct_feat_statistics(features_dict, protocols_dict, feat_reject_list=['peak_time'],
+                        subthresh_features=['voltage_deflection_vb_ssse'],suprathresh_features=[]):
     
     feature_stat = defaultdict(list)
     protocol_stat = defaultdict(list)
@@ -214,6 +215,10 @@ def correct_feat_statistics(features_dict, protocols_dict, feat_reject_list=['pe
         if key.rsplit('_',1)[0] == 'LongDC':
             for feat_name in val['soma'].keys():
                 if feat_name not in feat_reject_list:
+                    if feat_name in subthresh_features and val['soma']['Spikecount'][0]>0:
+                        continue
+                    elif feat_name in suprathresh_features and val['soma']['Spikecount'][0]==0:
+                        continue
                     feature_val_list = val['soma'][feat_name][-1]
                     stim_amp = protocols_dict[key]['stimuli'][0]['amp']
                     for feat_list in feature_val_list:
@@ -230,6 +235,10 @@ def correct_feat_statistics(features_dict, protocols_dict, feat_reject_list=['pe
         for key,val in features_dict.items():
             if key.rsplit('_',1)[0] == 'LongDC':
                 if feat_name in val['soma'].keys():
+                    if feat_name in subthresh_features and val['soma']['Spikecount'][0]>0:
+                        continue
+                    elif feat_name in suprathresh_features and val['soma']['Spikecount'][0]==0:
+                        continue
                     stim_amp = protocols_dict[key]['stimuli'][0]['amp']
                     se_mean = (results.get_prediction([1,stim_amp]).se_mean[0] or 
                                0.05*np.abs(val['soma'][feat_name][0]) or 0.05)
