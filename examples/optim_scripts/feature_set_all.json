@@ -1,5 +1,5 @@
 {
-    "features": [
+    "Long Square": [
         "voltage_base",
         "steady_state_voltage",
         "voltage_deflection_vb_ssse",
@@ -17,5 +17,72 @@
         "AHP_depth",
         "depol_block",
         "check_AISInitiation"
+    ],
+    "Square - 2s Suprathreshold": [
+        "voltage_base",
+        "steady_state_voltage",
+        "voltage_deflection_vb_ssse",
+        "decay_time_constant_after_stim",
+        "Spikecount",
+        "sag_amplitude",
+        "sag_ratio1",
+        "peak_time",
+        "mean_frequency",
+        "time_to_first_spike",
+        "AP_amplitude_from_voltagebase",
+        "ISI_CV",
+        "AP_width",
+        "adaptation_index2",
+        "AHP_depth",
+        "depol_block",
+        "check_AISInitiation"
+    ],
+    "Ramp": [
+        "voltage_base",
+        "Spikecount",
+        "peak_time",
+        "mean_frequency",
+        "time_to_first_spike",
+        "AP_amplitude_from_voltagebase",
+        "ISI_CV",
+        "AP_width",
+        "adaptation_index2",
+        "AHP_depth"
+    ],
+    "Noise 1": [
+        "voltage_base",
+        "Spikecount",
+        "peak_time",
+        "mean_frequency",
+        "time_to_first_spike",
+        "AP_amplitude_from_voltagebase",
+        "ISI_CV",
+        "AP_width",
+        "adaptation_index2",
+        "AHP_depth"
+    ],
+    "Noise 2": [
+        "voltage_base",
+        "Spikecount",
+        "peak_time",
+        "mean_frequency",
+        "time_to_first_spike",
+        "AP_amplitude_from_voltagebase",
+        "ISI_CV",
+        "AP_width",
+        "adaptation_index2",
+        "AHP_depth"
+    ],
+    "Short Square - Triple": [
+        "voltage_base",
+        "Spikecount",
+        "peak_time",
+        "mean_frequency",
+        "time_to_first_spike",
+        "AP_amplitude_from_voltagebase",
+        "ISI_CV",
+        "AP_width",
+        "adaptation_index2",
+        "AHP_depth"
     ]
 }
