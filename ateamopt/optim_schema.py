@@ -39,8 +39,7 @@ class Stage_JobConfig(ags.schemas.DefaultSchema):
     AP_initiation_zone = ags.fields.OptionList(
         description="", options=['axon', 'soma'], default='soma')
     cp_dir = ags.fields.Str(description="", default='checkpoints')
-    cp_backup_dir = ags.fields.Str(
-        description="", default=None, allow_none=True)
+    cp_backup_dir = ags.fields.Str(description="", default=None, allow_none=True)
     cp_backup_frequency = ags.fields.Int(description="Checkpoint backup frequency",
                                          default=5)
     ipyp_optim = ags.fields.Boolean(description="", default=True)

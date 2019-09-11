@@ -44,8 +44,8 @@ aibs_stimname_map = {
     'Square - 2s Suprathreshold': 'LongDCSupra',
     'Short Square - Triple': 'Short_Square_Triple',
     'Ramp to Rheobase': 'RampRheo',
-                        'Noise 1': 'Noise_1',
-                        'Noise 2': 'Noise_2',
+    'Noise 1': 'Noise_1',
+    'Noise 2': 'Noise_2',
 }
 
 aibs_stimname_map_inv = {
@@ -54,8 +54,8 @@ aibs_stimname_map_inv = {
     'LongDCSupra': 'Square - 2s Suprathreshold',
     'Short_Square_Triple': 'Short Square - Triple',
     'Ramp to Rheobase': 'RampRheo',
-                        'Noise_1': 'Noise 1',
-                        'Noise_2': 'Noise 2'
+    'Noise_1': 'Noise 1',
+    'Noise_2': 'Noise 2'
 }
 
 bpopt_current_play_stimtypes = ['Short Square - Triple', 'Noise 1', 'Noise 2']
