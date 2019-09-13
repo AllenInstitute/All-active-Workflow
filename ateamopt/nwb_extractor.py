@@ -1,8 +1,8 @@
 import os
 from allensdk.core.nwb_data_set import NwbDataSet
-# from ipfx.aibs_data_set import EphysDataSet
 from ipfx.aibs_data_set import AibsDataSet
 from ipfx.stim_features import get_stim_characteristics
+import ipfx.bin.lims_queries as lq
 import numpy as np
 import json
 from collections import defaultdict
@@ -339,6 +339,7 @@ class NwbExtractor(object):
         distinct_id_map = utility.aibs_stimname_map
         # Note: may also need to provide h5 "lab notebok" and/or ontology
         from ipfx.stimulus import StimulusOntology
+        from ipfx.epochs import get_recording_epoch
         import allensdk.core.json_utilities as ju
         ontology = StimulusOntology(
             ju.read(StimulusOntology.DEFAULT_STIMULUS_ONTOLOGY_FILE))
@@ -349,21 +350,27 @@ class NwbExtractor(object):
         output_dir = os.path.join(os.getcwd(), ephys_dir)
         utility.create_dirpath(output_dir)
 
-        for record in dataset.sweep_table.itertuples():
-            record = record._asdict()
+        # Note: are QC criteria appropriate for ramps + other stim?
+        passed_sweep_nums = get_passed_sweeps(dataset, self.cell_id)
+        for sweep_num in passed_sweep_nums:
+            record = dataset.get_sweep_record(sweep_num)
             sweep_number = record[AibsDataSet.SWEEP_NUMBER]
             stim_type = record[AibsDataSet.STIMULUS_NAME]
 
             if stim_type in acceptable_stimtypes:
-                # or use dataset.sweep to get full object, epochs
+                # TODO: use dataset.sweep to get full object, epochs
                 sweep = dataset.get_sweep_data(sweep_number)
 
                 stimulus_trace = sweep['stimulus']
                 response_trace = sweep['response']
-
                 sampling_rate = sweep['sampling_rate']
 
+                # remove missing data
+                # start, end = get_recording_epoch(stimulus_trace)
+                # stimulus_trace = stimulus_trace[:end]
+                # response_trace = response_trace[:end]
                 time = np.arange(0, len(stimulus_trace)) / sampling_rate
+
                 trace_name = '%s_%d' % (
                     distinct_id_map[stim_type], sweep_number)
 
@@ -425,6 +432,7 @@ class NwbExtractor(object):
             stim_reps_sweep_map)
 
         return output_dir, stimmap_filename
+
 
     @staticmethod
     def get_stim_map(stim_map_filename, record_locations=None):
@@ -691,3 +699,22 @@ class NwbExtractor(object):
 
         return train_features_write_path, test_features_write_path,\
             train_protocols_write_path
+
+def get_passed_sweeps(dataset, specimen_id):
+    iclamp_st = dataset.filtered_sweep_table(clamp_mode=AibsDataSet.CURRENT_CLAMP)
+    exist_sql = """
+        select swp.sweep_number from ephys_sweeps swp
+        where swp.specimen_id = :1
+        and swp.sweep_number = any(:2)
+    """
+    passed_sql = """
+    select swp.sweep_number from ephys_sweeps swp
+    where swp.specimen_id = :1
+    and swp.sweep_number = any(:2)
+    and swp.workflow_state like '%%passed'
+    """
+    sweep_num_list = iclamp_st["sweep_number"].sort_values().tolist()
+    results = lq.query(passed_sql, (specimen_id, sweep_num_list))
+    # results_df = pd.DataFrame(results, columns=["sweep_number"])
+    # passed_sweep_nums = results_df["sweep_number"].values
+    return [int(res["sweep_number"]) for res in results]
