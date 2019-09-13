@@ -30,11 +30,10 @@ def save_cell_metadata(**cell_metadata):
     data_source = cell_metadata["data_source"]
     if data_source == "web":
         cell_metadata.update(get_data_web(cell_id,ctc))
+        cell_metadata.update(cell_props(cell_id,ctc))
+        cell_metadata.update(model_props(cell_id))
     elif data_source == "lims":
         cell_metadata.update(get_data_lims(cell_id))
-
-    cell_metadata.update(cell_props(cell_id,ctc))
-    cell_metadata.update(model_props(cell_id))
 
     utility.save_json(metadata_filename, cell_metadata)
 
