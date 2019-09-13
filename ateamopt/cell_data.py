@@ -1,4 +1,5 @@
 import os
+import os.path
 import socket
 from allensdk.core.cell_types_cache import CellTypesCache
 from allensdk.api.queries.biophysical_api import BiophysicalApi
@@ -15,12 +16,11 @@ except:
     pass
 
 logger = logging.getLogger(__name__)
-
+data_dir = 'cell_types'
 
 def save_cell_metadata(**cell_metadata):
     cell_id = cell_metadata["cell_id"]
     metadata_filename = 'cell_metadata_%s.json' % cell_id
-    ctc = CellTypesCache(manifest_file='cell_types/manifest.json')
 
     # TODO: maybe move this to launch_optimjob?
     machine_name = socket.gethostname()
@@ -29,12 +29,12 @@ def save_cell_metadata(**cell_metadata):
 
     data_source = cell_metadata["data_source"]
     if data_source == "web":
+        ctc = CellTypesCache(manifest_file=os.path.join(data_dir, 'manifest.json'))
         cell_metadata.update(get_data_web(cell_id,ctc))
+        cell_metadata.update(cell_props(cell_id,ctc))
+        cell_metadata.update(model_props(cell_id))
     elif data_source == "lims":
         cell_metadata.update(get_data_lims(cell_id))
-
-    cell_metadata.update(cell_props(cell_id,ctc))
-    cell_metadata.update(model_props(cell_id))
 
     utility.save_json(metadata_filename, cell_metadata)
 
@@ -43,8 +43,13 @@ def save_cell_metadata(**cell_metadata):
 
 def get_data_lims(cell_id):
     lr = lims.LimsReader()
-    nwb_path = lr.get_nwb_path_from_lims(cell_id)
-    swc_path = lr.get_swc_path_from_lims(cell_id)
+    os.mkdir(data_dir)
+    nwb_path = os.path.join(data_dir, f'{cell_id}.nwb')
+    swc_path = os.path.join(data_dir, f'{cell_id}.swc')
+    nwb_lims = lr.get_nwb_path_from_lims(cell_id)
+    swc_lims = lr.get_swc_path_from_lims(cell_id)
+    shutil.copy(nwb_lims, nwb_path)
+    shutil.copy(swc_lims, swc_path)
     return {"nwb_path": nwb_path, "swc_path": swc_path}
 
 
