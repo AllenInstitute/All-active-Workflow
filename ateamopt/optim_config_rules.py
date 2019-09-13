@@ -12,18 +12,14 @@ select_feat_dict = {'spike_proto': 2,
                     'nospike_proto': 0}
 
 
-def filter_feat_proto_active(features_dict, protocols_dict,
-                             #                             add_fi_kink = True,add_DB_check = True,
-                             **kwargs):
+def filter_feat_proto_active(features_dict, protocols_dict,**kwargs):
     """
         Filter the features and protocols for the final
         stage of optimization
     """
-#    features_dict = correct_voltage_feat_std(features_dict)
     spiking_proto_dict = OrderedDict()
     non_spiking_proto_dict = OrderedDict()
-    training_stimtype_reject = ['LongDCSupra',
-                                'Ramp', 'Short_Square_Triple', 'Noise']
+    training_stimtype_reject = ['LongDCSupra','Ramp', 'Short_Square_Triple', 'Noise']
 
     for feat_key, feat_val in features_dict.items():
         if any(reject_stim in feat_key for reject_stim in training_stimtype_reject):
@@ -31,7 +27,7 @@ def filter_feat_proto_active(features_dict, protocols_dict,
         stim_amp = protocols_dict[feat_key]['stimuli'][0]['amp']
         if feat_val['soma']['Spikecount'][0] > 0:
             spiking_proto_dict[feat_key] = stim_amp
-            del feat_val['soma']['Spikecount']
+#            del feat_val['soma']['Spikecount']
         else:
             non_spiking_proto_dict[feat_key] = stim_amp
             if 'depol_block' in feat_val['soma'].keys():
@@ -89,13 +85,13 @@ def filter_feat_proto_active(features_dict, protocols_dict,
 
     # For fI kink spiking proto only allow the following features
     # Remove everything other than basic features for the first spiking proto
-    f_key_list = []
-    for f_key, f_val in train_features_dict[spiking_proto_sorted[0]]['soma'].items():
-        if f_key not in ['mean_frequency', 'depol_block',
-                         'check_AISInitiation']:
-            f_key_list.append(f_key)
-    train_features_dict[spiking_proto_sorted[0]]['soma'] = entries_to_remove(
-        f_key_list, train_features_dict[spiking_proto_sorted[0]]['soma'])
+#    f_key_list = []
+#    for f_key, f_val in train_features_dict[spiking_proto_sorted[0]]['soma'].items():
+#        if f_key not in ['mean_frequency', 'Spikecount','depol_block',
+#                         'check_AISInitiation']:
+#            f_key_list.append(f_key)
+#    train_features_dict[spiking_proto_sorted[0]]['soma'] = entries_to_remove(
+#        f_key_list, train_features_dict[spiking_proto_sorted[0]]['soma'])
 
     if kwargs.get('depol_block_check'):
         max_proto_key = spiking_proto_sorted[-1]
@@ -207,7 +203,8 @@ def correct_voltage_feat_std(features_dict,
 
 
 def correct_feat_statistics(features_dict, protocols_dict, feat_reject_list=['peak_time'],
-                        subthresh_features=['voltage_deflection_vb_ssse'],suprathresh_features=[]):
+                        subthresh_features=['voltage_deflection_vb_ssse','steady_state_voltage',
+                        'decay_time_constant_after_stim','voltage_after_stim'],suprathresh_features=[]):
     
     feature_stat = defaultdict(list)
     protocol_stat = defaultdict(list)
