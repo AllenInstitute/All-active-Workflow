@@ -539,7 +539,7 @@ class NwbExtractor(object):
                 if len(feature_mean_over_trials) == 0:
                     continue
                 else:
-                    mean = np.nanmean(feature_mean_over_trials)
+                    mean = np.nanmean(list(itertools.chain.from_iterable(feature_values_over_trials)))
                     std = (np.nanstd(list(itertools.chain.from_iterable(feature_values_over_trials))) or 
                                 0.05*np.abs(mean) or 0.05)
                     

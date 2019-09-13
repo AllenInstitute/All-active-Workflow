@@ -700,7 +700,8 @@ class Optim_Analyzer(object):
         bpopt_param_dict = self.create_bpopt_param_template(bpopt_param_list)
         utility.save_json(save_params_filename,bpopt_param_dict)
 
-    def convert_aibs_param_to_dict(self,aibs_param_file,repeat_params = []):
+    @staticmethod
+    def convert_aibs_param_to_dict(aibs_param_file,repeat_params = []):
         aibs_params = utility.load_json(aibs_param_file)
         
         # param_files are of the format 'hof_param_cellid_hofindex.json'
