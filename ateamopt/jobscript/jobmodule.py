@@ -149,7 +149,7 @@ class test_JobModule(JobModule):
         utility.save_json(self.job_config_path, job_config)
 
         testjob_string = '#!/bin/bash\n'
-        testjob_string += 'set -ex\n'
+        testjob_string += 'set -e\n'
         testjob_string += 'source activate %s\n' % highlevel_job_props['conda_env']
         testjob_string += 'python %s --input_json %s\n' %\
             (optim_config['main_script'], self.job_config_path)

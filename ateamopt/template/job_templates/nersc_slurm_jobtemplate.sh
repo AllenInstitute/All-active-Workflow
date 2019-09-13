@@ -24,7 +24,7 @@ sbatch jobscript_name
 # submit launch script upon signal USR1
 run_dependent_script func_trap USR1
 
-set -ex
+set -e
 
 source activate conda_env
 export PATH="/global/common/software/m2043/AIBS_Opt/software/x86_64/bin:$PATH"

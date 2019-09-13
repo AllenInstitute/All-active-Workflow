@@ -9,7 +9,7 @@
 #$ -M email
 #$ -S /bin/bash
 
-set -ex
+set -e
 
 source activate conda_env
 

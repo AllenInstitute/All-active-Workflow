@@ -1,5 +1,5 @@
 #!/bin/bash
-set -ex
+set -e
 
 # Activate conda environment
 source activate conda_env
