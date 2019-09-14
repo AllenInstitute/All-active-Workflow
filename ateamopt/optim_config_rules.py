@@ -2,7 +2,7 @@ from collections import OrderedDict
 from collections import defaultdict
 import numpy as np
 import statsmodels.api as sm
-
+import itertools
 
 import logging
 logger = logging.getLogger(__name__)
@@ -208,6 +208,8 @@ def correct_feat_statistics(features_dict, protocols_dict, feat_reject_list=['pe
     
     feature_stat = defaultdict(list)
     protocol_stat = defaultdict(list)
+    feature_revision_stims = defaultdict(list)
+    
     for key,val in features_dict.items():
         if key.rsplit('_',1)[0] == 'LongDC':
             for feat_name in val['soma'].keys():
@@ -218,6 +220,8 @@ def correct_feat_statistics(features_dict, protocols_dict, feat_reject_list=['pe
                         continue
                     feature_val_list = val['soma'][feat_name][-1]
                     stim_amp = protocols_dict[key]['stimuli'][0]['amp']
+                    if len(list(itertools.chain.from_iterable(feature_val_list))) == 1:
+                        feature_revision_stims[feat_name].append(key)
                     for feat_list in feature_val_list:
                         feature_stat[feat_name].extend(feat_list)
                         protocol_stat[feat_name].extend([stim_amp]*len(feat_list))
@@ -229,17 +233,20 @@ def correct_feat_statistics(features_dict, protocols_dict, feat_reject_list=['pe
         protocol_vals = protocol_stat[feat_name]
         model = sm.OLS(feature_vals, sm.add_constant(protocol_vals))
         results = model.fit()
-        for key,val in features_dict.items():
-            if key.rsplit('_',1)[0] == 'LongDC':
-                if feat_name in val['soma'].keys():
-                    if feat_name in subthresh_features and val['soma']['Spikecount'][0]>0:
-                        continue
-                    elif feat_name in suprathresh_features and val['soma']['Spikecount'][0]==0:
-                        continue
-                    stim_amp = protocols_dict[key]['stimuli'][0]['amp']
-                    se_mean = (results.get_prediction([1,stim_amp]).se_mean[0] or 
+        for stim in feature_revision_stims:
+            val = features_dict[stim]
+#            if stim.rsplit('_',1)[0] == 'LongDC':
+#                if feat_name in val['soma'].keys():
+            if feat_name in subthresh_features and val['soma']['Spikecount'][0]>0:
+                continue
+            elif feat_name in suprathresh_features and val['soma']['Spikecount'][0]==0:
+                continue
+#                    stim_amp = protocols_dict[key]['stimuli'][0]['amp']
+#                    se_mean = (results.get_prediction([1,stim_amp]).se_mean[0] or 
+#                               0.05*np.abs(val['soma'][feat_name][0]) or 0.05)
+            resid_rmse = (np.sqrt(results.mse_resid/results.df_resid) or 
                                0.05*np.abs(val['soma'][feat_name][0]) or 0.05)
-                    features_dict[key]['soma'][feat_name][1] = se_mean
+            features_dict[stim]['soma'][feat_name][1] = resid_rmse
     return features_dict
 
 
