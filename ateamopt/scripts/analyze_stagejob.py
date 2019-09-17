@@ -10,7 +10,6 @@ from ateamopt.analysis import analysis_module
 from ateamopt.optim_schema import Optim_Config
 import argschema as ags
 import logging
-from collections import defaultdict
 
 logger = logging.getLogger()
 

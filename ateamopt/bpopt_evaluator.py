@@ -189,8 +189,9 @@ class Bpopt_Evaluator(object):
                 location=AIS_loc,
                 variable='v')
 
-            if self.AIS_check: 
+            if self.AIS_check and 'LongDC' in protocol_name: 
                 # Only for Square pulses (AIS recording removed for others later)
+                # TODO: Possibly pass this through config file(which stimtypes should record at AIS)
                 recordings = [somav_recording, AIS_recording]
             else:
                 recordings = [somav_recording]
@@ -232,22 +233,18 @@ class Bpopt_Evaluator(object):
                         ramp_duration=stimulus_definition['duration'],
                         location=soma_loc,
                         total_duration=stimulus_definition['totduration']))
-                    # TODO: Pass this through config file possibly
-                    recordings = [somav_recording] # Removing AIS recording
+                    
                 elif stimulus_definition['type'] in ['TriBlip', 'Noise']:
-                    try:
-                        sweep_file = os.path.join(ephys_dir,
-                                                  stimulus_definition['sweep_filenames'][0])
-                        stim_play_time = np.loadtxt(sweep_file)[:, 0]
-                        stim_play_current = np.loadtxt(sweep_file)[:, 2]
-                        stimuli.append(ephys.stimuli.NrnCurrentPlayStimulus(
-                            current_points=stim_play_current,
-                            time_points=stim_play_time,
-                            location=soma_loc))
-                        # TODO: Pass this through config file possibly
-                        recordings = [somav_recording] # Removing AIS recording
-                    except Exception as e:
-                        logger.debug(e)
+                    sweep_file = os.path.join(ephys_dir,
+                                              stimulus_definition['sweep_filenames'][0])
+                    stim_play_time = np.loadtxt(sweep_file)[:, 0]
+                    stim_play_current = np.loadtxt(sweep_file)[:, 2]
+                    stimuli.append(ephys.stimuli.NrnCurrentPlayStimulus(
+                        current_points=stim_play_current,
+                        time_points=stim_play_time,
+                        location=soma_loc))
+                    
+                   
             protocols[protocol_name] = ephys.protocols.SweepProtocol(
                 protocol_name,
                 stimuli,
@@ -261,6 +258,7 @@ class Bpopt_Evaluator(object):
         # TODO: add bAP stimulus
         objectives = []
         feature_definitions = json.load(open(self.feature_path))
+        protocol_definitions = json.load(open(self.protocol_path))
         for protocol_name, locations in feature_definitions.items():
             for location, features in locations.items():
 
@@ -268,7 +266,7 @@ class Bpopt_Evaluator(object):
                     if efel_feature_name not in self.skip_features:
                         feature_name = '%s.%s.%s' % (
                             protocol_name, location, efel_feature_name)
-                        if self.AIS_check:
+                        if self.AIS_check and 'LongDC' in protocol_name:
                             recording_names = {'': '%s.%s.v' % (protocol_name, location),
                                                'location_AIS': '%s.AIS.v' % protocol_name}
                         else:
@@ -281,15 +279,18 @@ class Bpopt_Evaluator(object):
                         elif 'DC' in protocol_name:
                             stim_start = stimulus.step_delay
                             duration = stimulus.step_duration
-    
+                        else:
+                            stim_start = protocol_definitions[protocol_name]['stimuli'][0]['delay']
+                            duration = protocol_definitions[protocol_name]['stimuli'][0]['duration']
+                        
                         if location == 'soma':
                             threshold = -20
                         elif 'dend' in location:
                             threshold = -55
     
                         if protocol_name == 'bAP':
-                            stim_end = stimulus.total_duration
-        #                    stim_end = stimulus.step_delay + stimulus.step_duration
+#                            stim_end = stimulus.total_duration
+                            stim_end = stimulus.step_delay + stimulus.step_duration
     
                         else:
                             stim_end = stim_start + duration

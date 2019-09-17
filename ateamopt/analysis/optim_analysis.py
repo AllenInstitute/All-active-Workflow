@@ -412,8 +412,8 @@ class Optim_Analyzer(object):
                         ax_comp[index//n_col,index%n_col].set_ylabel('Voltage (mV)')
                     ax_comp[index//n_col,index%n_col].set_title(name.split('.')[0] + state, fontsize=8)
 
-                    if 'LongDC' in name:
-                        ax_comp[index//n_col,index%n_col].set_xlim([amp_start_list[ix]-200,\
+#                    if 'LongDC' in name:
+                    ax_comp[index//n_col,index%n_col].set_xlim([amp_start_list[ix]-200,\
                                                                   amp_end_list[ix]+200])
 
                     logger.debug('Plotting response comparisons for %s \n'%name.split('.')[0])
