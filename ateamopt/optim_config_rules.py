@@ -203,8 +203,8 @@ def correct_voltage_feat_std(features_dict,
 
 
 def correct_feat_statistics(features_dict, protocols_dict, feat_reject_list=['peak_time'],
-                        subthresh_features=['voltage_deflection_vb_ssse',
-                        'decay_time_constant_after_stim'],suprathresh_features=[]):
+                    subthresh_features=['voltage_deflection_vb_ssse',
+                    'decay_time_constant_after_stim'],suprathresh_features=['Spikecount']):
     
     feature_stat = defaultdict(list)
     protocol_stat = defaultdict(list)
@@ -248,9 +248,12 @@ def correct_feat_statistics(features_dict, protocols_dict, feat_reject_list=['pe
 #                    se_mean = (results.get_prediction([1,stim_amp]).se_mean[0] or 
 #                               0.05*np.abs(val['soma'][feat_name][0]) or 0.05)
             # Use rmse only when there is no repetition within and across sweeps
-            resid_rmse = (np.sqrt(results.mse_resid/results.df_resid) or 
-                               0.05*np.abs(val['soma'][feat_name][0]) or 0.05)
-            features_dict[stim]['soma'][feat_name][1] = resid_rmse
+            resid_rmse = np.sqrt(results.mse_resid/results.df_resid)
+            if np.isnan(resid_rmse):
+                std_corrected = 0.05*np.abs(val['soma'][feat_name][0]) or 0.05
+            else:
+                std_corrected = (resid_rmse or 0.05*np.abs(val['soma'][feat_name][0]) or 0.05)
+            features_dict[stim]['soma'][feat_name][1] = std_corrected
     return features_dict
 
 
