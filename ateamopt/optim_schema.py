@@ -78,9 +78,9 @@ class Stage_JobConfig(ags.schemas.DefaultSchema):
     nprocs_analysis = ags.fields.Int(description="")
 
     error_stream = ags.fields.Str(
-        description="Direct error stream (PBS specific)")  # '/dev/null'
+        description="Direct error stream (PBS specific)", default='/dev/null')  
     output_stream = ags.fields.Str(
-        description="Direct output stream (PBS specific)")
+        description="Direct output stream (PBS specific)", default='/dev/null')
     error_stream_analysis = ags.fields.Str(description="Direct error stream"
                                            "(PBS specific)", default='/dev/null')  # '/dev/null'
     output_stream_analysis = ags.fields.Str(description="Direct output stream"
@@ -140,7 +140,7 @@ class Stage_Launch_Config(ags.ArgSchema):
 class Optim_Config(ags.ArgSchema):
     highlevel_jobconfig = ags.fields.Nested(Top_JobConfig)
     stage_jobconfig = ags.fields.Nested(Stage_JobConfig)
-#    seed = ags.fields.Int(description='',default=1)
+    seed = ags.fields.Int(description='')
     parameters = ags.fields.InputFile(description="")
     mechanism = ags.fields.InputFile(description="")
     released_aa_mechanism = ags.fields.InputFile(description="", required=False,
