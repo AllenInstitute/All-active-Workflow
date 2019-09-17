@@ -39,8 +39,8 @@ sleep 30
 pids=""
 for seed in seed_list; do
     python main_script             \
-        --seed=${seed}             \
-        --job_config job_config_path &
+        --seed ${seed}             \
+        --input_json job_config_path &
     pids+="$! "
 done
 

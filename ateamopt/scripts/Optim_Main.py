@@ -1,22 +1,21 @@
-
 import bluepyopt as bpopt
 import logging
 import os
-import argparse
 from datetime import datetime
 from ateamopt.utils import utility
 import shutil
 from ateamopt.bpopt_evaluator import Bpopt_Evaluator
-
+from ateamopt.optim_schema import Optim_Config
+import argschema as ags
 
 logger = logging.getLogger()
 
 
-def create_optimizer(job_config, seed):
+def create_optimizer(args):
     '''returns configured bluepyopt.optimisations.DEAPOptimisation'''
 
-    stage_jobconfig = job_config['stage_jobconfig']
-    highlevel_job_props = job_config['highlevel_jobconfig']
+    stage_jobconfig = args['stage_jobconfig']
+    highlevel_job_props = args['highlevel_jobconfig']
 
     if stage_jobconfig['ipyp_optim']:
         from ipyparallel import Client
@@ -41,16 +40,17 @@ def create_optimizer(job_config, seed):
     else:
         map_function = None
 
+    seed = args['seed']
     seed = os.getenv('BLUEPYOPT_SEED', seed)
 
     # load the configuration paths
 
     ephys_dir = highlevel_job_props['ephys_dir']
     morph_path = highlevel_job_props['swc_path']
-    protocol_path = job_config['train_protocols']
-    mech_path = job_config['mechanism']
-    feature_path = job_config['train_features']
-    param_path = job_config['parameters']
+    protocol_path = args['train_protocols']
+    mech_path = args['mechanism']
+    feature_path = args['train_features']
+    param_path = args['parameters']
 
     axon_type = highlevel_job_props.get('axon_type')
 
@@ -71,29 +71,15 @@ def create_optimizer(job_config, seed):
     return opt
 
 
-def get_parser():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--job_config', required=True,
-                        help='Job config path')
-    parser.add_argument('--seed', type=int, default=1,
-                        help='Seed to use for optimization')
-    return parser
 
-
-def main():
+def main(args):
     """Main"""
-    args = get_parser().parse_args()
-
-    seed = args.seed
-    job_config_path = args.job_config
-    job_config = utility.load_json(job_config_path)
-
-    stage_jobconfig = job_config['stage_jobconfig']
-    highlevel_job_props = job_config['highlevel_jobconfig']
-
+    stage_jobconfig = args['stage_jobconfig']
+    highlevel_job_props = args['highlevel_jobconfig']
+    seed = args['seed']
     logging.basicConfig(level=highlevel_job_props['log_level'])
 
-    opt = create_optimizer(job_config, seed)
+    opt = create_optimizer(args)
 
     cp_file = os.path.join(stage_jobconfig['cp_dir'], 'seed%s.pkl' % seed)
     utility.create_filepath(cp_file)
@@ -127,4 +113,6 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    mod = ags.ArgSchemaParser(schema_type=Optim_Config)
+    main(mod.args)
+
