@@ -90,7 +90,7 @@ class AllActive_Model_Parameters(object):
 
         # Adjust parameter bounds from previous stage
 
-        if self.prev_stage_model_path and prev_stage_tolerance:
+        if self.prev_stage_model_path and prev_stage_tolerance is not None:
             model_params_prev = self.load_params_prev_stage(section_map)
             for model_param_dict  in model_params_prev:
                 unique_param = model_param_dict['param_name']+'.'+\

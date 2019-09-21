@@ -115,6 +115,7 @@ class CtyConfig(ags.schemas.DefaultSchema):
     cell_id = ags.fields.Str(description="")
     e_type = ags.fields.Str(description="")
     me_type = ags.fields.Str(description="")
+    t_type = ags.fields.Str(description="")
 
     # schema for user to pass in options
 
