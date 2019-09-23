@@ -297,7 +297,7 @@ class PBS_JobModule(JobModule):
                            if kwargs.get('analysis') else batchjob_string.replace('nprocs',
                                                                                   str(stage_jobconfig['nprocs'])))
         batchjob_string = (batchjob_string.replace('nengines',
-                                                   str(stage_jobconfig['nprocs_analysis']))
+                                                   str(stage_jobconfig['nengines_analysis']))
                            if kwargs.get('analysis') else batchjob_string.replace('nengines',
                                                                                   str(stage_jobconfig['nengines'])))
 
