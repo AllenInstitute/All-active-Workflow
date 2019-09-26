@@ -14,10 +14,10 @@ def script_decorator(func):
     return func_wrapper
 
 
-dryrun_config = dict(offspring_size=2, max_ngen=2, cp_backup_dir=None,
-                     nengines=2, nnodes=1, nnodes_analysis=1, nprocs=2,
-                     nprocs_analysis=4, nengines_analysis=4,
-                     jobtime='10:00', jobtime_analysis='1:00:00')
+dryrun_config = dict(dict(optim_config = dict(nnodes=1,  nprocs=2,nengines=2, jobtime='10:00')),
+                           offspring_size=2, max_ngen=2, cp_backup_dir=None)
+dryrun_analysis_config = dict(analysis_config=dict(nnodes=4,nprocs=4,nengines=16, jobtime='1:00:00'))
+dryrun_config.update(dryrun_analysis_config)
 
 
 class JobModule(object):
@@ -108,35 +108,6 @@ class ChainSubJob(JobModule):
             self.adjust_template('RES=$(%s batch_job.sh)' % self.submit_cmd,
                                  '%s batch_job.sh' % self.submit_cmd)
             self.adjust_template('echo ${RES##* }', '', partial_match=True)
-
-
-#    def script_generator(self):
-#        # Adjusting the job based on machine
-#        job_config = utility.load_json(self.job_config_path)
-#        machine = job_config['machine']
-#        if 'cori' in machine:
-#            self.adjust_template('#SBATCH -p prod', '#SBATCH -q regular')
-#            self.adjust_template('#SBATCH -C cpu|nvme', '#SBATCH -C haswell')
-#            self.adjust_template('#SBATCH -A proj36','#SBATCH -L SCRATCH')
-#            Path_append ='export PATH="/global/common/software/m2043/AIBS_Opt/software/x86_64/bin:$PATH"'
-#            self.adjust_template('source activate %s'%self.conda_env, Path_append,
-#                                      add = True)
-#            # HDF5 file locking
-#            HDF5_cmd = "export HDF5_USE_FILE_LOCKING=FALSE"
-#            self.adjust_template('source activate %s'%self.conda_env,
-#                                  HDF5_cmd,add = True)
-#
-#        elif 'hpc-login' in machine:
-#            self.adjust_template('cp -r $SCRIPT_REPO/modfiles $STAGE_DIR/',
-#                             'cp -r $SCRIPT_REPO/x86_64 $STAGE_DIR/',add = True)
-#            self.adjust_template('nrnivmodl modfiles/',
-#                     '\techo "Loading compiled modfiles"',partial_match = True)
-#
-#
-#        elif self.submit_cmd == 'bash':
-#            self.adjust_template('RES=$(sh batch_job.sh)', 'sh batch_job.sh')
-#            self.adjust_template('echo ${RES##* }', '',partial_match = True)
-
 
     def run_job(self):
 
@@ -233,11 +204,12 @@ class PBS_JobModule(JobModule):
     def script_generator(self, chain_job='chain_job.sh', **kwargs):
         job_config = utility.load_json(self.job_config_path)
         stage_jobconfig = job_config['stage_jobconfig']
+        analysis_config = stage_jobconfig['analysis_config']
 
         highlevel_job_props = job_config['highlevel_jobconfig']
-
-        if highlevel_job_props['dryrun'] or (kwargs.get('analysis') and
-                                             not stage_jobconfig.get('run_hof_analysis')):
+        analysis_flag = kwargs.get('analysis')  # this means prepare a batch script for analysis
+        
+        if highlevel_job_props['dryrun']:
             for option, option_val in dryrun_config.items():
                 if stage_jobconfig.get(option):
                     stage_jobconfig[option] = option_val
@@ -249,7 +221,7 @@ class PBS_JobModule(JobModule):
 
         jobname = '%s.%s' % (os.path.basename(highlevel_job_props['job_dir']),
                              stage_jobconfig['stage_name'])
-        if kwargs.get('analysis'):
+        if analysis_flag: 
             jobname += '.analysis'
 
         seed_string = ''.join(
@@ -259,64 +231,39 @@ class PBS_JobModule(JobModule):
         batchjob_string = batchjob_string.replace('conda_env',
                                                   highlevel_job_props['conda_env'])
         batchjob_string = batchjob_string.replace('jobname', jobname)
-
-        # Stage Job config
-        batchjob_string = batchjob_string.replace(
-            'jobscript_name', self.script_name)
-        batchjob_string = batchjob_string.replace('jobmem',
-                                                  stage_jobconfig['jobmem'])
-        batchjob_string = batchjob_string.replace('ipyp_db',
-                                                  stage_jobconfig['ipyp_db'])
-        batchjob_string = batchjob_string.replace('qos',
-                                                  job_config['stage_jobconfig']['qos'])
-        batchjob_string = batchjob_string.replace('main_script',
-                                                  stage_jobconfig['main_script'])
-        batchjob_string = batchjob_string.replace('job_config_path',
-                                                  self.job_config_path)
+        batchjob_string = batchjob_string.replace('jobscript_name', self.script_name)
+        
+        
+        # Only related to optimization
         batchjob_string = batchjob_string.replace('seed_list', seed_string)
         batchjob_string = batchjob_string.replace('analysis_script',
-                                                  stage_jobconfig['analysis_script'])
-
+                                  analysis_config['main_script'])
+        
+        batchjob_string = batchjob_string.replace('job_config_path',
+                                                  self.job_config_path)
+        
         # Job config analysis vs optimization
-        batchjob_string = (batchjob_string.replace('jobtime',
-                                                   stage_jobconfig['jobtime_analysis'])
-                           if kwargs.get('analysis') else batchjob_string.replace('jobtime',
-                                                                                  stage_jobconfig['jobtime']))
-        batchjob_string = (batchjob_string.replace('error_stream',
-                                                   stage_jobconfig['error_stream_analysis']) if kwargs.get('analysis')
-                           else batchjob_string.replace('error_stream', stage_jobconfig['error_stream']))
-        batchjob_string = (batchjob_string.replace('output_stream',
-                                                   stage_jobconfig['output_stream_analysis']) if kwargs.get('analysis')
-                           else batchjob_string.replace('output_stream', stage_jobconfig['output_stream']))
-        batchjob_string = (batchjob_string.replace('nnodes',
-                                                   str(stage_jobconfig['nnodes_analysis']))
-                           if kwargs.get('analysis') else batchjob_string.replace('nnodes',
-                                                                                  str(stage_jobconfig['nnodes'])))
-        batchjob_string = (batchjob_string.replace('nprocs',
-                                                   str(stage_jobconfig['nprocs_analysis']))
-                           if kwargs.get('analysis') else batchjob_string.replace('nprocs',
-                                                                                  str(stage_jobconfig['nprocs'])))
-        batchjob_string = (batchjob_string.replace('nengines',
-                                                   str(stage_jobconfig['nengines_analysis']))
-                           if kwargs.get('analysis') else batchjob_string.replace('nengines',
-                                                                                  str(stage_jobconfig['nengines'])))
-
-        if kwargs.get('analysis'):
+        if analysis_flag:
+            hpc_job_config = analysis_config
             batchjob_string = re.sub('# Run[\S\s]*pids', '',
                                      batchjob_string)
-            if not stage_jobconfig['run_hof_analysis']:
-                batchjob_string = re.sub('# Configure[\S\s]*pids', '',
-                                         batchjob_string)
-
-        if 'next_stage_job_config' in kwargs.keys():
-            if bool(kwargs['next_stage_job_config']):
-                if (kwargs.get('analysis') and stage_jobconfig.get('ipyp_analysis'))\
-                        or not kwargs.get('analysis'):
-                    batchjob_string += 'bash %s\n' % chain_job
-
-        if not kwargs.get('analysis') and stage_jobconfig.get('ipyp_analysis'):
-            batchjob_string = re.sub('# Analyze[\S\s]*.json', 'qsub analyze_job.sh',
+        else:
+            hpc_job_config = stage_jobconfig['optim_config']
+            if analysis_config.get('ipyparallel'):
+                batchjob_string = re.sub('# Analyze[\S\s]*.json', 'qsub %s'%self.script_name,
                                      batchjob_string)
+            
+        hpc_job_parameters = ['jobmem','ipyparallel_db','qos','main_script','jobtime',
+                              'error_stream','output_stream','nnodes','nprocs','nengines']
+        
+        for hpc_param in hpc_job_parameters:
+            batchjob_string = batchjob_string.replace(hpc_param,hpc_job_config[hpc_param])
+        
+
+
+        if bool(kwargs.get('next_stage_job_config')):
+                batchjob_string += 'bash %s\n' % chain_job
+            
 
         with open(self.script_name, "w") as batchjob_script:
             batchjob_script.write(batchjob_string)
