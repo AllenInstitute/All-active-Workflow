@@ -18,7 +18,7 @@ done
 
 # trap function to relaunch the optimization
 func_trap() {
-sbatch batch_job
+sbatch jobscript_name
 }
 
 # submit launch script upon signal USR1

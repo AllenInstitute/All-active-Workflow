@@ -49,7 +49,8 @@ def main(args):
     script_repo_dir = stage_jobconfig.get('script_repo_dir')
     depol_block_check = stage_jobconfig.get('depol_block_check')
     add_fi_kink = stage_jobconfig.get('add_fi_kink')
-    ipyp_analysis = stage_jobconfig.get('ipyp_analysis')
+    analysis_parallel = (stage_jobconfig['analysis_config'].get('ipyparallel') and 
+            stage_jobconfig['run_hof_analysis']) # Only create analysis batch job for hof analysis
     param_bound_tolerance = stage_jobconfig.get('adjust_param_bounds_prev')
     prev_stage_path = stage_jobconfig.get('prev_stage_path')
     
@@ -185,7 +186,7 @@ def main(args):
         batch_job = PBS_JobModule(jobtemplate_path, job_config_path)
         batch_job.script_generator(next_stage_job_config=next_stage_jobconfig)
 
-        if ipyp_analysis:
+        if analysis_parallel:
             analysis_job = PBS_JobModule(jobtemplate_path, job_config_path,
                                          script_name='analyze_job.sh')
             analysis_job.script_generator(analysis=True,

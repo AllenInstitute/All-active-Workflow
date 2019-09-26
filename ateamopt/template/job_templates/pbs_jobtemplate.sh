@@ -28,7 +28,7 @@ file $IPYTHONDIR
 export IPYTHON_PROFILE=pbs.$PBS_JOBID
 
 # Start ipcontroller and engines
-ipcontroller --init --ip='*' --ipyp_db --ping=30000 --profile=${IPYTHON_PROFILE} &
+ipcontroller --init --ip='*' --ipyparallel_db --ping=30000 --profile=${IPYTHON_PROFILE} &
 sleep 30
 file $IPYTHONDIR/profile_$IPYTHON_PROFILE
 mpiexec -n nengines ipengine --timeout=3000 --profile=${IPYTHON_PROFILE} &
