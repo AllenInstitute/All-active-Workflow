@@ -3,8 +3,20 @@ import logging
 from subprocess import Popen, PIPE
 from ateamopt.utils import utility
 import re
+import collections
 
 logger = logging.getLogger(__name__)
+
+def update(orig_dict, new_dict):
+    for key, val in new_dict.iteritems():
+        if isinstance(val, collections.Mapping):
+            tmp = update(orig_dict.get(key, { }), val)
+            orig_dict[key] = tmp
+        elif isinstance(val, list):
+            orig_dict[key] = (orig_dict.get(key, []) + val)
+        else:
+            orig_dict[key] = new_dict[key]
+    return orig_dict
 
 
 def script_decorator(func):
@@ -128,11 +140,9 @@ class test_JobModule(JobModule):
         job_config = utility.load_json(self.job_config_path)
         stage_jobconfig = job_config['stage_jobconfig']
         highlevel_job_props = job_config['highlevel_jobconfig']
-        for option, option_val in dryrun_config.items():
-            if option in stage_jobconfig:
-                stage_jobconfig[option] = option_val
-        stage_jobconfig['ipyp_optim'] = False
-        stage_jobconfig['ipyp_analysis'] = False
+        stage_jobconfig = update(stage_jobconfig,dryrun_config)
+        stage_jobconfig['optim_config']['ipyparallel'] = False
+        stage_jobconfig['analysis_config']['ipyparallel'] = False
         stage_jobconfig['seed'] = [1]
         utility.save_json(self.job_config_path, job_config)
 
@@ -210,11 +220,12 @@ class PBS_JobModule(JobModule):
         analysis_flag = kwargs.get('analysis')  # this means prepare a batch script for analysis
         
         if highlevel_job_props['dryrun']:
-            for option, option_val in dryrun_config.items():
-                if stage_jobconfig.get(option):
-                    stage_jobconfig[option] = option_val
-
-        utility.save_json(self.job_config_path, job_config)
+#            for option, option_val in dryrun_config.items():
+#                if stage_jobconfig.get(option):
+#                    stage_jobconfig[option] = option_val
+            stage_jobconfig = update(stage_jobconfig,dryrun_config)
+            job_config['stage_jobconfig'] = stage_jobconfig
+            utility.save_json(self.job_config_path, job_config)
 
         with open(self.script_template, 'r') as job_template:
             batchjob_string = job_template.read()
@@ -259,8 +270,6 @@ class PBS_JobModule(JobModule):
         for hpc_param in hpc_job_parameters:
             batchjob_string = batchjob_string.replace(hpc_param,hpc_job_config[hpc_param])
         
-
-
         if bool(kwargs.get('next_stage_job_config')):
                 batchjob_string += 'bash %s\n' % chain_job
             

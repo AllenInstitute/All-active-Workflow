@@ -73,14 +73,15 @@ def main(args):
     release_param_write_path = args['released_aa_model']
     mech_release_write_path = args['released_aa_mechanism']
 
-    ipyp_analysis = stage_jobconfig.get('ipyp_analysis')
+    analysis_parallel = (stage_jobconfig['analysis_config'].get('ipyparallel') and 
+            stage_jobconfig['run_hof_analysis'])
 
     props = dict(axon_type=axon_type, ephys_dir=ephys_dir)
 #    for prop in ['timeout', 'learn_eval_trend']:
 #        if stage_jobconfig.get(prop):
 #            props[prop] = stage_jobconfig.get(prop)
 
-    map_function = analyzer_map(ipyp_analysis)
+    map_function = analyzer_map(analysis_parallel)
     opt_train = get_opt_obj(all_protocols_path, train_features_path,
                             morph_path, param_write_path,
                             mech_write_path, map_function, **props)

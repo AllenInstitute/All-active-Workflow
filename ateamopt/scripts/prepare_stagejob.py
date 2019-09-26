@@ -50,7 +50,7 @@ def main(args):
     depol_block_check = stage_jobconfig.get('depol_block_check')
     add_fi_kink = stage_jobconfig.get('add_fi_kink')
     analysis_parallel = (stage_jobconfig['analysis_config'].get('ipyparallel') and 
-            stage_jobconfig['run_hof_analysis']) # Only create analysis batch job for hof analysis
+            stage_jobconfig['run_hof_analysis']) # analysis batch job only for hof analysis
     param_bound_tolerance = stage_jobconfig.get('adjust_param_bounds_prev')
     prev_stage_path = stage_jobconfig.get('prev_stage_path')
     
