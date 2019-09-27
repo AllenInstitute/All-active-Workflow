@@ -8,7 +8,7 @@ import collections
 logger = logging.getLogger(__name__)
 
 def update(orig_dict, new_dict):
-    for key, val in new_dict.iteritems():
+    for key, val in new_dict.items():
         if isinstance(val, collections.Mapping):
             tmp = update(orig_dict.get(key, { }), val)
             orig_dict[key] = tmp
@@ -140,6 +140,8 @@ class test_JobModule(JobModule):
         job_config = utility.load_json(self.job_config_path)
         stage_jobconfig = job_config['stage_jobconfig']
         highlevel_job_props = job_config['highlevel_jobconfig']
+        analysis_config = stage_jobconfig['analysis_config']
+        optim_config = stage_jobconfig['optim_config']
         stage_jobconfig = update(stage_jobconfig,dryrun_config)
         stage_jobconfig['optim_config']['ipyparallel'] = False
         stage_jobconfig['analysis_config']['ipyparallel'] = False
@@ -149,10 +151,10 @@ class test_JobModule(JobModule):
         testjob_string = '#!/bin/bash\n'
         testjob_string += 'set -ex\n'
         testjob_string += 'source activate %s\n' % highlevel_job_props['conda_env']
-        testjob_string += 'python %s --job_config %s\n' %\
-            (stage_jobconfig['main_script'], self.job_config_path)
+        testjob_string += 'python %s --input_json %s\n' %\
+            (optim_config['main_script'], self.job_config_path)
         testjob_string += 'python %s --input_json %s\n'\
-            % (stage_jobconfig['analysis_script'], self.job_config_path)
+            % (analysis_config['main_script'], self.job_config_path)
 
         if 'next_stage_job_config' in kwargs.keys():
             if bool(kwargs['next_stage_job_config']):
@@ -256,22 +258,25 @@ class PBS_JobModule(JobModule):
         # Job config analysis vs optimization
         if analysis_flag:
             hpc_job_config = analysis_config
-            batchjob_string = re.sub('# Run[\S\s]*pids', '',
-                                     batchjob_string)
+            batchjob_string = re.sub('# Run[\S\s]*pids', '',batchjob_string)
+            if bool(kwargs.get('next_stage_job_config')):
+                batchjob_string += 'bash %s\n' % chain_job 
         else:
             hpc_job_config = stage_jobconfig['optim_config']
             if analysis_config.get('ipyparallel'):
-                batchjob_string = re.sub('# Analyze[\S\s]*.json', 'qsub %s'%self.script_name,
+                analysis_jobname = kwargs.get('analysis_jobname')
+                batchjob_string = re.sub('# Analyze[\S\s]*.json', 'qsub %s'%analysis_jobname,
                                      batchjob_string)
+            elif bool(kwargs.get('next_stage_job_config')):
+                batchjob_string += 'bash %s\n' % chain_job
             
         hpc_job_parameters = ['jobmem','ipyparallel_db','qos','main_script','jobtime',
                               'error_stream','output_stream','nnodes','nprocs','nengines']
         
         for hpc_param in hpc_job_parameters:
-            batchjob_string = batchjob_string.replace(hpc_param,hpc_job_config[hpc_param])
+            batchjob_string = batchjob_string.replace(hpc_param,str(hpc_job_config[hpc_param]))
         
-        if bool(kwargs.get('next_stage_job_config')):
-                batchjob_string += 'bash %s\n' % chain_job
+        
             
 
         with open(self.script_name, "w") as batchjob_script:
