@@ -16,8 +16,9 @@ def create_optimizer(args):
 
     stage_jobconfig = args['stage_jobconfig']
     highlevel_job_props = args['highlevel_jobconfig']
+    optim_config = stage_jobconfig['optim_config']
 
-    if stage_jobconfig['ipyp_optim']:
+    if optim_config['ipyparallel']:
         from ipyparallel import Client
         rc = Client(profile=os.getenv('IPYTHON_PROFILE'))
 
@@ -40,7 +41,7 @@ def create_optimizer(args):
     else:
         map_function = None
 
-    seed = args['seed']
+    seed = args.get('seed',1)
     seed = os.getenv('BLUEPYOPT_SEED', seed)
 
     # load the configuration paths
@@ -76,7 +77,7 @@ def main(args):
     """Main"""
     stage_jobconfig = args['stage_jobconfig']
     highlevel_job_props = args['highlevel_jobconfig']
-    seed = args['seed']
+    seed = args.get('seed',1)
     logging.basicConfig(level=highlevel_job_props['log_level'])
 
     opt = create_optimizer(args)

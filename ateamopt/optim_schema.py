@@ -30,7 +30,7 @@ class Top_JobConfig(ags.schemas.DefaultSchema):
 
 class Job_Parameters(ags.schemas.DefaultSchema):
     # jobmodule used always
-    ipyparallel = ags.fields.Boolean(description="", default=True)
+    ipyparallel = ags.fields.Boolean(description="", default=False)
     ipyparallel_db = ags.fields.OptionList(
         description="", options=['nodb', 'sqlitedb']) 
     qos = ags.fields.Str(description="")
@@ -41,9 +41,9 @@ class Job_Parameters(ags.schemas.DefaultSchema):
     jobtime = ags.fields.Str(description="")  # '00:30:00'
     jobmem = ags.fields.Str(description="PBS specific")
     error_stream = ags.fields.Str(
-        description="Direct error stream (PBS specific)", default='/dev/null')  
+        description="Direct error stream (PBS specific)")  
     output_stream = ags.fields.Str(
-        description="Direct output stream (PBS specific)", default='/dev/null') 
+        description="Direct output stream (PBS specific)") 
 
 #class Stage_JobConfig(ags.schemas.DefaultSchema):
 #    stage_name = ags.fields.Str(description="")
@@ -146,6 +146,7 @@ class Stage_JobConfig(ags.schemas.DefaultSchema):
                                           description='Modify the timeout based on evaluation\
                                           times of previous generation (Experimental)')
     # analyze only
+    run_hof_analysis = ags.fields.Boolean(description="", default=False)
     run_peri_comparison = ags.fields.Boolean(description="", default=False)
     run_released_aa_comparison = ags.fields.Boolean(
         description="", default=True)  # not used!
@@ -210,8 +211,6 @@ class Optim_Config(ags.ArgSchema):
     train_protocols = ags.fields.InputFile(description="")
     released_aa_model_dict = ags.fields.Dict(description="", required=False,
                                              allow_none=True)
-#    released_peri_model_dict = ags.fields.Dict(description="",required=False,
-#                                           allow_none=True)
     released_aa_model = ags.fields.InputFile(description="", required=False,
                                              allow_none=True)
     released_peri_model = ags.fields.InputFile(description="", required=False,

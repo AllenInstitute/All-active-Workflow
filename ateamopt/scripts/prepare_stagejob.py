@@ -143,8 +143,8 @@ def main(args):
                                                **props)
 
     # Copy the optimizer scripts in the current directory
-    optimizer_script = stage_jobconfig['main_script']
-    analysis_script = stage_jobconfig['analysis_script']
+    optimizer_script = stage_jobconfig['optim_config']['main_script']
+    analysis_script = stage_jobconfig['analysis_config']['main_script']
     if script_repo_dir:
         optimizer_script_repo = os.path.abspath(os.path.join(script_repo_dir,
                                                              optimizer_script))
@@ -184,13 +184,16 @@ def main(args):
     elif 'hpc-login' in machine:
         jobtemplate_path = 'job_templates/pbs_jobtemplate.sh'
         batch_job = PBS_JobModule(jobtemplate_path, job_config_path)
-        batch_job.script_generator(next_stage_job_config=next_stage_jobconfig)
-
         if analysis_parallel:
+            batch_job.script_generator(next_stage_job_config=next_stage_jobconfig,
+                                       analysis_jobname ='analyze_job.sh')
             analysis_job = PBS_JobModule(jobtemplate_path, job_config_path,
                                          script_name='analyze_job.sh')
             analysis_job.script_generator(analysis=True,
                                           next_stage_job_config=next_stage_jobconfig)
+        else:
+            batch_job.script_generator(next_stage_job_config=next_stage_jobconfig)
+            
     elif 'cori' in machine:
         jobtemplate_path = 'job_templates/nersc_slurm_jobtemplate.sh'
 
