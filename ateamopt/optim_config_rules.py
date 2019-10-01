@@ -39,7 +39,7 @@ def filter_feat_proto_active(features_dict, protocols_dict,**kwargs):
     for spike_stim, spike_amp in spiking_proto_dict.items():
         if spike_amp < max_nospiking_amp:
             f_key_list.append(spike_stim)
-    spiking_proto_dict = entries_to_remove(f_key_list, spiking_proto_dict)
+    spiking_proto_dict = remove_entries_from_dict(f_key_list, spiking_proto_dict)
 
     spiking_proto_sorted = sorted(spiking_proto_dict,
                                   key=spiking_proto_dict.__getitem__)
@@ -90,7 +90,7 @@ def filter_feat_proto_active(features_dict, protocols_dict,**kwargs):
 #        if f_key not in ['mean_frequency', 'Spikecount','depol_block',
 #                         'check_AISInitiation']:
 #            f_key_list.append(f_key)
-#    train_features_dict[spiking_proto_sorted[0]]['soma'] = entries_to_remove(
+#    train_features_dict[spiking_proto_sorted[0]]['soma'] = remove_entries_from_dict(
 #        f_key_list, train_features_dict[spiking_proto_sorted[0]]['soma'])
 
     if kwargs.get('depol_block_check'):
@@ -150,7 +150,7 @@ def filter_feat_proto_basic(features_dict, protocols_dict):
                                if key in spiking_proto_select}
 
     for filtered_key, filtered_val in features_dict_filtered.items():
-        filtered_val['soma'] = entries_to_remove(
+        filtered_val['soma'] = remove_entries_from_dict(
             feature_reject, filtered_val['soma'])
 
     features_dict_filtered = {key: val for key, val in
@@ -274,7 +274,7 @@ def adjust_param_bounds(model_param, model_param_prev,tolerance=0.5):
     return model_param
 
 
-def entries_to_remove(entries, the_dict):
+def remove_entries_from_dict(entries, the_dict):
     for key in entries:
         if key in the_dict.keys():
             del the_dict[key]
