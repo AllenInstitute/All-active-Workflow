@@ -4,13 +4,13 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-def cleanup_files(animation_func):
-    def inner(*args,**kwargs):
-        animation_func(*args,**kwargs)
-        files = args[1]
-        for f in files:
-            os.remove(f)
-    return inner
+#def cleanup_files(animation_func):
+#    def inner(*args,**kwargs):
+#        animation_func(*args,**kwargs)
+#        files = args[1]
+#        for f in files:
+#            os.remove(f)
+#    return inner
 
 class Animation(object):
     """
@@ -53,14 +53,14 @@ class Animation(object):
         return files
 
     # Transform a series of picture into animation
-    @cleanup_files
+    
     def make_movie(self,files,fps=10,bitrate=1800,**kwargs):
         """
         Uses mencoder, produces a .mp4/.ogv/... movie from a list of
         picture files.
         """
 
-        output_name, output_ext = os.path.splitext(self.animpath)
+        output_name, output_ext = os.path.splitext(self.anim_path)
         command = { '.mp4' : 'mencoder "mf://%s" -mf fps=%d -o %s.mp4 -ovc lavc\
                              -lavcopts vcodec=msmpeg4v2:vbitrate=%d'
                              %(",".join(files),fps,output_name,bitrate)}
@@ -83,7 +83,6 @@ class Animation(object):
         os.system('convert -delay %d -loop %d %s %s'
                   %(delay,loop," ".join(files),self.anim_path))
 
-    @cleanup_files
     def make_strip(self,files,**kwargs):
         """
         Uses imageMagick to produce a .jpeg strip from a list of
