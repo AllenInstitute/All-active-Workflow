@@ -1,23 +1,23 @@
 {
     "cty_config": {
-        "cell_id": "548494556",
-        "e_type": "Exc",
-        "me_type": ""
+        "cell_id": "786497332"
     },
     "job_config": {
         "highlevel_jobconfig": {
-            "job_dir": "Human_trial",
             "conda_env": "ateam_opt",
             "axon_type": "stub_axon",
+            "data_source": "lims",
             "ephys_dir": "ephys_data",
             "non_standard_nwb": false,
             "acceptable_stimtypes": [
                 "Long Square",
                 "Noise 1",
-                "Noise 2"
+                "Noise 2",
+                "Square - 2s Suprathreshold",
+                "Ramp",
+                "Short Square - Triple"
             ],
             "feature_names_path": "feature_set_all.json",
-            "dryrun": true,
             "compiled_modfiles_dir": "x86_64"
         },
         "stage_jobconfig": [
@@ -28,8 +28,9 @@
                 ],
                 "stage_features": "feature_set_stage0.json",
                 "stage_parameters": "param_bounds_stage0.json",
-                "cp_dir": "checkpoint",
                 "filter_rule": "filter_feat_proto_passive",
+                "offspring_size": 512,
+                "max_ngen": 50,
                 "nengines": 256,
                 "nnodes": 16,
                 "qos": "celltypes",
@@ -51,6 +52,8 @@
                 "stage_features": "feature_set_stage1.json",
                 "stage_parameters": "param_bounds_stage1.json",
                 "filter_rule": "filter_feat_proto_passive",
+                "offspring_size": 512,
+                "max_ngen": 50,
                 "nengines": 256,
                 "nnodes": 16,
                 "qos": "celltypes",
@@ -70,27 +73,32 @@
                     "Long Square"
                 ],
                 "stage_features": "feature_set_stage2.json",
-                "stage_parameters": "param_bounds_stage2.json",
+                "stage_parameters": "param_bounds_human_inh.json",
                 "filter_rule": "filter_feat_proto_active",
+                "offspring_size": 512,
+                "cp_backup_dir": "checkpoints_backup",
+                "max_ngen": 200,
                 "nengines": 256,
                 "nnodes": 16,
                 "qos": "celltypes",
                 "nprocs": 16,
-                "error_stream": "/dev/null",
-                "output_stream": "/dev/null",
+                "error_stream": "job.err",
+                "output_stream": "job.out",
                 "jobmem": "100g",
-                "jobtime": "5:00:00",
-                "nengines_analysis": 10,
-                "nnodes_analysis": 1,
+                "jobtime": "24:00:00",
+                "nengines_analysis": 40,
+                "nnodes_analysis": 4,
                 "nprocs_analysis": 10,
-                "jobtime_analysis": "30:00",
+                "jobtime_analysis": "10:00:00",
                 "ipyp_db": "nodb",
                 "seed": [
                     1,
-                    2
+                    2,
+                    3,
+                    4
                 ],
                 "run_hof_analysis": true,
-                "run_peri_comparison": true,
+                "run_peri_comparison": false,
                 "depol_block_check": true,
                 "add_fi_kink": true,
                 "calc_model_perf": true,
@@ -98,7 +106,8 @@
                 "error_stream_analysis": "analysis.err",
                 "output_stream_analysis": "analysis.out",
                 "model_postprocess": true,
-                "calc_time_statistics": true
+                "calc_time_statistics": true,
+                "timeout": 300
             }
         ]
     }

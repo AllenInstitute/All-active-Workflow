@@ -10,7 +10,6 @@ from ateamopt.analysis import analysis_module
 from ateamopt.optim_schema import Optim_Config
 import argschema as ags
 import logging
-from collections import defaultdict
 
 logger = logging.getLogger()
 
@@ -74,14 +73,12 @@ def main(args):
     release_param_write_path = args['released_aa_model']
     mech_release_write_path = args['released_aa_mechanism']
 
-    ipyp_analysis = stage_jobconfig.get('ipyp_analysis')
+    analysis_parallel = (stage_jobconfig['analysis_config'].get('ipyparallel') and 
+            stage_jobconfig['run_hof_analysis'])
 
     props = dict(axon_type=axon_type, ephys_dir=ephys_dir)
-#    for prop in ['timeout', 'learn_eval_trend']:
-#        if stage_jobconfig.get(prop):
-#            props[prop] = stage_jobconfig.get(prop)
 
-    map_function = analyzer_map(ipyp_analysis)
+    map_function = analyzer_map(analysis_parallel)
     opt_train = get_opt_obj(all_protocols_path, train_features_path,
                             morph_path, param_write_path,
                             mech_write_path, map_function, **props)
@@ -103,6 +100,12 @@ def main(args):
     bpopt_params_modelname = 'fitted_params/optim_param_%s_bpopt.json'%cell_id
     analysis_handler.save_params_bpopt_format(bpopt_params_modelname,
                                               best_model[0])
+    
+    # Export hoc model
+    model_string = opt_train.evaluator.cell_model.create_hoc(best_model[0])
+    with open('fitted_params/model_template.hoc', "w") as hoc_template:
+        hoc_template.write(model_string)
+    
     hof_model_params, seed_indices = analysis_handler.get_all_models()
 
     if not stage_jobconfig.get('run_hof_analysis'):

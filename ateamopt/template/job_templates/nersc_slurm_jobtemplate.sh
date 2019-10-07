@@ -2,7 +2,7 @@
 
 #SBATCH -q qos
 #SBATCH -t jobtime
-#SBATCH -n nengines
+#SBATCH -N nnodes
 #SBATCH -C haswell
 #SBATCH -L SCRATCH
 #SBATCH --mail-type=ALL
@@ -18,7 +18,7 @@ done
 
 # trap function to relaunch the optimization
 func_trap() {
-sbatch batch_job
+sbatch jobscript_name
 }
 
 # submit launch script upon signal USR1
@@ -33,7 +33,6 @@ export PATH="/global/common/software/m2043/AIBS_Opt/software/x86_64/bin:$PATH"
 PWD=$(pwd)
 LOGS=$PWD/logs
 mkdir -p $LOGS
-seed=1
 
 # Configure ipython profile
 export IPYTHONDIR=${PWD}/.ipython
@@ -46,16 +45,17 @@ srun -n nengines --output="${LOGS}/engine_%j_%2t.out" ipengine --timeout=3000 --
 sleep 10
 
 
-python optimizer_script             \
-    --seed=${seed}                     \
-    --job_config job_config_path &
+# Run Optimization
+pids=""
+for seed in seed_list; do
+    python main_script             \
+        --seed ${seed}             \
+        --input_json job_config_path &
+    pids+="$! "
+done
+
+wait $pids
 
 
-# Check if the job for final seed is finished
-if [[ $seed = max_seed ]]; then
-    sbatch analyze_results.sh
-else
-    seed_new=$(($seed+1))
-    sed -i -e "s/seed=$seed/seed=$seed_new/g" batch_job
-    sbatch batch_job
-fi
+# Analyze results
+python analysis_script --input_json stage_job_config.json

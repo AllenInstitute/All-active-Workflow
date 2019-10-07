@@ -71,7 +71,7 @@ class NwbExtractor(object):
         stim_stop = start_time + duration
         stim_amp_start = 1e12 * stimulus_trace[start_idx]
         stim_amp_end = amplitude
-        tot_duration = time[-1]
+        tot_duration = min(time[-1],stim_stop+1.0) # 1sec beyond stim end
         hold_curr = 0.0
         return start_time, stim_stop, stim_amp_start, stim_amp_end, tot_duration, hold_curr
 
@@ -513,8 +513,11 @@ class NwbExtractor(object):
                     sweep_filename)
 
                 data = np.loadtxt(sweep_fullpath)
-                time = data[:, 0]
-                voltage = data[:, 1]
+                tot_duration = stim_map[stim_name]['stimuli'][0]['totduration']
+                time,voltage = data[:, 0],data[:, 1]
+                
+                # Limit the duration of stim for correct stim end feature calculation
+                time,voltage = time[time <= tot_duration],voltage[time <= tot_duration]
 
                 # Prepare sweep for eFEL
                 sweep = {}
@@ -547,7 +550,7 @@ class NwbExtractor(object):
                 if len(feature_mean_over_trials) == 0:
                     continue
                 else:
-                    mean = np.nanmean(feature_mean_over_trials)
+                    mean = np.nanmean(list(itertools.chain.from_iterable(feature_values_over_trials)))
                     std = (np.nanstd(list(itertools.chain.from_iterable(feature_values_over_trials))) or 
                                 0.05*np.abs(mean) or 0.05)
                     

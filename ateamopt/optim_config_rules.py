@@ -2,7 +2,7 @@ from collections import OrderedDict
 from collections import defaultdict
 import numpy as np
 import statsmodels.api as sm
-
+import itertools
 
 import logging
 logger = logging.getLogger(__name__)
@@ -12,18 +12,14 @@ select_feat_dict = {'spike_proto': 2,
                     'nospike_proto': 0}
 
 
-def filter_feat_proto_active(features_dict, protocols_dict,
-                             #                             add_fi_kink = True,add_DB_check = True,
-                             **kwargs):
+def filter_feat_proto_active(features_dict, protocols_dict,**kwargs):
     """
         Filter the features and protocols for the final
         stage of optimization
     """
-#    features_dict = correct_voltage_feat_std(features_dict)
     spiking_proto_dict = OrderedDict()
     non_spiking_proto_dict = OrderedDict()
-    training_stimtype_reject = ['LongDCSupra',
-                                'Ramp', 'Short_Square_Triple', 'Noise']
+    training_stimtype_reject = ['LongDCSupra','Ramp', 'Short_Square_Triple', 'Noise']
 
     for feat_key, feat_val in features_dict.items():
         if any(reject_stim in feat_key for reject_stim in training_stimtype_reject):
@@ -31,7 +27,7 @@ def filter_feat_proto_active(features_dict, protocols_dict,
         stim_amp = protocols_dict[feat_key]['stimuli'][0]['amp']
         if feat_val['soma']['Spikecount'][0] > 0:
             spiking_proto_dict[feat_key] = stim_amp
-            del feat_val['soma']['Spikecount']
+#            del feat_val['soma']['Spikecount']
         else:
             non_spiking_proto_dict[feat_key] = stim_amp
             if 'depol_block' in feat_val['soma'].keys():
@@ -89,13 +85,13 @@ def filter_feat_proto_active(features_dict, protocols_dict,
 
     # For fI kink spiking proto only allow the following features
     # Remove everything other than basic features for the first spiking proto
-    f_key_list = []
-    for f_key, f_val in train_features_dict[spiking_proto_sorted[0]]['soma'].items():
-        if f_key not in ['mean_frequency', 'depol_block',
-                         'check_AISInitiation']:
-            f_key_list.append(f_key)
-    train_features_dict[spiking_proto_sorted[0]]['soma'] = entries_to_remove(
-        f_key_list, train_features_dict[spiking_proto_sorted[0]]['soma'])
+#    f_key_list = []
+#    for f_key, f_val in train_features_dict[spiking_proto_sorted[0]]['soma'].items():
+#        if f_key not in ['mean_frequency', 'Spikecount','depol_block',
+#                         'check_AISInitiation']:
+#            f_key_list.append(f_key)
+#    train_features_dict[spiking_proto_sorted[0]]['soma'] = entries_to_remove(
+#        f_key_list, train_features_dict[spiking_proto_sorted[0]]['soma'])
 
     if kwargs.get('depol_block_check'):
         max_proto_key = spiking_proto_sorted[-1]
@@ -207,10 +203,13 @@ def correct_voltage_feat_std(features_dict,
 
 
 def correct_feat_statistics(features_dict, protocols_dict, feat_reject_list=['peak_time'],
-                        subthresh_features=['voltage_deflection_vb_ssse'],suprathresh_features=[]):
+                    subthresh_features=['voltage_deflection_vb_ssse',
+                    'decay_time_constant_after_stim'],suprathresh_features=['Spikecount']):
     
     feature_stat = defaultdict(list)
     protocol_stat = defaultdict(list)
+    feature_revision_stims = defaultdict(list)
+    
     for key,val in features_dict.items():
         if key.rsplit('_',1)[0] == 'LongDC':
             for feat_name in val['soma'].keys():
@@ -221,6 +220,8 @@ def correct_feat_statistics(features_dict, protocols_dict, feat_reject_list=['pe
                         continue
                     feature_val_list = val['soma'][feat_name][-1]
                     stim_amp = protocols_dict[key]['stimuli'][0]['amp']
+                    if len(list(itertools.chain.from_iterable(feature_val_list))) == 1:
+                        feature_revision_stims[feat_name].append(key)
                     for feat_list in feature_val_list:
                         feature_stat[feat_name].extend(feat_list)
                         protocol_stat[feat_name].extend([stim_amp]*len(feat_list))
@@ -232,17 +233,27 @@ def correct_feat_statistics(features_dict, protocols_dict, feat_reject_list=['pe
         protocol_vals = protocol_stat[feat_name]
         model = sm.OLS(feature_vals, sm.add_constant(protocol_vals))
         results = model.fit()
-        for key,val in features_dict.items():
-            if key.rsplit('_',1)[0] == 'LongDC':
-                if feat_name in val['soma'].keys():
-                    if feat_name in subthresh_features and val['soma']['Spikecount'][0]>0:
-                        continue
-                    elif feat_name in suprathresh_features and val['soma']['Spikecount'][0]==0:
-                        continue
-                    stim_amp = protocols_dict[key]['stimuli'][0]['amp']
-                    se_mean = (results.get_prediction([1,stim_amp]).se_mean[0] or 
-                               0.05*np.abs(val['soma'][feat_name][0]) or 0.05)
-                    features_dict[key]['soma'][feat_name][1] = se_mean
+        for stim in feature_revision_stims[feat_name]:
+            val = features_dict[stim]
+#            if stim.rsplit('_',1)[0] == 'LongDC':
+#                if feat_name in val['soma'].keys():
+            
+            # Don't correct subthresh specific features for spiking traces 
+            if feat_name in subthresh_features and val['soma']['Spikecount'][0]>0:
+                continue
+            # Don't correct suprathresh specific features for non-spiking traces 
+            elif feat_name in suprathresh_features and val['soma']['Spikecount'][0]==0:
+                continue
+#                    stim_amp = protocols_dict[key]['stimuli'][0]['amp']
+#                    se_mean = (results.get_prediction([1,stim_amp]).se_mean[0] or 
+#                               0.05*np.abs(val['soma'][feat_name][0]) or 0.05)
+            # Use rmse only when there is no repetition within and across sweeps
+            resid_rmse = np.sqrt(results.mse_resid/results.df_resid)
+            if np.isnan(resid_rmse):
+                std_corrected = 0.05*np.abs(val['soma'][feat_name][0]) or 0.05
+            else:
+                std_corrected = (resid_rmse or 0.05*np.abs(val['soma'][feat_name][0]) or 0.05)
+            features_dict[stim]['soma'][feat_name][1] = std_corrected
     return features_dict
 
 

@@ -12,7 +12,7 @@
 
 cd $PBS_O_WORKDIR
 
-set -ex
+set -e
 
 source activate conda_env
 
@@ -28,7 +28,7 @@ file $IPYTHONDIR
 export IPYTHON_PROFILE=pbs.$PBS_JOBID
 
 # Start ipcontroller and engines
-ipcontroller --init --ip='*' --ipyp_db --ping=30000 --profile=${IPYTHON_PROFILE} &
+ipcontroller --init --ip='*' --ipyparallel_db --ping=30000 --profile=${IPYTHON_PROFILE} &
 sleep 30
 file $IPYTHONDIR/profile_$IPYTHON_PROFILE
 mpiexec -n nengines ipengine --timeout=3000 --profile=${IPYTHON_PROFILE} &
@@ -39,8 +39,8 @@ sleep 30
 pids=""
 for seed in seed_list; do
     python main_script             \
-        --seed=${seed}             \
-        --job_config job_config_path &
+        --seed ${seed}             \
+        --input_json job_config_path &
     pids+="$! "
 done
 

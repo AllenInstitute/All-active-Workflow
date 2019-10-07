@@ -21,16 +21,17 @@ logger = logging.getLogger(__name__)
 
 class Optim_Analyzer(object):
 
-    def __init__(self,job_config,opt_obj=None):
+    def __init__(self,job_config=None,opt_obj=None):
         self._opt = opt_obj
-        self.stage_jobconfig = job_config['stage_jobconfig']
-        self.highlevel_job_props = job_config['highlevel_jobconfig']
-        self.job_config = job_config
-        self.cp_dir = self.stage_jobconfig['cp_dir']
-        if self.cp_dir:
-            self._cp_path = self.get_best_cp_seed() # the seed file with minimum error
-        else:
-            self._cp_path = None
+        if job_config:
+            self.stage_jobconfig = job_config['stage_jobconfig']
+            self.highlevel_job_props = job_config['highlevel_jobconfig']
+            self.job_config = job_config
+            self.cp_dir = self.stage_jobconfig['cp_dir']
+            if self.cp_dir:
+                self._cp_path = self.get_best_cp_seed() # the seed file with minimum error
+            else:
+                self._cp_path = None
 
     def get_best_cp_seed(self):
         checkpoint_dir  = os.path.join(self.cp_dir,'seed*.pkl')
@@ -174,9 +175,9 @@ class Optim_Analyzer(object):
         optimized_param_dict = {key:param_list[i] for i,key in \
                             enumerate(opt.evaluator.param_names)}
 
-        param_dict = {key : optimized_param_dict[key] for key in optimized_param_dict.keys()}
+#        param_dict = {key : optimized_param_dict[key] for key in optimized_param_dict.keys()}
 
-        return param_dict
+        return optimized_param_dict
 
     def create_aibs_param_template(self,param_list,
                                    expand_params = False):
@@ -193,7 +194,13 @@ class Optim_Analyzer(object):
 
 
         param_dict = self.create_bpopt_param_template(param_list)
-
+        for sim_param in bpopt_sim_params:
+            # Get the frozen parameters from the parameter config file
+            if sim_param['param_name'] not in ['ena','ek','v_init','celsius'] \
+                            and 'value' in sim_param.keys():
+                param_sect = sim_param['param_name']+'.'+sim_param['sectionlist']
+                param_dict[param_sect] = sim_param['value']
+        
         aibs_format_params = defaultdict(list)
         aibs_format_params['passive'].append({'ra' : param_dict['Ra.all']})
         aibs_format_params['fitting'].append({
@@ -412,8 +419,8 @@ class Optim_Analyzer(object):
                         ax_comp[index//n_col,index%n_col].set_ylabel('Voltage (mV)')
                     ax_comp[index//n_col,index%n_col].set_title(name.split('.')[0] + state, fontsize=8)
 
-                    if 'LongDC' in name:
-                        ax_comp[index//n_col,index%n_col].set_xlim([amp_start_list[ix]-200,\
+#                    if 'LongDC' in name:
+                    ax_comp[index//n_col,index%n_col].set_xlim([amp_start_list[ix]-200,\
                                                                   amp_end_list[ix]+200])
 
                     logger.debug('Plotting response comparisons for %s \n'%name.split('.')[0])
@@ -700,7 +707,8 @@ class Optim_Analyzer(object):
         bpopt_param_dict = self.create_bpopt_param_template(bpopt_param_list)
         utility.save_json(save_params_filename,bpopt_param_dict)
 
-    def convert_aibs_param_to_dict(self,aibs_param_file,repeat_params = []):
+    @staticmethod
+    def convert_aibs_param_to_dict(aibs_param_file,repeat_params = []):
         aibs_params = utility.load_json(aibs_param_file)
         
         # param_files are of the format 'hof_param_cellid_hofindex.json'
