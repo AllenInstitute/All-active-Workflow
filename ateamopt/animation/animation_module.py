@@ -1,5 +1,7 @@
 import os
 import logging
+from ateamopt.utils import utility
+import matplotlib.pyplot as plt
 
 logger = logging.getLogger(__name__)
 
@@ -26,7 +28,7 @@ class Animation(object):
 
 
     @staticmethod
-    def make_3Dviews(ax,angles,elevation=0, width=4, height = 8,
+    def make_3Dviews(ax,angles,elevation=0, width=3, height = 8,
                 prefix='tmprot_',**kwargs):
         """
         Makes jpeg pictures of the given 3d ax, with different angles.
@@ -42,12 +44,15 @@ class Animation(object):
 
         files = []
         ax.figure.set_size_inches(width,height)
+        ax.axis('equal')
 
         for i,angle in enumerate(angles):
-
+            
             ax.view_init(elev = elevation, azim=angle)
             fname = '%s%03d.jpeg'%(prefix,i)
-            ax.figure.savefig(fname)
+            utility.create_filepath(fname)
+            ax.figure.savefig(fname,bbox_inches='tight',pad_inches=0,dpi=500)
+            plt.close(ax.figure)
             files.append(fname)
 
         return files

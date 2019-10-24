@@ -12,7 +12,7 @@ import neurom as nm
 from neurom import morphmath as mm
 from neurom.core.types import tree_type_checker, NEURITES
 from ateamopt.utils import utility
-
+import seaborn as sns
 
 class MorphHandler(object):
     def __init__(self, morph_file, cell_id=None):
@@ -152,23 +152,43 @@ class MorphHandler(object):
         xCenter, yCenter, zCenter = center_tuple
 
         # draw sphere
-        u, v = np.mgrid[0:2*np.pi:100j, 0:np.pi:100j]
-        x = np.cos(u)*np.sin(v)
-        y = np.sin(u)*np.sin(v)
-        z = np.cos(v)
+        u = np.linspace(0, 2 * np.pi, 100)
+        v = np.linspace(0, np.pi, 100)
+        x = np.outer(np.cos(u), np.sin(v))
+        y = np.outer(np.sin(u), np.sin(v))
+        z = np.outer(np.ones(np.size(u)), np.cos(v))
         # shift and scale sphere
         x = rad*x + xCenter
         y = rad*y + yCenter
         z = rad*z + zCenter
         return (x, y, z)
 
+
+    def add_synapses(self,section_points,n_syn,theta,axis_of_rot,ax,**kwargs):
+        color = 'lime' if not kwargs.get('color') else kwargs.get('color')
+        np.random.seed(0)
+        select_syn_loc = section_points[np.random.choice(section_points.shape[0],n_syn,
+                                                         replace=False),:]
+        select_syn_loc = np.apply_along_axis(lambda x:self.rotate3D_point(x,
+                                               theta, axis_of_rot),1,select_syn_loc)
+        ax.scatter(select_syn_loc[:,0], select_syn_loc[:,1],
+                       select_syn_loc[:,2],
+                       marker='o', alpha=0.8,linewidth=0,
+                       s=8,color=color)
+        return ax
+
     def draw_morphology(self, theta, axis_of_rot, reject_axon=True, **kwargs):
-        color_dict = {4: 'orange', 3: 'darkred', 2: 'royalblue', 1: 'grey'}
+        color_dict = kwargs.get('color_dict')
+        if not color_dict:
+            color_dict = {4: 'orange', 3: 'darkred', 2: 'royalblue', 1: 'lightgrey'}
         label_dict = {4: 'apical dendrite', 3: 'basal dendrite',
                       2: 'axon', 1: 'soma'}
 
-        fig = plt.figure(figsize=(8, 8), dpi=100)
+        sns.set(style='whitegrid')
+        fig = plt.figure(figsize=(4, 8), dpi=100)
+        
         ax = fig.add_subplot(111, projection='3d')
+        ax.axis('equal')
 
         all_x, all_y, all_z = [], [], []
 
@@ -186,7 +206,7 @@ class MorphHandler(object):
 
                 ax.plot([nx_rot, cx_rot], [ny_rot, cy_rot],
                         [nz_rot, cz_rot],
-                        color=color_dict[n['type']], lw=.8, alpha=.5,
+                        color=color_dict[n['type']], lw=.5, alpha=1,
                         label=label_dict[n['type']])
 
                 all_x.extend((nx_rot, cx_rot))
@@ -199,14 +219,14 @@ class MorphHandler(object):
 
         if kwargs.pop('draw_sphere', None):
             (xs, ys, zs) = self.draw_sphere(shifted_soma_coord)
-            ax.plot_surface(xs, ys, zs, color=color_dict[1])
+            ax.plot_surface(xs, ys, zs, rstride=1, cstride=1,color=color_dict[1],
+                            linewidth=0,alpha=.8)
+            
         else:
             ax.scatter(shifted_soma[0], shifted_soma[1],
                        shifted_soma[2],
-                       marker='o', alpha=0.8,
-                       #               s=math.pi*self.soma_rad,
-                       s=100,
-                       color=color_dict[1])
+                       marker='o', alpha=0.8,edgecolor=color_dict[1],linewidth=.2,
+                       s=50,color=color_dict[1])
 
         all_x_min, all_x_max = min(all_x), max(all_x)
         all_y_min, all_y_max = min(all_y), max(all_y)
@@ -214,12 +234,11 @@ class MorphHandler(object):
         z_mid = (all_z_min+all_z_max)*0.5
         view_base = np.max([all_x_min, all_y_min, all_x_max, all_y_max])
         elev_angle = np.arctan(z_mid/view_base)
-
         ax.axis('off')
         ax.view_init(elev=elev_angle, azim=90)
-        if kwargs.get('figname'):
-            figname = kwargs['figname']
-        else:
-            figname = 'Morph_figure.pdf'
-        fig.savefig(figname, bbox_inches='tight')
-        plt.close(fig)
+#        ax.set_facecolor('k')
+#        xlims = ax.get_xlim()
+#        ylims = ax.get_ylim()
+#        zlims = ax.get_zlim()
+        return fig,ax,elev_angle
+
