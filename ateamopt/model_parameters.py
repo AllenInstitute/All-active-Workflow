@@ -328,8 +328,9 @@ class AllActive_Model_Parameters(object):
                     peri_mechs_release[param_dict['sectionlist']].append(
                         param_dict['mech'])
 
-        peri_params_write_path = base_dir + self.cell_id + '/peri_parameters.json'
-        peri_mech_write_path = base_dir + self.cell_id + '/peri_mechanism.json'
+        peri_params_write_path = os.path.join(base_dir,self.cell_id,'peri_parameters.json')
+        peri_mech_write_path = os.path.join(base_dir,self.cell_id,'peri_mechanism.json')
+        utility.create_filepath(peri_params_write_path)
         utility.save_json(peri_params_write_path, peri_params_release)
         utility.save_json(peri_mech_write_path, peri_mechs_release)
         return peri_params_write_path, peri_mech_write_path
