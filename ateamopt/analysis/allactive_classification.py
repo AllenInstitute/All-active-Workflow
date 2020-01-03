@@ -528,11 +528,9 @@ class Allactive_Classification(object):
     
     @staticmethod
     def RF_classifier(X_df,y_df,feature_fields,target_field,
-#                  color_dict,
-#                  plot_confusion_mat=False,conf_mat_figname=None,
-#                  plot_feat_imp=False,feat_imp_figname=None
-                    ):
-        clf = RandomForestClassifier(n_estimators=100, random_state=0)
+                  plot_feat_imp=False,feat_imp_figname=None):
+        
+        clf = RandomForestClassifier(n_estimators=80, random_state=0)
         rf_pipeline = Pipeline([('scaler', StandardScaler()),
                                   ('random_forest', clf)])
         le = preprocessing.LabelEncoder()   
@@ -540,29 +538,41 @@ class Allactive_Classification(object):
         
         X_data = X_df.loc[:,feature_fields].values
         y_data = y_df['label_encoder'].values
+
         
-        skf = StratifiedKFold(n_splits=3,random_state=0) # K-fold train test split 
-        
+        n_splits = 3
+        skf = StratifiedKFold(n_splits=n_splits,random_state=0) # K-fold train test split 
         confusion_matrix_list = list()
         score_list = list()
+        delta_chance = 0
         feature_imp_df_list = list()
+        np.random.seed(0)
         
         for train_index,test_index in skf.split(X_data,y_data):
             X_train, X_test = X_data[train_index], X_data[test_index]
             y_train, y_test = y_data[train_index], y_data[test_index]
             rf_pipeline.fit(X_train, y_train)
             y_pred_test = rf_pipeline.predict(X_test)
-        
+            y_pred_chance = np.random.choice(y_test,len(y_test))
             confusion_matrix_rf = confusion_matrix(y_test, y_pred_test)
-#            confusion_matrix_list.append(confusion_matrix_rf)
             
-            score_list.append(accuracy_score(y_test, y_pred_test))
+            score = accuracy_score(y_test, y_pred_test)
+            score_list.append(score)
+            chance_score = accuracy_score(y_test, y_pred_chance)
+            
+            score_list.append(score)
+            if score == max(score_list):
+                best_y_pred = y_pred_test
+                best_y = y_test
+            
             classes = le.inverse_transform(unique_labels(y_test, \
                                         y_pred_test))
             df_conf_rf= pd.DataFrame(confusion_matrix_rf, classes,
                   classes)
             df_conf_rf=df_conf_rf.div(df_conf_rf.sum(axis=1),axis=0)
             confusion_matrix_list.append(df_conf_rf)
+
+            delta_chance += score - chance_score
         
             feature_imp = pd.Series(rf_pipeline.named_steps['random_forest'].feature_importances_,
                         index=feature_fields).sort_values(ascending=False)
@@ -575,22 +585,7 @@ class Allactive_Classification(object):
                     feature_dict['param_name'].append(param_name_)
             feature_imp_df = pd.DataFrame(feature_dict)
             feature_imp_df_list.append(feature_imp_df)
-        
-#        if plot_confusion_mat:
-#            sns.set(style="whitegrid")
-#            fig = plt.figure(figsize=(4,3))
-#            
-#            cmap = sns.cubehelix_palette(light=1, as_cmap=True)
-#            ax = sns.heatmap(df_conf_rf,cmap=cmap,alpha=0.8,linewidths=.1,
-#                             linecolor='lightgrey',vmin=0,vmax=1)
-#            fig.suptitle('Accuracy: %s %%'%score, fontsize = 10)
-#            ax.set_ylabel('True Label',fontsize=8)
-#            ax.set_xlabel('Predicted Label',fontsize=8)
-#            plt.setp(ax.get_xticklabels(),fontsize=8,rotation=60,ha='right')
-#            plt.setp(ax.get_yticklabels(),fontsize=8)
-#            fig.savefig(conf_mat_figname,bbox_inches='tight')
-#            plt.close(fig)
-#        
+
 #        
 #        if plot_feat_imp:
 #            fig,ax = plt.subplots(1, figsize = (8,6))
@@ -618,7 +613,7 @@ class Allactive_Classification(object):
 #            cbar.ax.set_yticklabels(feature_fields_cmap, fontsize=10)    
 #            fig.savefig(feat_imp_figname,bbox_inches='tight')
 #            plt.close(fig)
-        
+#        
         score_avg = np.mean(score_list)*100
         
         index,columns = confusion_matrix_list[0].index,\
@@ -627,16 +622,18 @@ class Allactive_Classification(object):
                                    axis=0)
         confusion_matrix_df = pd.DataFrame(data=conf_matrix,index=index,
                                            columns=columns)
+        delta_chance = int(delta_chance/n_splits*100)
+        best_y_pred,best_y = le.inverse_transform(y_pred_test),\
+                                    le.inverse_transform(y_test)
         
         param_imp_df = pd.concat(feature_imp_df_list,sort=False,ignore_index=True)
         param_group_dict = param_imp_df.groupby('param_name')['importance'].\
                 agg(np.median).to_dict()
         params_sorted =  sorted(param_group_dict, key=param_group_dict.get,
                                 reverse=True)
-        delta_chance = int(score_avg - 100.0/len(index))
         
-        return int(score_avg),confusion_matrix_df,param_imp_df,\
-                    params_sorted,delta_chance
+        return int(score_avg),confusion_matrix_df,delta_chance,best_y,best_y_pred,param_imp_df,\
+                    params_sorted
         
     
     @staticmethod
