@@ -102,9 +102,14 @@ def main(args):
                                               best_model[0])
     
     # Export hoc model
-    model_string = opt_train.evaluator.cell_model.create_hoc(best_model[0])
-    with open('fitted_params/model_template.hoc', "w") as hoc_template:
-        hoc_template.write(model_string)
+    if stage_jobconfig['hoc_export']:
+        hoc_export_path = 'fitted_params/model_template_%s.hoc'%cell_id
+        utility.create_filepath(hoc_export_path)
+        best_param_dict = {key:best_model[0][i] for i,key in \
+                            enumerate(opt_train.evaluator.param_names)}
+        model_string = opt_train.evaluator.cell_model.create_hoc(best_param_dict)
+        with open(hoc_export_path, "w") as hoc_template:
+            hoc_template.write(model_string)
     
     hof_model_params, seed_indices = analysis_handler.get_all_models()
 
@@ -180,21 +185,21 @@ def main(args):
 
     # Save the sorted hall of fame output in .pkl
     hof_model_params_sorted = analysis_handler.save_hof_output_params(hof_model_params,
-                                                                      hof_params_filename, score_list_train)
+                                                  hof_params_filename, score_list_train)
     # Save the entire hall of fame parameters
     for i, hof_param in enumerate(hof_model_params_sorted):
-        aibs_params_modelname = 'fitted_params/hof_param_%s_%s.json' % (
-            cell_id, i)
+        aibs_params_modelname = os.path.join('fitted_params','hof_param_%s_%s.json' % (
+            cell_id,i))
         analysis_handler.save_params_aibs_format(aibs_params_modelname,
                                                  hof_param, expand_params=True)
 
     # Now save the sorted score
     utility.save_pickle(score_list_train_filename, sorted(score_list_train))
 
-    GA_evol_path = 'analysis_params/GA_evolution_params.pkl'
+    GA_evol_path = os.path.join('analysis_params','GA_evolution_params.pkl')
     analysis_handler.save_GA_evolultion_info(GA_evol_path)
 
-    resp_filename = './resp_opt.txt'
+    resp_filename = os.path.join(os.getcwd(),'resp_opt.txt')
     analysis_handler.save_best_response(hof_response_sorted[0], resp_filename)
 
     if release_param_write_path:
@@ -208,13 +213,14 @@ def main(args):
         evaluator_release = eval_handler_release.create_evaluator()
         opt_release = bpopt.optimisations.DEAPOptimisation(
             evaluator=evaluator_release)
-        resp_release_filename = './resp_release.txt'
+        resp_release_filename = os.path.join(os.getcwd(),'resp_release.txt')
         analysis_handler.get_release_responses(
             opt_release, resp_release_filename)
         resp_release_aa = utility.load_pickle(resp_release_filename)[0]
         features_release_aa = opt_release.evaluator.fitness_calculator.\
             calculate_features(resp_release_aa)
-        features_aa_filename = 'Validation_Responses/Features_released_aa_%s.pkl' % cell_id
+        features_aa_filename = os.path.join('Validation_Responses','Features_released_aa_%s.pkl'% cell_id)
+        utility.create_filepath(features_aa_filename)
         utility.save_pickle(features_aa_filename, features_release_aa)
     else:
         resp_release_filename = None
@@ -236,10 +242,10 @@ def main(args):
                                                       pdf_pages)
 
     if stage_jobconfig['model_postprocess']:
-        exp_fi_path = 'Validation_Responses/fI_exp_%s.pkl' % cell_id
-        model_fi_path = 'Validation_Responses/fI_aa_%s.pkl' % cell_id
-        exp_AP_shape_path = 'Validation_Responses/AP_shape_exp_%s.pkl' % cell_id
-        model_AP_shape_path = 'Validation_Responses/AP_shape_aa_%s.pkl' % cell_id
+        exp_fi_path = os.path.join('Validation_Responses','fI_exp_%s.pkl'%cell_id)
+        model_fi_path = os.path.join('Validation_Responses','fI_aa_%s.pkl' % cell_id)
+        exp_AP_shape_path = os.path.join('Validation_Responses','AP_shape_exp_%s.pkl' % cell_id)
+        model_AP_shape_path = os.path.join('Validation_Responses','AP_shape_aa_%s.pkl' % cell_id)
 
         pdf_pages = analysis_handler.postprocess(stim_mapfile, resp_filename, pdf_pages,
                                                  exp_fi_path, model_fi_path, exp_AP_shape_path, model_AP_shape_path,
@@ -248,7 +254,7 @@ def main(args):
     # Perisomatic model
 
     if peri_model_id and stage_jobconfig['run_peri_comparison']:
-        resp_peri_filename = './resp_peri.txt'
+        resp_peri_filename = os.path.join(os.getcwd(),'resp_peri.txt')
         peri_param_path = args['released_peri_model']
         peri_mech_path = args['released_peri_mechanism']
 
@@ -266,7 +272,7 @@ def main(args):
         resp_peri = utility.load_pickle(resp_peri_filename)[0]
         features_peri = opt_peri.evaluator.fitness_calculator.calculate_features(
             resp_peri)
-        features_peri_filename = 'Validation_Responses/Features_peri_%s.pkl' % cell_id
+        features_peri_filename = os.path.join('Validation_Responses','Features_peri_%s.pkl' % cell_id)
         utility.create_filepath(features_peri_filename)
         utility.save_pickle(features_peri_filename, features_peri)
 
@@ -274,14 +280,14 @@ def main(args):
                         resp_peri_filename,stim_mapfile, pdf_pages, 
                         resp_comparison=model_type)
         if stage_jobconfig['model_postprocess']:
-            model_fi_path = 'Validation_Responses/fI_peri_%s.pkl' % cell_id
-            model_AP_shape_path = 'Validation_Responses/AP_shape_peri_%s.pkl' % cell_id
+            model_fi_path = os.path.join('Validation_Responses','fI_peri_%s.pkl' % cell_id)
+            model_AP_shape_path = os.path.join('Validation_Responses','AP_shape_peri_%s.pkl'%cell_id)
             pdf_pages = analysis_handler.postprocess(stim_mapfile, resp_peri_filename, 
                         pdf_pages, exp_fi_path, model_fi_path, exp_AP_shape_path, 
                         model_AP_shape_path, model_type)
 
     if stage_jobconfig.get('calc_model_perf'):
-        spiketimes_exp_path = 'Validation_Responses/spiketimes_exp_noise.pkl'
+        spiketimes_exp_path = os.path.join('Validation_Responses','spiketimes_exp_noise.pkl')
         all_features = utility.load_json(all_features_path)
         spiketimes_noise_exp = {}
         for stim_, feat in all_features.items():
@@ -292,9 +298,9 @@ def main(args):
             utility.create_filepath(spiketimes_exp_path)
             utility.save_pickle(spiketimes_exp_path, spiketimes_noise_exp)
 
-        spiketimes_hof_path = 'Validation_Responses/spiketimes_model_noise.pkl'
-        exp_variance_hof_path = 'Validation_Responses/exp_variance_hof.pkl'
-        model_perf_filename = 'Validation_Responses/fitness_metrics_'+cell_id+'.csv'
+        spiketimes_hof_path = os.path.join('Validation_Responses','spiketimes_model_noise.pkl')
+        exp_variance_hof_path = os.path.join('Validation_Responses','exp_variance_hof.pkl')
+        model_perf_filename = os.path.join('Validation_Responses','fitness_metrics_%s.csv'%cell_id)
         pdf_pages = analysis_handler.hof_statistics(stim_mapfile, pdf_pages,
                                                     obj_list_all_filename, hof_responses_filename,
                                                     obj_list_train_filename, obj_list_test_filename,
@@ -303,12 +309,14 @@ def main(args):
     pdf_pages.close()
 
     if stage_jobconfig.get('calc_time_statistics'):
-        time_by_gen_filename = 'time_info.txt'
-        if os.path.exists(time_by_gen_filename):
-            time_metrics_filename = 'time_metrics_%s.csv' % cell_id
-            analysis_module.save_optimization_time(time_by_gen_filename,
-                                                   time_metrics_filename, cell_metadata)
-
+#        time_by_gen_filename = 'time_info.txt'
+#        if os.path.exists(time_by_gen_filename):
+#            time_metrics_filename = 'time_metrics_%s.csv' % cell_id
+#            analysis_module.save_optimization_time(time_by_gen_filename,
+#                                                   time_metrics_filename, cell_metadata)
+        compute_statistics_filename = 'compute_metrics_%s.csv' % cell_id
+        opt_logbook = 'logbook_info.txt'
+        analysis_module.save_compute_statistics(opt_logbook,compute_statistics_filename)
 
 if __name__ == '__main__':
     mod = ags.ArgSchemaParser(schema_type=Optim_Config)

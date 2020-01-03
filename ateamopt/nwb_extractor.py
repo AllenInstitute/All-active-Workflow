@@ -238,7 +238,7 @@ class NwbExtractor(object):
                     ': '))
 
     def save_cell_data_web(self,acceptable_stimtypes,non_standard_nwb = False,
-                       ephys_dir='preprocessed'):
+                       ephys_dir='preprocessed',**kwargs):
 
         bpopt_stimtype_map = utility.bpopt_stimtype_map
         distinct_id_map = utility.aibs_stimname_map
@@ -249,7 +249,8 @@ class NwbExtractor(object):
         output_dir = os.path.join(os.getcwd(),ephys_dir)
         utility.create_dirpath(output_dir)
 
-        for sweep_number in nwb_file.get_sweep_numbers():
+        sweep_numbers = kwargs.get('sweep_numbers') or nwb_file.get_sweep_numbers()
+        for sweep_number in sweep_numbers:
             sweep_data = nwb_file.get_sweep_metadata(sweep_number)
             stim_type = sweep_data['aibs_stimulus_name']
 

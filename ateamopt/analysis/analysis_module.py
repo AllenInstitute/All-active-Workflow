@@ -2,6 +2,7 @@ from scipy import interpolate
 import numpy as np
 import scipy.signal as signal
 import pandas as pd
+import os
 
 def get_spike_shape(time,voltage,spike_times,
                     AP_shape_time, AP_shape_voltage):
@@ -22,11 +23,26 @@ def get_spike_shape(time,voltage,spike_times,
 
 def calculate_spike_time_metrics(expt_trains, model_train, total_length, dt, sigma):
     """
-    expt_trains is a list of nparrays, where each array contains the time indices of spike times (from all experimental trials)
-    model_train is a single nparray which contains the time indices of spike times from the model
-    total_length is the total number of time bins
-    dt is the time step between each bin
-    sigma is the length of the Gaussian convolution window (same units as dt)
+    Calculate explained variance (%) in terms of  the experiment and model spike train.
+    
+    Parameters
+    ----------
+    expt_trains : list
+        list of nparrays, where each array contains the time indices of spike times (from all experimental trials)
+    model_train :  np.array
+        is a single nparray which contains the time indices of spike times from the model
+    total_length : int
+        the total number of time bins
+    dt : float 
+        Time step between each bin
+    sigma : float
+        Length of the Gaussian convolution window (same units as dt)
+        
+    Returns
+    -------
+    float
+        Explained variance in percentage
+        
     """
     trialtotrial_expvar_result = []
     for s in sigma:
@@ -93,3 +109,35 @@ def save_optimization_time(time_by_gen_filename,time_metrics_filename,
                         'time' : time_vec
                         })
     time_metrics.to_csv(time_metrics_filename) 
+    
+    
+def save_compute_statistics(opt_logbook,output_csv_filename):
+    """
+    Saving generation wise compute time from the optimization logbook
+    
+    
+    Parameters
+    ----------
+    opt_logbook : str
+        location of the optimization logbook 
+    output_csv_filename : str
+        location of the output csv file
+    
+    """
+    
+    if os.path.exists(opt_logbook):
+        colnames = ['gen','nevals','avg','std','min','max','cp_loc']
+        col_dtypes = {'gen':int,'nevals':int,'avg': float, 'std': float, 'min': float,
+                      'max': float, 'cp_loc':str}
+        logbook = pd.read_fwf(opt_logbook,names=colnames,
+                              header=0)
+        logbook_filtered = logbook[logbook['gen'] != 'gen']
+        nan_seed_indices = logbook_filtered.index[logbook_filtered.cp_loc.isnull()].tolist()
+        actual_seed_indices = [idx+1 for idx in nan_seed_indices]
+        nan_cp_locations = logbook_filtered['cp_loc'][actual_seed_indices].tolist()
+        logbook_filtered.loc[logbook_filtered.cp_loc.isnull(),'cp_loc']=nan_cp_locations
+        logbook_filtered = logbook_filtered.astype(dtype=col_dtypes).reset_index()
+        
+        logbook_filtered['seed_index'] = logbook_filtered['cp_loc'].apply(lambda x:x.split('seed')[-1])
+        logbook_filtered.to_csv(output_csv_filename)
+    
