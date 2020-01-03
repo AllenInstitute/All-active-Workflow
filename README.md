@@ -1,5 +1,5 @@
 [![Build Status](https://travis-ci.com/anirban6908/All-active-Workflow.svg?token=93Twb9jDYFzVNoM9gSjr&branch=master)](https://travis-ci.com/anirban6908/All-active-Workflow)
-[![Generic badge](https://img.shields.io/badge/License-Allen Institute-brightgreen.svg)](LICENSE.txt)
+[![Generic badge](https://img.shields.io/badge/License-Allen_Institute-yellow.svg)](https://alleninstitute.org/legal/terms-use/)
 
 
 # All-active-Workflow
