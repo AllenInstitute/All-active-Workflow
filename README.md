@@ -5,52 +5,156 @@
 # All-active-Workflow
 Creating the code base for All-active Model generation and analysis written on top of Bluepyopt
 
+Genetic algorithm in action: **selection** + **evaluation** + **evolution**
+
+![alt text](examples/visualization/animations/GA_evolution_animation/movie.gif "all-active model optimization") 
+
 #### Launching optimization jobs
-* AIBS hpc
 ```sh
-$ cd /allen/aibs/mat/ateam_shared/optimization_software
-$ sh add_shared_conda.sh
-$ source activate ateam_opt
+$ source activate conda-env # conda environment with all dependencies
 $ launch_optimjob --help # Look at the options
-$ launch_optimjob --input_json job_config.json 
-[//]: # ($ launch_optimjob --cell_id xyz --ext_scripts /allen/aibs/mat/anin/software/All-active-Workflow/examples/optim_scripts --me_type ME_Exc_1 # launch jobs by passing me type)
-[//]: # ($ script_repo='/allen/aibs/mat/anin/software/All-active-Workflow/examples/optim_scripts')
-[//]: # ($ submit_opt_jobs -f cell_data.csv -r $script_repo -c ateam_opt -m 2 # Launching multiple jobs from a csv file)
+$ launch_optimjob --input_json job_config.json
+```
+#### Configurable optimization 
+<details> <summary>job_config.json</summary>
+
+```json
+{
+    "cty_config": {
+        "cell_id": "483101699"
+    },
+    "job_config": {
+        "highlevel_jobconfig": {
+            "conda_env": "ateam_opt",
+            "axon_type": "stub_axon",
+            "data_source": "web",
+            "ephys_dir": "ephys_data",
+            "non_standard_nwb": false,
+            "feature_stimtypes": [
+                "Long Square"
+            ],
+            "feature_names_path": "feature_set_all.json",
+            "compiled_modfiles_dir": "x86_64",
+            "job_dir": "483101699_benchmark_timeout"
+        },
+        "stage_jobconfig": [
+            {
+                "stage_name": "Stage0",
+                "stage_stimtypes": [
+                    "Long Square"
+                ],
+                "stage_features": "feature_set_stage0.json",
+                "stage_parameters": "param_bounds_stage0.json",
+                "filter_rule": "filter_feat_proto_passive",
+                "offspring_size": 512,
+                "max_ngen": 50,
+                "optim_config":{
+                    "nengines": 256,
+                    "nnodes": 16,
+                    "qos": "celltypes",
+                    "nprocs": 16,
+                    "error_stream": "job.err",
+                    "output_stream": "job.out",
+                    "jobmem": "100g",
+                    "jobtime": "5:00:00",
+                    "ipyparallel": true,
+                    "ipyparallel_db": "sqlitedb",
+                    "main_script": "Optim_Main.py"
+                },
+                "analysis_config":{
+                    "main_script": "analyze_stagejob.py"
+                },
+                "seed": [
+                    1
+                ]
+            },
+            {
+                "stage_name": "Stage1",
+                "stage_stimtypes": [
+                    "Long Square"
+                ],
+                "stage_features": "feature_set_stage1.json",
+                "stage_parameters": "param_bounds_stage1.json",
+                "filter_rule": "filter_feat_proto_passive",
+                "offspring_size": 512,
+                "max_ngen": 50,
+                "optim_config":{
+                    "nengines": 256,
+                    "nnodes": 16,
+                    "qos": "celltypes",
+                    "nprocs": 16,
+                    "error_stream": "job.err",
+                    "output_stream": "job.out",
+                    "jobmem": "100g",
+                    "jobtime": "5:00:00",
+                    "ipyparallel": true,
+                    "ipyparallel_db": "sqlitedb",
+                    "main_script": "Optim_Main.py"
+                },
+                "analysis_config":{
+                    "main_script": "analyze_stagejob.py"
+                },
+                "seed": [
+                    1
+                ]
+            },
+            {
+                "stage_name": "Stage2",
+                "stage_stimtypes": [
+                    "Long Square"
+                ],
+                "stage_features": "feature_set_stage2.json",
+                "stage_parameters": "param_bounds_stage2_mouse_spiny.json",
+                "filter_rule": "filter_feat_proto_active",
+                "AP_initiation_zone": "axon",
+                "offspring_size": 512,
+                "cp_backup_dir": "checkpoints_backup",
+                "max_ngen": 200,
+                "optim_config":{
+                    "nengines": 256,
+                    "nnodes": 16,
+                    "qos": "celltypes",
+                    "nprocs": 16,
+                    "error_stream": "job.err",
+                    "output_stream": "job.out",
+                    "jobmem": "150g",
+                    "jobtime": "12:00:00",
+                    "ipyparallel": true,
+                    "ipyparallel_db": "sqlitedb",
+                    "main_script": "Optim_Main.py"
+                },
+                "analysis_config":{
+                    "main_script": "analyze_stagejob.py",
+                    "ipyparallel": true,
+                    "ipyparallel_db": "nodb",
+                    "error_stream": "analysis.err",
+                    "output_stream": "analysis.out",
+                    "nengines": 40,
+                    "nnodes": 4,
+                    "nprocs": 10,
+                    "jobtime": "10:00:00",
+                    "jobmem": "100g",
+                    "qos": "celltypes"
+                },
+                "seed": [
+                    1,
+                    2,
+                    3,
+                    4
+                ],
+                "run_hof_analysis": true,
+                "run_peri_comparison": false,
+                "depol_block_check": true,
+                "add_fi_kink": true,
+                "calc_model_perf": true,
+                "model_postprocess": true,
+                "calc_time_statistics": true,
+                "timeout": 300,
+                "hoc_export": true
+            }
+        ]
+    }
+}
 
 ```
-* NERSC Cori - using shared conda environment
-```sh
-$ source activate ateam
-$ script_repo='/global/homes/a/ani/shared_software/All-active-Workflow/examples/optim_scripts'
-$ launch_optimjob --cell_id xyz --conda_env ateam --ext_scripts $script_repo 
-$ submit_opt_jobs -f cell_data.csv -r $script_repo -c ateam -m 2 # Launching multiple jobs from a csv file
-```
-* NERSC Cori - using docker image
-```sh
-# On your machine 
-$ docker build -t=ateam_opt . # From inside the directory containing dockerfile
-$ docker run -it ateam_opt # Run the container interactively
-$ docker container ls # get the container id
-$ docker container stop $container_id
-$ docker login # login to dockerhub
-$ docker tag ateam_opt anirban6908/aibs_software_ani:ateam_opt # tag the image for upload
-$ docker push anirban6908/aibs_software_ani:ateam_opt # push the image
-
-# On NERSC
-$ shifterimg -v pull docker:anirban6908/aibs_software_ani:ateam_opt # pull the image (only needs to be done once)
-$ salloc -N 1 -C haswell -q debug --image anirban6908/aibs_software_ani:ateam_opt --volume="/global/homes/a/ani/docker/bmtk_docker_sims:/app" # Run the image interactively
-$ shifter /bin/bash # interactive bash shell in your shifter image
-
-# Add the following sbatch directives in the jobscript
-#SBATCH --image=docker:anirban6908/aibs_software_ani:ateam_opt
-#SBATCH --volume="/global/homes/a/ani/docker/bmtk_docker_sims:/app" # Mounting the current directory to the image volume
-``` 
-* BBP5
-```sh
-$ source activate CompNeuro
-$ script_repo=~/All-active-Workflow/examples/optim_scripts
-$ launch_optimjob --cell_id xyz --conda_env CompNeuro --ext_scripts $script_repo 
-$ submit_opt_jobs -f cell_data.csv -r $script_repo -c CompNeuro -m 2 # Launching multiple jobs from a csv file
-```
-
-
+</details>
