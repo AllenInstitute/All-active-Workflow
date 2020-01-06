@@ -1,0 +1,12 @@
+git+https://github.com/anirban6908/AllenSDK.git
+git+https://github.com/anirban6908/eFEL.git
+git+https://github.com/anirban6908/BluePyOpt.git@speedup_x
+git+https://github.com/anirban6908/bmtk.git
+git+https://auth_token:x-oauth-basic@github.com/anirban6908/ateam-tools.git
+git+https://auth_token:x-oauth-basic@github.com/anirban6908/All-active-Workflow.git
+neurom
+seaborn==0.9
+pandas==0.23.4
+awscli
+awscli-plugin-endpoint
+uncertainpy==1.2.0

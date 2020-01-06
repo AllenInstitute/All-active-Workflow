@@ -31,7 +31,22 @@ from matplotlib.ticker import MaxNLocator
 from scipy import stats
 from scipy.stats import distributions,find_repeats
 import warnings
+from sklearn.cluster import KMeans,DBSCAN
+from sklearn import metrics
+from sklearn.model_selection import GridSearchCV
+from ateamopt.analysis.cluster_score import silhouette_score,gap_statistic
 
+#def silhouette_score(estimator, X):
+#    cluster_labels = estimator.fit_predict(X)
+#    num_labels = len(set(cluster_labels))
+#    num_samples = X.shape[0]
+#    if num_labels == 1 or num_labels == num_samples:
+#        return -1
+#    else:
+#        return metrics.silhouette_score(X, cluster_labels)
+# 
+#def gap_statistic():
+#    pass          
 
 from IPython import get_ipython
 get_ipython().run_line_magic('matplotlib', 'inline')
@@ -157,6 +172,8 @@ def wilcoxon_v(x, y=None, zero_method="wilcox", correction=False,
         prob = distributions.norm.cdf(z)
 
     return WilcoxonResult(T, prob)
+
+
 class Allactive_Classification(object):
     def __init__(self, param_file_list=None,metadata_file_list=None,
                      model_perf_filelist=None,me_cluster_data=None,
@@ -511,11 +528,9 @@ class Allactive_Classification(object):
     
     @staticmethod
     def RF_classifier(X_df,y_df,feature_fields,target_field,
-#                  color_dict,
-#                  plot_confusion_mat=False,conf_mat_figname=None,
-#                  plot_feat_imp=False,feat_imp_figname=None
-                    ):
-        clf = RandomForestClassifier(n_estimators=100, random_state=0)
+                  plot_feat_imp=False,feat_imp_figname=None):
+        
+        clf = RandomForestClassifier(n_estimators=80, random_state=0)
         rf_pipeline = Pipeline([('scaler', StandardScaler()),
                                   ('random_forest', clf)])
         le = preprocessing.LabelEncoder()   
@@ -523,29 +538,41 @@ class Allactive_Classification(object):
         
         X_data = X_df.loc[:,feature_fields].values
         y_data = y_df['label_encoder'].values
+
         
-        skf = StratifiedKFold(n_splits=3,random_state=0) # K-fold train test split 
-        
+        n_splits = 3
+        skf = StratifiedKFold(n_splits=n_splits,random_state=0) # K-fold train test split 
         confusion_matrix_list = list()
         score_list = list()
+        delta_chance = 0
         feature_imp_df_list = list()
+        np.random.seed(0)
         
         for train_index,test_index in skf.split(X_data,y_data):
             X_train, X_test = X_data[train_index], X_data[test_index]
             y_train, y_test = y_data[train_index], y_data[test_index]
             rf_pipeline.fit(X_train, y_train)
             y_pred_test = rf_pipeline.predict(X_test)
-        
+            y_pred_chance = np.random.choice(y_test,len(y_test))
             confusion_matrix_rf = confusion_matrix(y_test, y_pred_test)
-#            confusion_matrix_list.append(confusion_matrix_rf)
             
-            score_list.append(accuracy_score(y_test, y_pred_test))
+            score = accuracy_score(y_test, y_pred_test)
+            score_list.append(score)
+            chance_score = accuracy_score(y_test, y_pred_chance)
+            
+            score_list.append(score)
+            if score == max(score_list):
+                best_y_pred = y_pred_test
+                best_y = y_test
+            
             classes = le.inverse_transform(unique_labels(y_test, \
                                         y_pred_test))
             df_conf_rf= pd.DataFrame(confusion_matrix_rf, classes,
                   classes)
             df_conf_rf=df_conf_rf.div(df_conf_rf.sum(axis=1),axis=0)
             confusion_matrix_list.append(df_conf_rf)
+
+            delta_chance += score - chance_score
         
             feature_imp = pd.Series(rf_pipeline.named_steps['random_forest'].feature_importances_,
                         index=feature_fields).sort_values(ascending=False)
@@ -558,22 +585,7 @@ class Allactive_Classification(object):
                     feature_dict['param_name'].append(param_name_)
             feature_imp_df = pd.DataFrame(feature_dict)
             feature_imp_df_list.append(feature_imp_df)
-        
-#        if plot_confusion_mat:
-#            sns.set(style="whitegrid")
-#            fig = plt.figure(figsize=(4,3))
-#            
-#            cmap = sns.cubehelix_palette(light=1, as_cmap=True)
-#            ax = sns.heatmap(df_conf_rf,cmap=cmap,alpha=0.8,linewidths=.1,
-#                             linecolor='lightgrey',vmin=0,vmax=1)
-#            fig.suptitle('Accuracy: %s %%'%score, fontsize = 10)
-#            ax.set_ylabel('True Label',fontsize=8)
-#            ax.set_xlabel('Predicted Label',fontsize=8)
-#            plt.setp(ax.get_xticklabels(),fontsize=8,rotation=60,ha='right')
-#            plt.setp(ax.get_yticklabels(),fontsize=8)
-#            fig.savefig(conf_mat_figname,bbox_inches='tight')
-#            plt.close(fig)
-#        
+
 #        
 #        if plot_feat_imp:
 #            fig,ax = plt.subplots(1, figsize = (8,6))
@@ -601,7 +613,7 @@ class Allactive_Classification(object):
 #            cbar.ax.set_yticklabels(feature_fields_cmap, fontsize=10)    
 #            fig.savefig(feat_imp_figname,bbox_inches='tight')
 #            plt.close(fig)
-        
+#        
         score_avg = np.mean(score_list)*100
         
         index,columns = confusion_matrix_list[0].index,\
@@ -610,16 +622,18 @@ class Allactive_Classification(object):
                                    axis=0)
         confusion_matrix_df = pd.DataFrame(data=conf_matrix,index=index,
                                            columns=columns)
+        delta_chance = int(delta_chance/n_splits*100)
+        best_y_pred,best_y = le.inverse_transform(y_pred_test),\
+                                    le.inverse_transform(y_test)
         
         param_imp_df = pd.concat(feature_imp_df_list,sort=False,ignore_index=True)
         param_group_dict = param_imp_df.groupby('param_name')['importance'].\
                 agg(np.median).to_dict()
         params_sorted =  sorted(param_group_dict, key=param_group_dict.get,
                                 reverse=True)
-        delta_chance = int(score_avg - 100.0/len(index))
         
-        return int(score_avg),confusion_matrix_df,param_imp_df,\
-                    params_sorted,delta_chance
+        return int(score_avg),confusion_matrix_df,delta_chance,best_y,best_y_pred,param_imp_df,\
+                    params_sorted
         
     
     @staticmethod
@@ -636,7 +650,6 @@ class Allactive_Classification(object):
         X_data = X_df.loc[:,feature_fields].values
         le = preprocessing.LabelEncoder()   
         y_df['label_encoder']= le.fit_transform(y_df[target_field])
-        y_data = y_df['label_encoder'].values
         
         umap_results = umap_pipeline.fit_transform(X_data)
         
@@ -691,23 +704,166 @@ class Allactive_Classification(object):
                                            color_list,marker_size)
         for ax_ in axes.ravel():
             ax_.axis('off')
-            ax_.get_xaxis().set_visible(False)
-            ax_.axes.get_yaxis().set_visible(False)
+
         
         if kwargs.get('legend'):
             g.fig.tight_layout(rect=[0, 0.1, .95, 1])
             g.fig.legend(handles = dummy_handles, labels = all_labels,
                          fontsize=16, loc= 'lower center',ncol=4,frameon=False)
-#        figtitle += ' (n=%s)'%len(data['Cell_id'].unique())
-#        g.fig.suptitle(figtitle,fontsize=16)
-#        
 
         g.fig.savefig(figname, bbox_inches='tight',dpi=100)
         plt.close(g.fig)    
     
+    @staticmethod
+    def elbow_method_kmeans(data_,max_clust_num=11,**kwargs):
+        from kneed import KneeLocator
+        
+        data_= StandardScaler().fit_transform(data_)
+        distortions = []
+        clust_num_arr = range(2, max_clust_num)
+        np.random.seed(0)
+        for k in clust_num_arr:
+            kmeans = KMeans(n_clusters=k,max_iter=2000)
+            kmeans.fit(data_)
+            distortions.append(kmeans.inertia_)
+        
+        kn = KneeLocator(clust_num_arr, distortions, curve='convex', direction='decreasing')
+        
+        sns.set(style='whitegrid')
+        fig,ax = plt.subplots(figsize=(2,2))
+        ax.plot(clust_num_arr, distortions)
+        ax.vlines(kn.knee, ax.get_ylim()[0], ax.get_ylim()[1], lw=.5)
+        ax.grid(False)
+        ax.set_xticks([2,4,6,8])
+        ax.set_title('Elbow method')
+        ax.set_xlabel('# of clusters')
+        ax.set_ylabel('Distortion')  
+        sns.despine(ax=ax)
+        figname = 'elbow_curve.pdf' if not kwargs.get('figname') else kwargs['figname']
+        figname = os.path.join('figures',figname)
+        fig.savefig(figname,bbox_inches='tight')
+        plt.close(fig)
+        
+        return kn.knee
     
     @staticmethod
-    def tsne_embedding(X_df,y_df,feature_fields,
+    def gridsearch_kmeans(data_,max_clust_num=11,**kwargs):
+        data_= StandardScaler().fit_transform(data_)
+        
+        clust_num_arr = range(2, max_clust_num)
+        param_grid = {"n_clusters": clust_num_arr,'max_iter':[2000]}
+        np.random.seed(0)
+        search_clust = GridSearchCV(
+            KMeans(),
+            param_grid=param_grid,
+            scoring=gap_statistic,
+            cv= [(slice(None), slice(None))]
+            )
+        search_clust.fit(data_)
+        score_arr = search_clust.cv_results_['mean_test_score']
+        optimal_cluster_num =  search_clust.best_estimator_.n_clusters
+        
+        sns.set(style='whitegrid')
+        fig,ax = plt.subplots(figsize=(2,2))
+        ax.plot(clust_num_arr, score_arr)
+        ax.vlines(optimal_cluster_num, ax.get_ylim()[0], ax.get_ylim()[1], lw=.5)
+        ax.grid(False)
+        ax.set_xticks([2,4,6,8])
+        ax.set_title('%s method'%search_clust.scoring.__name__)
+        ax.set_xlabel('# of clusters')
+        ax.set_ylabel('score')  
+        sns.despine(ax=ax)
+        figname = kwargs.get('figname') or 'score_curve.pdf'
+        figname = os.path.join('figures',figname)
+        fig.savefig(figname,bbox_inches='tight')
+        plt.close(fig)
+        return optimal_cluster_num
+        
+    @staticmethod
+    def draw_kmeans_decision_boundary(data_,nclusters,ax,h=5e-2):
+        
+        # Plot the decision boundary. For that, we will assign a color to each
+        scaler = StandardScaler()
+        data_= scaler.fit_transform(data_)
+        x_min, x_max = data_[:, 0].min() - 1, data_[:, 0].max() + 1
+        y_min, y_max = data_[:, 1].min() - 1, data_[:, 1].max() + 1
+        xx, yy = np.meshgrid(np.arange(x_min, x_max, h), np.arange(y_min, y_max, h))
+        
+        
+        kmeans = KMeans(n_clusters=nclusters)
+        kmeans.fit(data_)
+        Z = kmeans.predict(np.c_[xx.ravel(), yy.ravel()])
+        
+        inv_scaler_transform = scaler.inverse_transform(np.c_[xx.ravel(), yy.ravel()])
+        xx = inv_scaler_transform[:,0].reshape(xx.shape)
+        yy = inv_scaler_transform[:,1].reshape(yy.shape)
+        Z = Z.reshape(xx.shape)
+        
+        ax.imshow(Z, interpolation='nearest',
+           extent=(xx.min(), xx.max(), yy.min(), yy.max()),
+           cmap=plt.cm.Set1,alpha=.15,
+           aspect='auto', origin='lower')
+#        ax.contour(xx,yy,Z,colors='k',alpha=.5,linewidths=.5)
+        return ax
+    
+    
+    @staticmethod
+    def gridsearch_dbscan(data_,**kwargs):
+        data_= StandardScaler().fit_transform(data_)
+
+        eps_arr = np.linspace(1e-3,5,100)
+        min_samples_arr = range(20) or kwargs.get('min_samples_arr')
+        
+        param_grid = {"eps": eps_arr,'min_samples':min_samples_arr}
+        np.random.seed(1)
+        search_clust = GridSearchCV(
+            DBSCAN(),
+            n_jobs=2,
+            param_grid=param_grid,
+            scoring=silhouette_score,
+            cv= [(slice(None), slice(None))]
+            )
+        search_clust.fit(data_)
+        eps_best,min_sample_best = search_clust.best_estimator_.eps,\
+            search_clust.best_estimator_.min_samples
+        return eps_best,min_sample_best
+    
+    @staticmethod
+    def draw_dbscan_cluster(data_,ax,eps,min_samples):
+        data_= StandardScaler().fit_transform(data_)
+
+        # Plot the decision boundary. For that, we will assign a color to each
+        db = DBSCAN(eps=eps, min_samples=min_samples).fit(data_)
+        core_samples_mask = np.zeros_like(db.labels_, dtype=bool)
+        core_samples_mask[db.core_sample_indices_] = True
+        labels = db.labels_
+        
+        # Number of clusters in labels, ignoring noise if present.
+        n_clusters_ = len(set(labels)) - (1 if -1 in labels else 0)
+        n_noise_ = list(labels).count(-1)
+        
+        # Black removed and is used for noise instead.
+        unique_labels = set(labels)
+        colors = [plt.cm.Spectral(each)
+                  for each in np.linspace(0, 1, len(unique_labels))]
+        
+        for k, col in zip(unique_labels, colors):
+            if k == -1:
+                # Black used for noise.
+                col = [0, 0, 0, 1]
+        
+            class_member_mask = (labels == k)
+        
+            xy = data_[class_member_mask & core_samples_mask]
+            ax.plot(xy[:, 0], xy[:, 1], 'o', markerfacecolor=tuple(col),
+                     markeredgecolor='k', markersize=12)
+        
+            xy = data_[class_member_mask & ~core_samples_mask]
+            ax.plot(xy[:, 0], xy[:, 1], 'o', markerfacecolor=tuple(col),
+                     markeredgecolor='k', markersize=8)
+        return ax
+    
+    def tsne_embedding(self,X_df,y_df,feature_fields,
                        target_field,marker_field='Cell_id',
                        col_var = None,figname='tsne_plot.pdf',
                        figtitle = '',
@@ -770,21 +926,37 @@ class Allactive_Classification(object):
         dummy_handles,all_labels = reformat_legend(axes,sorted_target,
                                            color_list,marker_size)
         for ax_ in axes.ravel():
-#            ax_.grid(False)
             ax_.axis('off')
-            ax_.get_xaxis().set_visible(False)
-            ax_.axes.get_yaxis().set_visible(False)
         
         if kwargs.get('legend'):
             g.fig.tight_layout(rect=[0, 0.1, .95, 1])
             g.fig.legend(handles = dummy_handles, labels = all_labels,
                          fontsize=16, loc= 'lower center',ncol=4,frameon=False)
-#        figtitle += ' (n=%s)'%len(data['Cell_id'].unique())
-#        g.fig.suptitle(figtitle,fontsize=16)
-#        
-
-        g.fig.savefig(figname, bbox_inches='tight',dpi=500)
+        
+        if kwargs.get('run_kmeans'):
+            opt_cluster_curve = kwargs.get('opt_cluster_curve') or 'score_curve.pdf'
+            nclusters = self.gridsearch_kmeans(data.loc[:,['x-tsne','y-tsne']].values,
+                                               figname=opt_cluster_curve)
+        
+            if not col_var:
+                ax_ = axes.ravel()[0]
+                ax_ = self.draw_kmeans_decision_boundary(data.loc[:,['x-tsne','y-tsne']].values,
+                                             nclusters,ax_)
+        elif kwargs.get('run_dbscan'):
+            fig,ax_ = plt.subplots()
+            min_samples = kwargs.get('min_samples_arr')
+            eps,min_samples=self.gridsearch_dbscan(data.loc[:,['x-tsne','y-tsne']].values,
+                                                   min_samples_arr=min_samples)
+            ax_ = self.draw_dbscan_cluster(data.loc[:,['x-tsne','y-tsne']].values,ax_,
+                                                     eps,min_samples)
+            ax_.axis('off')
+            fig.savefig('figures/dbscan.pdf',bbox_inches='tight')
+            plt.close(fig)
+        g.fig.savefig(figname, bbox_inches='tight')
         plt.close(g.fig)
+        
+        
+        
         
     @staticmethod
     def calc_param_dist(param_df):
@@ -1162,7 +1334,7 @@ class Allactive_Classification(object):
         median_efeature = np.median(select_df['value_exp'].values)
         feature_iqr = iqr(select_df['value_exp'].values)
         
-        plt.style.use('seaborn-whitegrid')
+        sns.set(style='whitegrid')
         fig,ax = plt.subplots(figsize=(5,5),dpi=100)
         ax.plot([min_efeature_amp,max_efeature_amp], [min_efeature_amp,max_efeature_amp],
                  color = 'k', lw = .5)
@@ -1181,13 +1353,12 @@ class Allactive_Classification(object):
         yaxis_label = 'Model ' + axis_label \
                 if efeature != 'AP_amplitude_from_voltagebase' \
                         else 'Model \n' + axis_label
-        ax.set_xlabel(xaxis_label,fontsize=18)
-        ax.set_ylabel(yaxis_label,fontsize=18)
+        ax.set_xlabel(xaxis_label,fontsize=24)
+        ax.set_ylabel(yaxis_label,fontsize=24)
         ax.locator_params(nbins=3, axis='x')
         ax.locator_params(nbins=3, axis='y')
-
-        ax.spines['right'].set_visible(False)
-        ax.spines['top'].set_visible(False)
+        
+        sns.despine(ax=ax)
 #        if title != '':
 #            ax.set_title(title,fontsize=18)
 #        else:
@@ -1197,7 +1368,6 @@ class Allactive_Classification(object):
             ax.set_xlim([xlim_minus,xlim_plus])
             ax.set_ylim([xlim_minus,xlim_plus])
             
-#        ax.set_frame_on = False
         handles = [scat_aa,scat_peri]
         labels = [h.get_label() for h in handles]
 
@@ -1206,8 +1376,8 @@ class Allactive_Classification(object):
                             loc = 'lower center', ncol=2,fontsize=18)
             fig.tight_layout(rect=[0, 0.05, 1, 0.95])
         
-        plt.setp(ax.get_xticklabels(),fontsize=16)
-        plt.setp(ax.get_yticklabels(),fontsize=16)
+        plt.setp(ax.get_xticklabels(),fontsize=20)
+        plt.setp(ax.get_yticklabels(),fontsize=20)
         fig.savefig(figname,bbox_inches = 'tight')
         plt.close(fig)
     

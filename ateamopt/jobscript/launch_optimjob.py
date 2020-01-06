@@ -54,8 +54,8 @@ def create_optim_job(args):
     utility.create_dirpath(job_dir)
     os.chdir(job_dir)  # Change Working directory
 
-    cty_config_path = 'user_config/cell_config.json'
-    job_config_path = 'user_config/job_config.json'
+    cty_config_path = os.path.join('user_config','cell_config.json')
+    job_config_path = os.path.join('user_config','job_config.json')
     highlevel_jobconfig_path = 'high_level_job_config.json'
     stage_tracker_path = 'stage_tracker_config.json'
 
@@ -112,17 +112,17 @@ def create_optim_job(args):
     # Extract ephys data
     ephys_dir = highlevel_job_props['ephys_dir']
     non_standard_nwb = highlevel_job_props['non_standard_nwb']
-    acceptable_stimtypes = highlevel_job_props['acceptable_stimtypes']
+    feature_stimtypes = highlevel_job_props['feature_stimtypes']
 
     highlevel_job_props['nwb_path'] = cell_metadata['nwb_path']
     highlevel_job_props['swc_path'] = cell_metadata['swc_path']
     nwb_handler = NwbExtractor(cell_id, nwb_path=highlevel_job_props['nwb_path'])
     data_source = highlevel_job_props["data_source"]
     if data_source == "lims":
-        ephys_data_path, stimmap_filename = nwb_handler.save_cell_data(acceptable_stimtypes, 
+        ephys_data_path, stimmap_filename = nwb_handler.save_cell_data(feature_stimtypes, 
                                    non_standard_nwb=non_standard_nwb,ephys_dir=ephys_dir)
     else:
-        ephys_data_path, stimmap_filename = nwb_handler.save_cell_data_web(acceptable_stimtypes, 
+        ephys_data_path, stimmap_filename = nwb_handler.save_cell_data_web(feature_stimtypes, 
                                    non_standard_nwb=non_standard_nwb,ephys_dir=ephys_dir)
     feature_names_path = highlevel_job_props['feature_names_path']
     protocol_dict,feature_dict = nwb_handler.get_efeatures_all(feature_names_path,
