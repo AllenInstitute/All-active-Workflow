@@ -1,11 +1,3 @@
-<style>
-    pre {
-    white-space: pre !important;
-    overflow-y: scroll !important;
-    max-height: 50vh !important;
-    }
-</style>
-
 [![Build Status](https://travis-ci.com/anirban6908/All-active-Workflow.svg?token=93Twb9jDYFzVNoM9gSjr&branch=master)](https://travis-ci.com/anirban6908/All-active-Workflow)
 [![Generic badge](https://img.shields.io/badge/License-Allen_Institute-yellow.svg)](https://alleninstitute.org/legal/terms-use/)
 
@@ -18,8 +10,8 @@ Genetic algorithm in action: **selection** + **evaluation** + **evolution**
 ![alt text](examples/visualization/animations/GA_evolution_animation/movie.gif "all-active model optimization") 
 
 #### Launching optimization jobs
-```
-$ source activate conda-env # Environment with all dependencies
+```sh
+$ source activate conda-env # conda environment with all dependencies
 $ launch_optimjob --help # Look at the options
 $ launch_optimjob --input_json job_config.json
 ```
