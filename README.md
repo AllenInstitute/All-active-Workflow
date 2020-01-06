@@ -1,13 +1,14 @@
+<style>
+    pre {
+    white-space: pre !important;
+    overflow-y: scroll !important;
+    max-height: 50vh !important;
+    }
+</style>
+
 [![Build Status](https://travis-ci.com/anirban6908/All-active-Workflow.svg?token=93Twb9jDYFzVNoM9gSjr&branch=master)](https://travis-ci.com/anirban6908/All-active-Workflow)
 [![Generic badge](https://img.shields.io/badge/License-Allen_Institute-yellow.svg)](https://alleninstitute.org/legal/terms-use/)
 
-<style>
-pre {
-  white-space: pre !important;
-  overflow-y: scroll !important;
-  max-height: 50vh !important;
-}
-</style>
 
 # All-active-Workflow
 Creating the code base for All-active Model generation and analysis written on top of Bluepyopt
@@ -22,9 +23,10 @@ $ source activate conda-env # Environment with all dependencies
 $ launch_optimjob --help # Look at the options
 $ launch_optimjob --input_json job_config.json
 ```
-#### Configurable optimization config file : job_config.json
+#### Configurable optimization 
+<details> <summary>job_config.json</summary>
 
-```
+```json
 {
     "cty_config": {
         "cell_id": "483101699"
@@ -163,3 +165,4 @@ $ launch_optimjob --input_json job_config.json
 }
 
 ```
+</details>
