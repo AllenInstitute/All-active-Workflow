@@ -13,10 +13,10 @@ Genetic algorithm in action: **selection** + **evaluation** + **evolution**
 ```bash
 pip install git+https://github.com/AllenInstitute/All-active-Workflow # install directly from the repository
 ```
-
+or
 ```bash
 git clone https://github.com/AllenInstitute/All-active-Workflow # clone repository from github
-cd All-active All-active-Workflow
+cd All-active-Workflow
 pip install -e . # install in editable mode
 ```
 
