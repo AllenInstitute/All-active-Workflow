@@ -14,6 +14,11 @@ from neurom.core.types import tree_type_checker, NEURITES
 from ateamopt.utils import utility
 import seaborn as sns
 from matplotlib import collections  as mc
+from mpl_toolkits.mplot3d.art3d import Line3DCollection
+
+swc_dict = {4: 'apical dendrite', 3: 'basal dendrite',
+                      2: 'axon', 1: 'soma'}
+
 
 class MorphHandler(object):
     def __init__(self, morph_file, cell_id=None):
@@ -169,19 +174,6 @@ class MorphHandler(object):
         z = rad*z + zCenter
         return (x, y, z)
 
-    def draw_onion(self,ax,color,soma_loc):
-#        fig,ax=plt.subplots()
-        mu,sigma = 0,1
-        y = np.linspace(-5,5,50)
-        x = 5/(np.sqrt(2*np.pi)*sigma)*np.exp(-(y-mu)**2/(2*sigma**2))
-        x1 = x +soma_loc[0]
-        x2 = -x + soma_loc[0]
-        y += soma_loc[2]
-        ax.plot(x1,y,color=color,lw=.1)
-        ax.plot(x2,y,color=color,lw=.1)
-        ax.fill(np.concatenate([x1,np.flip(x2,axis=0)]),np.concatenate([y,np.flip(y,axis=0)]),
-                facecolor=color)
-        return ax
 
     def add_synapses(self,section_points,n_syn,theta,axis_of_rot,ax,**kwargs):
         color = 'lime' if not kwargs.get('color') else kwargs.get('color')
@@ -198,7 +190,7 @@ class MorphHandler(object):
 
 
     def draw_morphology_2D(self, theta, axis_of_rot, reject_axon=True,
-                           soma_loc= np.array([0,0,0]),**kwargs):
+                           soma_loc= np.array([0,0]),**kwargs):
         color_dict = kwargs.get('color_dict')
         if not color_dict:
             color_dict = {4: 'orange', 3: 'darkred', 2: 'royalblue', 1: 'lightgrey'}
@@ -207,9 +199,9 @@ class MorphHandler(object):
         morph_dist_arr = kwargs.get('morph_dist_arr')
         if morph_dist_arr:
             _,max_dist = np.min(morph_dist_arr),np.max(morph_dist_arr)
-            lw_min = .2
+            lw_min = kwargs.get('lw_min') or .2
         lw_max = kwargs.get('lw') or 1
-        fig,ax = kwargs.get('fig'),kwargs.get('ax')
+        ax = kwargs.get('ax')
         
         if not ax:
             sns.set(style='whitegrid')
@@ -224,7 +216,7 @@ class MorphHandler(object):
             [nx_rot, ny_rot, nz_rot] = self.rotate3D_point([nx, ny, nz],
                                                            theta, axis_of_rot)
             nx_rot += soma_loc[0]
-            nz_rot += soma_loc[2]
+            nz_rot += soma_loc[1]
             
             for c in self.morph.children_of(comp_):
                 cx, cy, cz = self.shift_origin(
@@ -242,7 +234,7 @@ class MorphHandler(object):
                 
                 # Shift the origin to the desired soma location
                 cx_rot += soma_loc[0]
-                cz_rot += soma_loc[2]
+                cz_rot += soma_loc[1]
 
                 
                 linewidths.append(lw)
@@ -254,46 +246,52 @@ class MorphHandler(object):
         ax.add_collection(lc)            
         shifted_soma = self.shift_origin(self.soma_coord)
         
-        if kwargs.pop('draw_onion',None):
-            ax = self.draw_onion(ax,color_dict[1],soma_loc)
-            
-        else:    
-            shifted_soma[0] += soma_loc[0]
-            shifted_soma[2] += soma_loc[2]
-            ax.scatter(shifted_soma[0], shifted_soma[2],
-                   marker='o', alpha=1,edgecolor=color_dict[1],linewidth=.2,
-                   s=10,color=color_dict[1])
+        
+        soma_rad = kwargs.get('soma_rad') or 40
+        shifted_soma[0] += soma_loc[0]
+        shifted_soma[2] += soma_loc[1]
+        ax.scatter(shifted_soma[0], shifted_soma[2],
+               marker='o', alpha=1,edgecolor=color_dict[1],linewidth=lw_max,
+               s=soma_rad,color=color_dict[1])
+        
+        if kwargs.get('axis_off'):
+            ax.axis('off')
+        return ax
 
-#        ax.axis('off')
-        return fig,ax
 
-
-    def draw_morphology(self, theta, axis_of_rot, reject_axon=True, **kwargs):
+    def draw_morphology(self, theta, axis_of_rot, reject_axon=True,soma_loc= np.array([0,0,0]),
+                        **kwargs):
         color_dict = kwargs.get('color_dict')
         if not color_dict:
-            color_dict = {4: 'orange', 3: 'darkred', 2: 'royalblue', 1: 'lightgrey'}
-        label_dict = {4: 'apical dendrite', 3: 'basal dendrite',
-                      2: 'axon', 1: 'soma'}
-
+            color_dict = {4: 'orange', 3: 'darkred', 2: 'royalblue', 1: 'dimgrey'}
+        
         morph_dist_arr = kwargs.get('morph_dist_arr')
         if morph_dist_arr:
             _,max_dist = np.min(morph_dist_arr),np.max(morph_dist_arr)
-            lw_min = .2
+            lw_min = kwargs.get('lw_min') or .2
+        lw_max = kwargs.get('lw') or 1
         
-        sns.set(style='whitegrid')
-        fig = plt.figure(figsize=(4, 8), dpi=100)
+        ax = kwargs.get('ax')
         
-        ax = fig.add_subplot(111, projection='3d')
+        if not ax:
+            sns.set(style='whitegrid')
+            fig = plt.figure(figsize=(4, 8), dpi=100)        
+            ax = fig.add_subplot(111, projection='3d')
         ax.axis('equal')
 
         all_x, all_y, all_z = [], [], []
-
+        all_lines =[]
+        linewidths,colors = [],[]
+        
         for comp_ in self.morph.compartment_list:
             if reject_axon and comp_['type'] == 2:
                 continue
             nx, ny, nz = self.shift_origin(np.array([comp_['x'], comp_['y'], comp_['z']]))
             [nx_rot, ny_rot, nz_rot] = self.rotate3D_point([nx, ny, nz],
                                                            theta, axis_of_rot)
+            nx_rot += soma_loc[0]
+            ny_rot += soma_loc[1]
+            nz_rot += soma_loc[2]
             for c in self.morph.children_of(comp_):
                 cx, cy, cz = self.shift_origin(
                     np.array([c['x'], c['y'], c['z']]))
@@ -302,45 +300,56 @@ class MorphHandler(object):
                 # Make neurites thinner with distance
                 if morph_dist_arr:
                     dist_ = np.linalg.norm(np.array([cx, cy, cz]))
-                    lw = lw_min+(1-lw_min)*(max_dist-dist_)/max_dist
-#                    lw = lw_min+(1-lw_min)*np.exp(-dist_/100)
+                    lw = lw_min+(lw_max-lw_min)*(max_dist-dist_)/max_dist
                 else:
-                    lw=.8
-                ax.plot([nx_rot, cx_rot], [ny_rot, cy_rot],
-                        [nz_rot, cz_rot],
-                        color=color_dict[comp_['type']], lw=lw, alpha=.8,
-                        label=label_dict[comp_['type']])
-
+                    lw=lw_max
+                    
+                
+                # Shift the origin to the desired soma location
+                cx_rot += soma_loc[0]
+                cy_rot += soma_loc[1]
+                cz_rot += soma_loc[2]
+                
+                
+                linewidths.append(lw)
+                point1,point2 = (nx_rot,ny_rot,nz_rot),(cx_rot,cy_rot,cz_rot)
+                all_lines.append([point1,point2])
                 all_x.extend((nx_rot, cx_rot))
                 all_y.extend((ny_rot, cy_rot))
                 all_z.extend((nz_rot, cz_rot))
+                colors.append(color_dict[comp_['type']])
 
+        lc = Line3DCollection(all_lines, colors=colors, linewidths=linewidths,alpha=1)
+        ax.add_collection(lc) 
+        
         shifted_soma = self.shift_origin(self.soma_coord)
-        shifted_soma_coord = (shifted_soma[0], shifted_soma[1],
-                              shifted_soma[2])
+        shifted_soma_coord = (shifted_soma[0]+soma_loc[0], shifted_soma[1]+soma_loc[1],
+                              shifted_soma[2]+soma_loc[2])
 
+        soma_rad = kwargs.get('soma_rad') or 40
         if kwargs.pop('draw_sphere', None):
             (xs, ys, zs) = self.draw_sphere(shifted_soma_coord)
             ax.plot_surface(xs, ys, zs, rstride=1, cstride=1,color=color_dict[1],
-                            linewidth=0,alpha=.8)
+                            linewidth=0,alpha=1)
             
         else:
-            ax.scatter(shifted_soma[0], shifted_soma[1],
-                       shifted_soma[2],
-                       marker='o', alpha=0.8,edgecolor=color_dict[1],linewidth=.2,
-                       s=40,color=color_dict[1])
+            ax.scatter(*shifted_soma_coord,marker='o', alpha=1,edgecolor=color_dict[1],
+                       linewidth=lw_max,s=soma_rad,color=color_dict[1])
 
         all_x_min, all_x_max = min(all_x), max(all_x)
         all_y_min, all_y_max = min(all_y), max(all_y)
         all_z_min, all_z_max = min(all_z), max(all_z)
+        ax.set_xlim3d([all_x_min-5,all_x_max+5])
+        ax.set_ylim3d([all_y_min-5,all_y_max+5])
+        ax.set_zlim3d([all_z_min-5,all_z_max+5])
+        
         z_mid = (all_z_min+all_z_max)*0.5
         view_base = np.max([all_x_min, all_y_min, all_x_max, all_y_max])
         elev_angle = np.arctan(z_mid/view_base)
-        ax.axis('off')
+        
+        if kwargs.get('axis_off'):
+            ax.axis('off')
         ax.view_init(elev=elev_angle, azim=90)
-#        ax.set_facecolor('k')
-#        xlims = ax.get_xlim()
-#        ylims = ax.get_ylim()
-#        zlims = ax.get_zlim()
-        return fig,ax,elev_angle
+
+        return ax,elev_angle
 
