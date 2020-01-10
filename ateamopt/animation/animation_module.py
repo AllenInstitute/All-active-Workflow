@@ -5,21 +5,10 @@ import matplotlib.pyplot as plt
 
 logger = logging.getLogger(__name__)
 
-
-#def cleanup_files(animation_func):
-#    def inner(*args,**kwargs):
-#        animation_func(*args,**kwargs)
-#        files = args[1]
-#        for f in files:
-#            os.remove(f)
-#    return inner
+#Adopted from https://zulko.wordpress.com/2012/09/29/animate-your-3d-plots-with-pythons-matplotlib/
 
 class Animation(object):
-    """
-    Adopted from https://zulko.wordpress.com/2012/09/29/animate-your-3d-plots-with-pythons-matplotlib/
-
-    """
-
+    
     def __init__(self,movie_name = 'movie.gif', movie_path = None):
         self.anim_filename = movie_name
         self.anim_format = movie_name.split('.')[1]
@@ -76,9 +65,12 @@ class Animation(object):
         logger.debug(command[output_ext])
         output_ext = os.path.splitext(self.anim_path)[1]
         os.system(command[output_ext])
+        
+        for f in files:
+            os.remove(f)
+        
 
-#    @cleanup_files
-    def make_gif(self,files,delay=100, repeat=True,**kwargs):
+    def make_gif(self,files,delay=20, repeat=True,**kwargs):
         """
         Uses imageMagick to produce an animated .gif from a list of
         picture files.
@@ -87,6 +79,9 @@ class Animation(object):
         loop = -1 if repeat else 0
         os.system('convert -delay %d -loop %d %s %s'
                   %(delay,loop," ".join(files),self.anim_path))
+        
+        for f in files:
+            os.remove(f)
 
     def make_strip(self,files,**kwargs):
         """

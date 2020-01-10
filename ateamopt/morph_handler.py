@@ -227,7 +227,6 @@ class MorphHandler(object):
                 if morph_dist_arr:
                     dist_ = np.linalg.norm(np.array([cx, cy, cz]))
                     lw = lw_min+(lw_max-lw_min)*(max_dist-dist_)/max_dist
-#                    lw = lw_min+(1-lw_min)*np.exp(-dist_/100)
                 else:
                     lw=lw_max
                 
@@ -275,7 +274,7 @@ class MorphHandler(object):
         
         if not ax:
             sns.set(style='whitegrid')
-            fig = plt.figure(figsize=(4, 8), dpi=100)        
+            fig = plt.figure(figsize=(3, 8), dpi=100)        
             ax = fig.add_subplot(111, projection='3d')
         ax.axis('equal')
 
@@ -310,6 +309,9 @@ class MorphHandler(object):
                 cy_rot += soma_loc[1]
                 cz_rot += soma_loc[2]
                 
+                # For animation: axis limits are automatically determined here
+                ax.plot([nx_rot, cx_rot], [ny_rot, cy_rot],[nz_rot, cz_rot],
+                        color=color_dict[comp_['type']], lw=lw, alpha=1)
                 
                 linewidths.append(lw)
                 point1,point2 = (nx_rot,ny_rot,nz_rot),(cx_rot,cy_rot,cz_rot)
@@ -319,8 +321,9 @@ class MorphHandler(object):
                 all_z.extend((nz_rot, cz_rot))
                 colors.append(color_dict[comp_['type']])
 
-        lc = Line3DCollection(all_lines, colors=colors, linewidths=linewidths,alpha=1)
-        ax.add_collection(lc) 
+        # For efficiently plotting a large no. of lines
+#        lc = Line3DCollection(all_lines, colors=colors, linewidths=linewidths,alpha=1)
+#        ax.add_collection(lc) 
         
         shifted_soma = self.shift_origin(self.soma_coord)
         shifted_soma_coord = (shifted_soma[0]+soma_loc[0], shifted_soma[1]+soma_loc[1],
@@ -339,9 +342,11 @@ class MorphHandler(object):
         all_x_min, all_x_max = min(all_x), max(all_x)
         all_y_min, all_y_max = min(all_y), max(all_y)
         all_z_min, all_z_max = min(all_z), max(all_z)
-        ax.set_xlim3d([all_x_min-5,all_x_max+5])
-        ax.set_ylim3d([all_y_min-5,all_y_max+5])
-        ax.set_zlim3d([all_z_min-5,all_z_max+5])
+        
+        # Set axis limits for Line3DCollection
+#        ax.set_xlim([all_x_min,all_x_max])
+#        ax.set_ylim([all_y_min,all_y_max])
+#        ax.set_zlim([all_z_min,all_z_max])
         
         z_mid = (all_z_min+all_z_max)*0.5
         view_base = np.max([all_x_min, all_y_min, all_x_max, all_y_max])
