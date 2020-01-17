@@ -202,6 +202,7 @@ class MorphHandler(object):
             lw_min = kwargs.get('lw_min') or .2
         lw_max = kwargs.get('lw') or 1
         ax = kwargs.get('ax')
+        alpha = kwargs.get('alpha') or 1
         
         if not ax:
             sns.set(style='whitegrid')
@@ -241,7 +242,7 @@ class MorphHandler(object):
                 all_lines.append([all_lines_x,all_lines_y])
                 colors.append(color_dict[comp_['type']])
 
-        lc = mc.LineCollection(all_lines, colors=colors, linewidths=linewidths,alpha=1)
+        lc = mc.LineCollection(all_lines, colors=colors, linewidths=linewidths,alpha=alpha)
         ax.add_collection(lc)            
         shifted_soma = self.shift_origin(self.soma_coord)
         
@@ -250,7 +251,7 @@ class MorphHandler(object):
         shifted_soma[0] += soma_loc[0]
         shifted_soma[2] += soma_loc[1]
         ax.scatter(shifted_soma[0], shifted_soma[2],
-               marker='o', alpha=1,edgecolor=color_dict[1],linewidth=lw_max,
+               marker='o', alpha=alpha,edgecolor=color_dict[1],linewidth=lw_max,
                s=soma_rad,color=color_dict[1])
         
         if kwargs.get('axis_off'):
@@ -269,7 +270,7 @@ class MorphHandler(object):
             _,max_dist = np.min(morph_dist_arr),np.max(morph_dist_arr)
             lw_min = kwargs.get('lw_min') or .2
         lw_max = kwargs.get('lw') or 1
-        
+        alpha = kwargs.get('alpha') or 1
         ax = kwargs.get('ax')
         
         if not ax:
@@ -311,7 +312,7 @@ class MorphHandler(object):
                 
                 # For animation: axis limits are automatically determined here
                 ax.plot([nx_rot, cx_rot], [ny_rot, cy_rot],[nz_rot, cz_rot],
-                        color=color_dict[comp_['type']], lw=lw, alpha=1)
+                        color=color_dict[comp_['type']], lw=lw, alpha=alpha)
                 
                 linewidths.append(lw)
                 point1,point2 = (nx_rot,ny_rot,nz_rot),(cx_rot,cy_rot,cz_rot)
@@ -333,10 +334,10 @@ class MorphHandler(object):
         if kwargs.pop('draw_sphere', None):
             (xs, ys, zs) = self.draw_sphere(shifted_soma_coord)
             ax.plot_surface(xs, ys, zs, rstride=1, cstride=1,color=color_dict[1],
-                            linewidth=0,alpha=1)
+                            linewidth=0,alpha=alpha)
             
         else:
-            ax.scatter(*shifted_soma_coord,marker='o', alpha=1,edgecolor=color_dict[1],
+            ax.scatter(*shifted_soma_coord,marker='o', alpha=alpha,edgecolor=color_dict[1],
                        linewidth=lw_max,s=soma_rad,color=color_dict[1])
 
         all_x_min, all_x_max = min(all_x), max(all_x)

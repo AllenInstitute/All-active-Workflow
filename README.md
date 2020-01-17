@@ -3,11 +3,22 @@
 
 
 # All-active-Workflow
-Creating the code base for All-active Model generation and analysis written on top of Bluepyopt
-
-Genetic algorithm in action: **selection** + **evaluation** + **evolution**
+Creating the code base for All-active Model generation and analysis written on top of Bluepyopt.
+* Genetic algorithm in action: **selection** + **evaluation** + **evolution**
 
 ![alt text](examples/visualization/animations/GA_evolution_animation/movie.gif "all-active model optimization") 
+
+## Dependencies
+
+* Python 3.5+
+* Neuron 7.5 (compiled with Python support)
+* BluePyOpt
+* eFEL
+* AllenSDK
+* NeuroM
+* Pandas
+* Seaborn
+
 
 ## Installation
 ```bash
@@ -22,6 +33,7 @@ pip install -e . # install in editable mode
 
 
 ## Quickstart: Launching optimization jobs
+In a Unix environment :
 ```bash
 $ source activate conda-env # conda environment with all dependencies
 $ launch_optimjob --help # Look at the options
