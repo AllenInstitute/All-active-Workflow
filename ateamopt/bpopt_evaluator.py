@@ -157,7 +157,11 @@ class Bpopt_Evaluator(object):
         return cell
 
     def define_protocols(self):
-        """Define protocols"""
+        """Define protocols, loading definitions from self.protocol_path
+        Returns: 
+            protocols (dict of str: bluepyopt.ephys.protocols.SweepProtocol):
+                protocols indexed by name
+        """
         ephys_dir = self.ephys_dir
         protocol_definitions = json.load(open(self.protocol_path))
 
@@ -253,7 +257,7 @@ class Bpopt_Evaluator(object):
         return protocols
 
     def define_fitness_calculator(self, fitness_protocols):
-        """Define fitness calculator"""
+        """Define fitness calculator, loading definitions from self.feature_path"""
 
         # TODO: add bAP stimulus
         objectives = []

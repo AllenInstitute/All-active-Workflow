@@ -35,8 +35,14 @@ dryrun_config.update(dryrun_analysis_config)
 class JobModule(object):
 
     def __init__(self, script_name='Jobscript.sh'):
-
         self.script_name = script_name
+
+    def submit_job(self):
+        os.system('chmod +x %s' % self.script_name)
+        process = Popen(['%s', '%s' % (self.submit_cmd, self.script_name)],
+                        stdout=PIPE, stderr=PIPE)
+        stdout, stderr = process.communicate()
+        logger.debug(stderr)
 
     def adjust_template(self, match_line, replace_line, add=False,
                         partial_match=False, add_in_place=False):
@@ -198,12 +204,6 @@ class Slurm_JobModule(JobModule):
                                  add=True)
             self.adjust_template('#SBATCH --mail-user', '', partial_match=True)
 
-    def submit_job(self):
-        os.system('chmod +x %s' % self.script_name)
-        process = Popen(['%s', '%s' % (self.submit_cmd, self.script_name)],
-                        stdout=PIPE, stderr=PIPE)
-        stdout, stderr = process.communicate()
-        logger.debug(stderr)
 
 
 class PBS_JobModule(JobModule):
@@ -239,6 +239,9 @@ class PBS_JobModule(JobModule):
 
         seed_string = ''.join(
             ['%s ' % seed_ for seed_ in stage_jobconfig['seed']])
+
+        if logger.getEffectiveLevel() < logging.DEBUG:
+            batchjob_string = batchjob_string.replace('set -e', 'set -ex')
 
         # High level job config
         batchjob_string = batchjob_string.replace('conda_env',
@@ -282,13 +285,6 @@ class PBS_JobModule(JobModule):
         with open(self.script_name, "w") as batchjob_script:
             batchjob_script.write(batchjob_string)
 
-    def submit_job(self):
-
-        os.system('chmod +x %s' % self.script_name)
-        process = Popen(['%s', '%s' % (self.submit_cmd, self.script_name)],
-                        stdout=PIPE, stderr=PIPE)
-        stdout, stderr = process.communicate()
-        logger.debug(stderr)
 
 
 class SGE_JobModule(JobModule):
@@ -308,10 +304,3 @@ class SGE_JobModule(JobModule):
         with open(self.script_name, "w") as batchjob_script:
             batchjob_script.write(batchjob_string)
 
-    def submit_job(self):
-
-        os.system('chmod +x %s' % self.script_name)
-        process = Popen(['%s', '%s' % (self.submit_cmd, self.script_name)],
-                        stdout=PIPE, stderr=PIPE)
-        stdout, stderr = process.communicate()
-        logger.debug(stderr)
