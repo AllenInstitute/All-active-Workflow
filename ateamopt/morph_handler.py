@@ -19,6 +19,7 @@ from mpl_toolkits.mplot3d.art3d import Line3DCollection
 swc_dict = {4: 'apical dendrite', 3: 'basal dendrite',
                       2: 'axon', 1: 'soma'}
 
+dark_grey = (128/255,128/255,128/255)
 
 class MorphHandler(object):
     def __init__(self, morph_file, cell_id=None):
@@ -193,7 +194,7 @@ class MorphHandler(object):
                            soma_loc= np.array([0,0]),**kwargs):
         color_dict = kwargs.get('color_dict')
         if not color_dict:
-            color_dict = {4: 'orange', 3: 'darkred', 2: 'royalblue', 1: 'lightgrey'}
+            color_dict = {4: 'orange', 3: 'darkred', 2: 'royalblue', 1: dark_grey}
 
 
         morph_dist_arr = kwargs.get('morph_dist_arr')
