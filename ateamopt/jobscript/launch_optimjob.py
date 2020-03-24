@@ -45,10 +45,8 @@ def create_optim_job(args):
         stage_job_props[ii] = convert_paths(stage_job_prop)
     highlevel_job_props = convert_paths(highlevel_job_props)
 
-    try:
-        job_dir = os.path.join(os.getcwd(), highlevel_job_props['job_dir'])
-    except:
-        job_dir = os.path.join(os.getcwd(), str(cell_id))
+    job_dir = os.path.join(os.getcwd(), highlevel_job_props.get('job_dir', str(cell_id))
+
     highlevel_job_props['job_dir'] = job_dir
 
     utility.create_dirpath(job_dir)
@@ -120,13 +118,13 @@ def create_optim_job(args):
     data_source = highlevel_job_props["data_source"]
     if data_source == "lims":
         ephys_data_path, stimmap_filename = nwb_handler.save_cell_data(feature_stimtypes, 
-                                   non_standard_nwb=non_standard_nwb,ephys_dir=ephys_dir)
+                                   non_standard_nwb=non_standard_nwb, ephys_dir=ephys_dir)
     else:
         ephys_data_path, stimmap_filename = nwb_handler.save_cell_data_web(feature_stimtypes, 
-                                   non_standard_nwb=non_standard_nwb,ephys_dir=ephys_dir)
+                                   non_standard_nwb=non_standard_nwb, ephys_dir=ephys_dir)
     feature_names_path = highlevel_job_props['feature_names_path']
-    protocol_dict,feature_dict = nwb_handler.get_efeatures_all(feature_names_path,
-                                          ephys_data_path,stimmap_filename)
+    protocol_dict = nwb_handler.get_stim_map(os.path.join(ephys_data_path, stimmap_filename))
+    feature_dict = nwb_handler.get_efeatures_all(feature_names_path, ephys_data_path, protocol_dict)
     
     feature_dict = correct_feat_statistics(feature_dict,protocol_dict)
     all_protocols_filename = os.path.join(ephys_data_path,'all_protocols.json')
