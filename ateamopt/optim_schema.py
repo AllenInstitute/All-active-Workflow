@@ -147,13 +147,13 @@ class Optim_Config(ags.ArgSchema):
     seed = ags.fields.Int(description='')
     parameters = ags.fields.InputFile(description="")
     mechanism = ags.fields.InputFile(description="")
-    released_aa_mechanism = ags.fields.InputFile(description="")
     train_features = ags.fields.InputFile(description="")
     test_features = ags.fields.InputFile(description="")
     train_protocols = ags.fields.InputFile(description="")
     released_aa_model_dict = ags.fields.Dict(description="")
-    released_aa_model = ags.fields.InputFile(description="")
-    released_peri_model = ags.fields.InputFile(description="")
-    released_peri_mechanism = ags.fields.InputFile(description="")
+    released_aa_model = ags.fields.InputFile(description="", allow_none=True)
+    released_aa_mechanism = ags.fields.InputFile(description="",allow_none=True)
+    released_peri_model = ags.fields.InputFile(description="", allow_none=True)
+    released_peri_mechanism = ags.fields.InputFile(description="", allow_none=True)
 
 

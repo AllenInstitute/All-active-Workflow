@@ -129,9 +129,19 @@ def save_compute_statistics(opt_logbook,output_csv_filename):
         colnames = ['gen','nevals','avg','std','min','max','cp_loc']
         col_dtypes = {'gen':int,'nevals':int,'avg': float, 'std': float, 'min': float,
                       'max': float, 'cp_loc':str}
-        logbook = pd.read_fwf(opt_logbook,names=colnames,
-                              header=0)
-        logbook_filtered = logbook[logbook['gen'] != 'gen']
+        logbook_list = []
+
+        with open(opt_logbook,'r') as fo:
+            lines = fo.readlines()
+            for line in lines:
+                if not line.startswith('gen'):
+                    split_line = [word.strip() for word in line.split('\t')]
+                    combined_entry = [word_ for word_ in split_line.pop().split(' ') if word_ != '']
+                    split_line.extend(combined_entry)
+                    logbook_list.append(dict(zip(colnames,split_line)))
+                    
+        logbook = pd.DataFrame(logbook_list)
+        logbook_filtered = logbook.astype(dtype=col_dtypes)
         nan_seed_indices = logbook_filtered.index[logbook_filtered.cp_loc.isnull()].tolist()
         actual_seed_indices = [idx+1 for idx in nan_seed_indices]
         nan_cp_locations = logbook_filtered['cp_loc'][actual_seed_indices].tolist()
