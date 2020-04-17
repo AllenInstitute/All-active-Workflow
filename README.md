@@ -3,7 +3,8 @@
 
 
 # All-active-Workflow
-Creating the code base for All-active Model generation and analysis written on top of Bluepyopt.
+Code base for all-active model generation, evaluation and analysis (main engine: bluepyopt). Method developed and present in Nandi et al. (2020): https://www.biorxiv.org/content/10.1101/2020.04.09.030239v1
+Main developers: Ani Nandi, Werner van Geit, Tom Chartrand and Costas A. Anastassiou
 * Genetic algorithm in action: **selection** + **evaluation** + **evolution**
 
 ![alt text](examples/visualization/animations/GA_evolution_animation/movie.gif "all-active model optimization") 
