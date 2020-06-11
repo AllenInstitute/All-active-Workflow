@@ -13,7 +13,7 @@ from neurom import morphmath as mm
 from neurom.core.types import tree_type_checker, NEURITES
 from ateamopt.utils import utility
 import seaborn as sns
-from matplotlib import collections  as mc
+from matplotlib import collections as mc
 from mpl_toolkits.mplot3d.art3d import Line3DCollection
 
 swc_dict = {4: 'apical dendrite', 3: 'basal dendrite',
@@ -278,7 +278,7 @@ class MorphHandler(object):
             sns.set(style='whitegrid')
             fig = plt.figure(figsize=(3, 8), dpi=100)        
             ax = fig.add_subplot(111, projection='3d')
-        ax.axis('equal')
+        #ax.axis('equal')
 
         all_x, all_y, all_z = [], [], []
         all_lines =[]

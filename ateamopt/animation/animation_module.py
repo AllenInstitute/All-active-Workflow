@@ -33,7 +33,7 @@ class Animation(object):
 
         files = []
         ax.figure.set_size_inches(width,height)
-        ax.axis('equal')
+        #ax.axis('equal')
 
         for i,angle in enumerate(angles):
             
