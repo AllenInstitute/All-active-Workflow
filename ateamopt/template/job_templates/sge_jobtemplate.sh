@@ -22,7 +22,7 @@ export IPYTHONDIR=$PWD/.ipython
 export IPYTHON_PROFILE=sge.$JOB_ID
 
 # Start ipcontroller and engines
-ipcontroller --init --ip='*' --ipyp_db --ping=30000 --profile=${IPYTHON_PROFILE} &
+ipcontroller --init --ip='*' --ipyparallel_db --ping=30000 --profile=${IPYTHON_PROFILE} &
 sleep 10
 mpiexec -np nengines --output-filename $LOGS/engine ipengine --timeout=3000 --profile=${IPYTHON_PROFILE} &
 sleep 10
@@ -38,3 +38,5 @@ done
 
 wait $pids
 
+# Analyze results
+python analysis_script --input_json stage_job_config.json

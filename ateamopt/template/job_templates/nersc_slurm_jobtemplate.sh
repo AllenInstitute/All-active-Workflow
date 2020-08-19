@@ -39,7 +39,7 @@ export IPYTHONDIR=${PWD}/.ipython
 export IPYTHON_PROFILE=slurm.${SLURM_JOBID}
 
 # Start ipcontroller and engines
-ipcontroller --init --ip='*' --ipyp_db --ping=30000 --profile=${IPYTHON_PROFILE} &
+ipcontroller --init --ip='*' --ipyparallel_db --ping=30000 --profile=${IPYTHON_PROFILE} &
 sleep 10
 srun -n nengines --output="${LOGS}/engine_%j_%2t.out" ipengine --timeout=3000 --profile=${IPYTHON_PROFILE} &
 sleep 10

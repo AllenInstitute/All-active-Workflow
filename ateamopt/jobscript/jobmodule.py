@@ -7,10 +7,11 @@ import collections
 
 logger = logging.getLogger(__name__)
 
+
 def update(orig_dict, new_dict):
     for key, val in new_dict.items():
         if isinstance(val, collections.Mapping):
-            tmp = update(orig_dict.get(key, { }), val)
+            tmp = update(orig_dict.get(key, {}), val)
             orig_dict[key] = tmp
         elif isinstance(val, list):
             orig_dict[key] = (orig_dict.get(key, []) + val)
@@ -26,9 +27,10 @@ def script_decorator(func):
     return func_wrapper
 
 
-dryrun_config = dict(dict(optim_config = dict(nnodes=1,  nprocs=2,nengines=2, jobtime='10:00')),
-                           offspring_size=2, max_ngen=2, cp_backup_dir=None)
-dryrun_analysis_config = dict(analysis_config=dict(nnodes=4,nprocs=4,nengines=16, jobtime='1:00:00'))
+dryrun_config = dict(dict(optim_config=dict(nnodes=1,  nprocs=2, nengines=2, jobtime='10:00')),
+                     offspring_size=2, max_ngen=2, cp_backup_dir=None)
+dryrun_analysis_config = dict(analysis_config=dict(
+    nnodes=4, nprocs=4, nengines=16, jobtime='1:00:00'))
 dryrun_config.update(dryrun_analysis_config)
 
 
@@ -40,6 +42,9 @@ class JobModule(object):
 
     def adjust_template(self, match_line, replace_line, add=False,
                         partial_match=False, add_in_place=False):
+        """
+        Replace the matching line fully with replace line in the job template
+        """
         with open(self.script_name, "r") as in_file:
             buf = in_file.readlines()
 
@@ -142,7 +147,7 @@ class test_JobModule(JobModule):
         highlevel_job_props = job_config['highlevel_jobconfig']
         analysis_config = stage_jobconfig['analysis_config']
         optim_config = stage_jobconfig['optim_config']
-        stage_jobconfig = update(stage_jobconfig,dryrun_config)
+        stage_jobconfig = update(stage_jobconfig, dryrun_config)
         stage_jobconfig['optim_config']['ipyparallel'] = False
         stage_jobconfig['analysis_config']['ipyparallel'] = False
         stage_jobconfig['seed'] = [1]
@@ -179,24 +184,81 @@ class Slurm_JobModule(JobModule):
         self.script_template = utility.locate_template_file(script_template)
         self.submit_cmd = 'sbatch'
 
-    def script_generator(self):
+    def script_generator(self, chain_job='chain_job.sh', **kwargs):
         job_config = utility.load_json(self.job_config_path)
+        stage_jobconfig = job_config['stage_jobconfig']
+
+        highlevel_job_props = job_config['highlevel_jobconfig']
+        analysis_flag = kwargs.get('analysis')  # this means prepare a batch script for analysis
+
+        if highlevel_job_props['dryrun']:
+            if 'cori' in self.machine:
+                # Cori specific : each node has 32 cores
+                dryrun_config['optim_config']['nengines'] = dryrun_config['optim_config']['nnodes'] * 32
+                dryrun_config['optim_config']['qos'] = 'debug'
+                dryrun_config['analysis_config']['nnodes'] = 1
+                dryrun_config['analysis_config']['nengines'] = dryrun_config['analysis_config']['nnodes'] * 32
+                dryrun_config['analysis_config']['qos'] = 'debug'
+
+            stage_jobconfig = update(stage_jobconfig, dryrun_config)
+            job_config['stage_jobconfig'] = stage_jobconfig
+            utility.save_json(self.job_config_path, job_config)
+
+        analysis_config = stage_jobconfig['analysis_config']
         with open(self.script_template, 'r') as job_template:
             batchjob_string = job_template.read()
 
-        batchjob_string = batchjob_string.replace('conda_env', self.conda_env)
+        jobname = '%s.%s' % (os.path.basename(highlevel_job_props['job_dir']),
+                             stage_jobconfig['stage_name'])
+        if analysis_flag:
+            jobname += '.analysis'
+
+        seed_string = ''.join(
+            ['%s ' % seed_ for seed_ in stage_jobconfig['seed']])
+
+        # High level job config
+        batchjob_string = re.sub('conda_env', highlevel_job_props['conda_env'], batchjob_string)
+        batchjob_string = re.sub('jobname', jobname, batchjob_string)
+        batchjob_string = re.sub('jobscript_name', self.script_name, batchjob_string)
+        if highlevel_job_props.get('email'):
+            batchjob_string = re.sub('email', highlevel_job_props['email'], batchjob_string)
+
+        # Only related to optimization
+        batchjob_string = re.sub('seed_list', seed_string, batchjob_string)
+        batchjob_string = re.sub('analysis_script',
+                                 analysis_config['main_script'], batchjob_string)
+
+        batchjob_string = re.sub('job_config_path', self.job_config_path, batchjob_string)
+
+        # Job config analysis vs optimization
+        if analysis_flag:
+            slurm_job_config = analysis_config
+            batchjob_string = re.sub('# Run[\S\s]*pids', '', batchjob_string)
+
+        else:
+            slurm_job_config = stage_jobconfig['optim_config']
+
+            # Within the batch job script change the analysis launch to batch analysis
+            if analysis_config.get('ipyparallel') and stage_jobconfig['run_hof_analysis']:
+                analysis_jobname = kwargs.get('analysis_jobname')
+                batchjob_string = re.sub('# Analyze[\S\s]*.json', 'sbatch %s' % analysis_jobname,
+                                         batchjob_string)
+
+        # if there is a next stage chain the job
+        if bool(kwargs.get('next_stage_job_config')):
+            batchjob_string += 'bash %s\n' % chain_job
+
+        slurm_job_parameters = ['ipyparallel_db', 'qos', 'main_script', 'jobtime',
+                                'nengines']
+        if 'cori' in self.machine:
+            slurm_job_parameters.append('nnodes')  # On cori you need to specify nodes
+
+        for slurm_param in slurm_job_parameters:
+            batchjob_string = re.sub(
+                slurm_param, str(slurm_job_config[slurm_param]), batchjob_string)
+
         with open(self.script_name, "w") as batchjob_script:
             batchjob_script.write(batchjob_string)
-
-        if 'cori' in self.machine:
-            self.adjust_template('#SBATCH -p prod', '#SBATCH -q regular')
-            self.adjust_template('#SBATCH -C cpu|nvme', '#SBATCH -C haswell')
-            self.adjust_template('#SBATCH -A proj36', '#SBATCH -L SCRATCH')
-            self.adjust_template('#SBATCH -n 256', '#SBATCH -N 8')
-            Path_append = 'export PATH="/global/common/software/m2043/AIBS_Opt/software/x86_64/bin:$PATH"'
-            self.adjust_template('source activate %s' % self.conda_env, Path_append,
-                                 add=True)
-            self.adjust_template('#SBATCH --mail-user', '', partial_match=True)
 
     def submit_job(self):
         os.system('chmod +x %s' % self.script_name)
@@ -208,76 +270,73 @@ class Slurm_JobModule(JobModule):
 
 class PBS_JobModule(JobModule):
     def __init__(self, script_template, job_config_path, script_name='batch_job.sh'):
-        self.job_config_path = job_config_path
+
         super(PBS_JobModule, self).__init__(script_name)
+        self.job_config_path = job_config_path
         self.script_template = utility.locate_template_file(script_template)
         self.submit_cmd = 'qsub'
 
     def script_generator(self, chain_job='chain_job.sh', **kwargs):
         job_config = utility.load_json(self.job_config_path)
         stage_jobconfig = job_config['stage_jobconfig']
-        analysis_config = stage_jobconfig['analysis_config']
 
         highlevel_job_props = job_config['highlevel_jobconfig']
         analysis_flag = kwargs.get('analysis')  # this means prepare a batch script for analysis
-        
+
         if highlevel_job_props['dryrun']:
-#            for option, option_val in dryrun_config.items():
-#                if stage_jobconfig.get(option):
-#                    stage_jobconfig[option] = option_val
-            stage_jobconfig = update(stage_jobconfig,dryrun_config)
+            stage_jobconfig = update(stage_jobconfig, dryrun_config)
             job_config['stage_jobconfig'] = stage_jobconfig
             utility.save_json(self.job_config_path, job_config)
 
+        analysis_config = stage_jobconfig['analysis_config']
         with open(self.script_template, 'r') as job_template:
             batchjob_string = job_template.read()
 
         jobname = '%s.%s' % (os.path.basename(highlevel_job_props['job_dir']),
                              stage_jobconfig['stage_name'])
-        if analysis_flag: 
+        if analysis_flag:
             jobname += '.analysis'
 
         seed_string = ''.join(
             ['%s ' % seed_ for seed_ in stage_jobconfig['seed']])
 
         # High level job config
-        batchjob_string = batchjob_string.replace('conda_env',
-                                                  highlevel_job_props['conda_env'])
-        batchjob_string = batchjob_string.replace('jobname', jobname)
-        batchjob_string = batchjob_string.replace('jobscript_name', self.script_name)
-        
-        
+        batchjob_string = re.sub('conda_env', highlevel_job_props['conda_env'], batchjob_string)
+        batchjob_string = re.sub('jobname', jobname, batchjob_string)
+        batchjob_string = re.sub('jobscript_name', self.script_name, batchjob_string)
+        if highlevel_job_props.get('email'):
+            batchjob_string = re.sub('email', highlevel_job_props['email'], batchjob_string)
+
         # Only related to optimization
-        batchjob_string = batchjob_string.replace('seed_list', seed_string)
-        batchjob_string = batchjob_string.replace('analysis_script',
-                                  analysis_config['main_script'])
-        
-        batchjob_string = batchjob_string.replace('job_config_path',
-                                                  self.job_config_path)
-        
+        batchjob_string = re.sub('seed_list', seed_string, batchjob_string)
+        batchjob_string = re.sub(
+            'analysis_script', analysis_config['main_script'], batchjob_string)
+
+        batchjob_string = re.sub('job_config_path', self.job_config_path, batchjob_string)
+
         # Job config analysis vs optimization
         if analysis_flag:
             hpc_job_config = analysis_config
-            batchjob_string = re.sub('# Run[\S\s]*pids', '',batchjob_string)
-            if bool(kwargs.get('next_stage_job_config')):
-                batchjob_string += 'bash %s\n' % chain_job 
+            batchjob_string = re.sub('# Run[\S\s]*pids', '', batchjob_string)
+
         else:
             hpc_job_config = stage_jobconfig['optim_config']
-            if analysis_config.get('ipyparallel'):
+
+            # Within the batch job script change the analysis launch to batch analysis
+            if analysis_config.get('ipyparallel') and stage_jobconfig['run_hof_analysis']:
                 analysis_jobname = kwargs.get('analysis_jobname')
-                batchjob_string = re.sub('# Analyze[\S\s]*.json', 'qsub %s'%analysis_jobname,
-                                     batchjob_string)
-            elif bool(kwargs.get('next_stage_job_config')):
-                batchjob_string += 'bash %s\n' % chain_job
-            
-        hpc_job_parameters = ['jobmem','ipyparallel_db','qos','main_script','jobtime',
-                              'error_stream','output_stream','nnodes','nprocs','nengines']
-        
+                batchjob_string = re.sub('# Analyze[\S\s]*.json', 'qsub %s' % analysis_jobname,
+                                         batchjob_string)
+
+        # if there is a next stage chain the job
+        if bool(kwargs.get('next_stage_job_config')):
+            batchjob_string += 'bash %s\n' % chain_job
+
+        hpc_job_parameters = ['jobmem', 'ipyparallel_db', 'qos', 'main_script', 'jobtime',
+                              'error_stream', 'output_stream', 'nnodes', 'nprocs', 'nengines']
+
         for hpc_param in hpc_job_parameters:
-            batchjob_string = batchjob_string.replace(hpc_param,str(hpc_job_config[hpc_param]))
-        
-        
-            
+            batchjob_string = re.sub(hpc_param, str(hpc_job_config[hpc_param]), batchjob_string)
 
         with open(self.script_name, "w") as batchjob_script:
             batchjob_script.write(batchjob_string)
@@ -291,27 +350,6 @@ class PBS_JobModule(JobModule):
         logger.debug(stderr)
 
 
-class SGE_JobModule(JobModule):
-    def __init__(self, script_template, machine, script_name='batch_job.sh',
-                 conda_env='ateam_opt'):
-
-        super(SGE_JobModule, self).__init__(machine, script_name)
-        self.conda_env = conda_env
-        self.script_template = utility.locate_template_file(script_template)
-        self.submit_cmd = 'qsub'
-
-    def script_generator(self):
-        with open(self.script_template, 'r') as job_template:
-            batchjob_string = job_template.read()
-
-        batchjob_string = batchjob_string.replace('conda_env', self.conda_env)
-        with open(self.script_name, "w") as batchjob_script:
-            batchjob_script.write(batchjob_string)
-
-    def submit_job(self):
-
-        os.system('chmod +x %s' % self.script_name)
-        process = Popen(['%s', '%s' % (self.submit_cmd, self.script_name)],
-                        stdout=PIPE, stderr=PIPE)
-        stdout, stderr = process.communicate()
-        logger.debug(stderr)
+class SGE_JobModule(PBS_JobModule):
+    def __init__(self, script_template, job_config_path, script_name='batch_job.sh'):
+        super(SGE_JobModule, self).__init__(script_template, job_config_path, script_name)

@@ -9,7 +9,7 @@ import shutil
 from ateamopt.jobscript.jobmodule import ChainSubJob
 import argschema as ags
 from ateamopt.optim_schema import Launch_Config
-from ateamopt.optim_config_rules import correct_feat_statistics
+from ateamopt.optim_config_rules import correct_feat_statistics, correct_voltage_feat_std
 from ateamopt.morph_handler import MorphHandler
 import subprocess
 import bluepyopt
@@ -54,8 +54,8 @@ def create_optim_job(args):
     utility.create_dirpath(job_dir)
     os.chdir(job_dir)  # Change Working directory
 
-    cty_config_path = os.path.join('user_config','cell_config.json')
-    job_config_path = os.path.join('user_config','job_config.json')
+    cty_config_path = os.path.join('user_config', 'cell_config.json')
+    job_config_path = os.path.join('user_config', 'job_config.json')
     highlevel_jobconfig_path = 'high_level_job_config.json'
     stage_tracker_path = 'stage_tracker_config.json'
 
@@ -86,7 +86,7 @@ def create_optim_job(args):
         cty_props['bluepyopt_tag'] = bpopt_commitID
     except:
         pass
-    
+
     # pickling consistency depends on pandas version
     pd_version = pd.__version__
     cty_props['pandas_version'] = pd_version
@@ -119,20 +119,20 @@ def create_optim_job(args):
     nwb_handler = NwbExtractor(cell_id, nwb_path=highlevel_job_props['nwb_path'])
     data_source = highlevel_job_props["data_source"]
     if data_source == "lims":
-        ephys_data_path, stimmap_filename = nwb_handler.save_cell_data(feature_stimtypes, 
-                                   non_standard_nwb=non_standard_nwb,ephys_dir=ephys_dir)
+        ephys_data_path, stimmap_filename = nwb_handler.save_cell_data(feature_stimtypes,
+                                                                       non_standard_nwb=non_standard_nwb, ephys_dir=ephys_dir)
     else:
-        ephys_data_path, stimmap_filename = nwb_handler.save_cell_data_web(feature_stimtypes, 
-                                   non_standard_nwb=non_standard_nwb,ephys_dir=ephys_dir)
+        ephys_data_path, stimmap_filename = nwb_handler.save_cell_data_web(feature_stimtypes,
+                                                                           non_standard_nwb=non_standard_nwb, ephys_dir=ephys_dir)
     feature_names_path = highlevel_job_props['feature_names_path']
-    protocol_dict,feature_dict = nwb_handler.get_efeatures_all(feature_names_path,
-                                          ephys_data_path,stimmap_filename)
-    
-    feature_dict = correct_feat_statistics(feature_dict,protocol_dict)
-    all_protocols_filename = os.path.join(ephys_data_path,'all_protocols.json')
-    all_features_filename = os.path.join(ephys_data_path,'all_features.json')
-    utility.save_json(all_protocols_filename,protocol_dict)
-    utility.save_json(all_features_filename,feature_dict)
+    protocol_dict, feature_dict = nwb_handler.get_efeatures_all(feature_names_path,
+                                                                ephys_data_path, stimmap_filename)
+
+    feature_dict = correct_voltage_feat_std(feature_dict)
+    all_protocols_filename = os.path.join(ephys_data_path, 'all_protocols.json')
+    all_features_filename = os.path.join(ephys_data_path, 'all_features.json')
+    utility.save_json(all_protocols_filename, protocol_dict)
+    utility.save_json(all_features_filename, feature_dict)
     highlevel_job_props['stimmap_file'] = os.path.abspath(stimmap_filename)
     highlevel_job_props['machine'] = cell_metadata['machine']
     highlevel_job_props['log_level'] = args['log_level']
