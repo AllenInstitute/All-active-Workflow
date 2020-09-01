@@ -12,14 +12,14 @@ select_feat_dict = {'spike_proto': 2,
                     'nospike_proto': 0}
 
 
-def filter_feat_proto_active(features_dict, protocols_dict,**kwargs):
+def filter_feat_proto_active(features_dict, protocols_dict, **kwargs):
     """
         Filter the features and protocols for the final
         stage of optimization
     """
     spiking_proto_dict = OrderedDict()
     non_spiking_proto_dict = OrderedDict()
-    training_stimtype_reject = ['LongDCSupra','Ramp', 'Short_Square_Triple', 'Noise']
+    training_stimtype_reject = ['LongDCSupra', 'Ramp', 'Short_Square_Triple', 'Noise']
 
     for feat_key, feat_val in features_dict.items():
         if any(reject_stim in feat_key for reject_stim in training_stimtype_reject):
@@ -177,46 +177,48 @@ def filter_feat_proto_passive(features_dict, protocols_dict, **kwargs):
 
 def correct_voltage_feat_std(features_dict,
                              feature_correct_list=['voltage_base', 'steady_state_voltage',
-                                                   'decay_time_constant_after_stim']):
+                                                   'voltage_after_stim', 'decay_time_constant_after_stim']):
     feature_stat = defaultdict(list)
-    feature_key = []
+    feature_keys = []
 
     for key, val in features_dict.items():
         for feat_name in val['soma'].keys():
-            if val['soma'][feat_name][1] == 0:
+            feature_val_list = val['soma'][feat_name][-1]
+            if len(feature_val_list) == 1:  # this means no repetition
+                # if the feature is in the correction list add it to the std correction
                 if feat_name in feature_correct_list:
                     feature_stat[feat_name].append(val['soma'][feat_name][0])
-                    feature_key.append(key)
-                else:
-                    mean = val['soma'][feat_name][0]
-                    val['soma'][feat_name][1] = 0.05*np.abs(mean) if mean != 0 else .05
+                    feature_keys.append(key)
+                # else:
+                #     mean = val['soma'][feat_name][0]
+                #     val['soma'][feat_name][1] = 0.05*np.abs(mean) if mean != 0 else .05
 
-    feature_key = list(set(feature_key))
+    feature_keys = list(set(feature_keys))
 
-    for feat_key in feature_key:
+    for feat_key in feature_keys:
         for feat_name in feature_correct_list:
             if feat_name in features_dict[feat_key]['soma'].keys():
-                features_dict[feat_key]['soma'][feat_name][1] = \
-                    np.std(feature_stat[feat_name])
+                features_dict[feat_key]['soma'][feat_name][1] = np.std(
+                    feature_stat[feat_name]) or 0.05
 
     return features_dict
 
 
 def correct_feat_statistics(features_dict, protocols_dict, feat_reject_list=['peak_time'],
-                    subthresh_features=['voltage_deflection_vb_ssse',
-                    'decay_time_constant_after_stim'],suprathresh_features=['Spikecount']):
-    
+                            subthresh_features=['voltage_deflection_vb_ssse',
+                                                'decay_time_constant_after_stim'], suprathresh_features=['Spikecount']):
+
     feature_stat = defaultdict(list)
     protocol_stat = defaultdict(list)
     feature_revision_stims = defaultdict(list)
-    
-    for key,val in features_dict.items():
-        if key.rsplit('_',1)[0] == 'LongDC':
+
+    for key, val in features_dict.items():
+        if key.rsplit('_', 1)[0] == 'LongDC':
             for feat_name in val['soma'].keys():
                 if feat_name not in feat_reject_list:
-                    if feat_name in subthresh_features and val['soma']['Spikecount'][0]>0:
+                    if feat_name in subthresh_features and val['soma']['Spikecount'][0] > 0:
                         continue
-                    elif feat_name in suprathresh_features and val['soma']['Spikecount'][0]==0:
+                    elif feat_name in suprathresh_features and val['soma']['Spikecount'][0] == 0:
                         continue
                     feature_val_list = val['soma'][feat_name][-1]
                     stim_amp = protocols_dict[key]['stimuli'][0]['amp']
@@ -237,15 +239,15 @@ def correct_feat_statistics(features_dict, protocols_dict, feat_reject_list=['pe
             val = features_dict[stim]
 #            if stim.rsplit('_',1)[0] == 'LongDC':
 #                if feat_name in val['soma'].keys():
-            
-            # Don't correct subthresh specific features for spiking traces 
-            if feat_name in subthresh_features and val['soma']['Spikecount'][0]>0:
+
+            # Don't correct subthresh specific features for spiking traces
+            if feat_name in subthresh_features and val['soma']['Spikecount'][0] > 0:
                 continue
-            # Don't correct suprathresh specific features for non-spiking traces 
-            elif feat_name in suprathresh_features and val['soma']['Spikecount'][0]==0:
+            # Don't correct suprathresh specific features for non-spiking traces
+            elif feat_name in suprathresh_features and val['soma']['Spikecount'][0] == 0:
                 continue
 #                    stim_amp = protocols_dict[key]['stimuli'][0]['amp']
-#                    se_mean = (results.get_prediction([1,stim_amp]).se_mean[0] or 
+#                    se_mean = (results.get_prediction([1,stim_amp]).se_mean[0] or
 #                               0.05*np.abs(val['soma'][feat_name][0]) or 0.05)
             # Use rmse only when there is no repetition within and across sweeps
             resid_rmse = np.sqrt(results.mse_resid/results.df_resid)
@@ -257,16 +259,15 @@ def correct_feat_statistics(features_dict, protocols_dict, feat_reject_list=['pe
     return features_dict
 
 
-
-def adjust_param_bounds(model_param, model_param_prev,tolerance=0.5):
-    lb_,ub_ = model_param['bounds']
+def adjust_param_bounds(model_param, model_param_prev, tolerance=0.5):
+    lb_, ub_ = model_param['bounds']
     value = model_param_prev['value']
     if tolerance > 0:
-        lb = max(value - tolerance*abs(value),lb_)
-        ub = min(value + tolerance*abs(value),ub_)
-        adjusted_bound = [lb,ub]
+        lb = max(value - tolerance*abs(value), lb_)
+        ub = min(value + tolerance*abs(value), ub_)
+        adjusted_bound = [lb, ub]
         model_param['bounds'] = adjusted_bound
-    elif tolerance == 0: # freeze parameters for next stage
+    elif tolerance == 0:  # freeze parameters for next stage
         del model_param['bounds']
         model_param['value'] = value
     else:

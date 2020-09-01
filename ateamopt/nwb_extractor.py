@@ -51,7 +51,7 @@ class NwbExtractor(object):
             stim_stop = time[nonzero_indices[-1]]
             if 'DC' in trace_name:
                 hold_curr = np.mean(stimulus_trace[nonzero_indices[-1]+1000:
-                                            nonzero_indices[-1] + 20000])*1e12
+                                                   nonzero_indices[-1] + 20000])*1e12
             else:
                 hold_curr = 0
 
@@ -71,7 +71,7 @@ class NwbExtractor(object):
         stim_stop = start_time + duration
         stim_amp_start = 1e12 * stimulus_trace[start_idx]
         stim_amp_end = amplitude
-        tot_duration = min(time[-1],stim_stop+1.0) # 1sec beyond stim end
+        tot_duration = min(time[-1], stim_stop+1.0)  # 1sec beyond stim end
         hold_curr = 0.0
         return start_time, stim_stop, stim_amp_start, stim_amp_end, tot_duration, hold_curr
 
@@ -237,8 +237,8 @@ class NwbExtractor(object):
                     ',',
                     ': '))
 
-    def save_cell_data_web(self,acceptable_stimtypes,non_standard_nwb = False,
-                       ephys_dir='preprocessed',**kwargs):
+    def save_cell_data_web(self, acceptable_stimtypes, non_standard_nwb=False,
+                           ephys_dir='preprocessed', **kwargs):
 
         bpopt_stimtype_map = utility.bpopt_stimtype_map
         distinct_id_map = utility.aibs_stimname_map
@@ -246,7 +246,7 @@ class NwbExtractor(object):
 
         stim_map = defaultdict(list)
         stim_sweep_map = {}
-        output_dir = os.path.join(os.getcwd(),ephys_dir)
+        output_dir = os.path.join(os.getcwd(), ephys_dir)
         utility.create_dirpath(output_dir)
 
         sweep_numbers = kwargs.get('sweep_numbers') or nwb_file.get_sweep_numbers()
@@ -271,36 +271,36 @@ class NwbExtractor(object):
 
                 time = np.arange(0, len(stimulus_trace)) / sampling_rate
                 trace_name = '%s_%d' % (
-                distinct_id_map[stim_type], sweep_number)
+                    distinct_id_map[stim_type], sweep_number)
 
                 if non_standard_nwb:
                     calc_stimparams_func = self.calc_stimparams_nonstandard
                 else:
                     calc_stimparams_func = self.calc_stimparams
-                
+
                 stim_start, stim_stop, stim_amp_start, stim_amp_end, \
-                    tot_duration,hold_curr = calc_stimparams_func(
-                            time, stimulus_trace,trace_name)
-                
+                    tot_duration, hold_curr = calc_stimparams_func(
+                        time, stimulus_trace, trace_name)
+
                 response_trace_short_filename = '%s.%s' % (trace_name, 'txt')
                 response_trace_filename = os.path.join(
                     output_dir, response_trace_short_filename)
 
-                time *= 1e3 # in ms
-                response_trace *= 1e3 # in mV
+                time *= 1e3  # in ms
+                response_trace *= 1e3  # in mV
                 response_trace = utility.correct_junction_potential(response_trace,
-                                                            self.junction_potential)
-                stimulus_trace *= 1e9 
-                
+                                                                    self.junction_potential)
+                stimulus_trace *= 1e9
+
                 # downsampling
-                time,stimulus_trace,response_trace = utility.downsample_ephys_data\
-                                (time,stimulus_trace,response_trace)
-                
+                time, stimulus_trace, response_trace = utility.downsample_ephys_data(
+                    time, stimulus_trace, response_trace)
+
                 if stim_type in utility.bpopt_current_play_stimtypes:
                     with open(response_trace_filename, 'wb') as response_trace_file:
                         np.savetxt(response_trace_file,
-                                  np.transpose([time, response_trace,stimulus_trace]))
-                    
+                                   np.transpose([time, response_trace, stimulus_trace]))
+
                 else:
                     with open(response_trace_filename, 'wb') as response_trace_file:
                         np.savetxt(response_trace_file,
@@ -312,7 +312,7 @@ class NwbExtractor(object):
                     trace_name,
                     bpopt_stimtype_map[stim_type],
                     holding_current/1e12,
-                    stim_amp_start /1e12,
+                    stim_amp_start / 1e12,
                     stim_amp_end/1e12,
                     stim_start * 1e3,
                     stim_stop * 1e3,
@@ -322,8 +322,8 @@ class NwbExtractor(object):
                 stim_sweep_map[trace_name] = sweep_number
 
         logger.debug('Writing stimmap.csv ...')
-        stim_reps_sweep_map,stimmap_filename = self.write_stimmap_csv(stim_map, 
-                                                  output_dir, stim_sweep_map)
+        stim_reps_sweep_map, stimmap_filename = self.write_stimmap_csv(stim_map,
+                                                                       output_dir, stim_sweep_map)
 
         self.write_provenance(
             output_dir,
@@ -331,7 +331,7 @@ class NwbExtractor(object):
             stim_sweep_map,
             stim_reps_sweep_map)
 
-        return output_dir,stimmap_filename
+        return output_dir, stimmap_filename
 
     def save_cell_data(self, acceptable_stimtypes, non_standard_nwb=False,
                        ephys_dir='preprocessed'):
@@ -434,7 +434,6 @@ class NwbExtractor(object):
 
         return output_dir, stimmap_filename
 
-
     @staticmethod
     def get_stim_map(stim_map_filename, record_locations=None):
         """Get stim map"""
@@ -493,14 +492,14 @@ class NwbExtractor(object):
         cell_name = self.cell_id
 
         feature_map = utility.load_json(feature_set_filename)
-        
+
         features_meanstd = defaultdict(
             lambda: defaultdict(
                 lambda: defaultdict(dict)))
         stim_map = self.get_stim_map(
             os.path.join(ephys_data_path, stimmap_filename))
         for stim_name in stim_map.keys():
-            stim_type = utility.aibs_stimname_map_inv[stim_name.rsplit('_',1)[0]]
+            stim_type = utility.aibs_stimname_map_inv[stim_name.rsplit('_', 1)[0]]
             stim_features = feature_map.get(stim_type)  # Features to extract
             if not stim_features:
                 continue
@@ -515,10 +514,10 @@ class NwbExtractor(object):
 
                 data = np.loadtxt(sweep_fullpath)
                 tot_duration = stim_map[stim_name]['stimuli'][0]['totduration']
-                time,voltage = data[:, 0],data[:, 1]
-                
+                time, voltage = data[:, 0], data[:, 1]
+
                 # Limit the duration of stim for correct stim end feature calculation
-                time,voltage = time[time <= tot_duration],voltage[time <= tot_duration]
+                time, voltage = time[time <= tot_duration], voltage[time <= tot_duration]
 
                 # Prepare sweep for eFEL
                 sweep = {}
@@ -543,27 +542,26 @@ class NwbExtractor(object):
 
             for feature_name in stim_features:
                 # For one feature, a list with values for every sweep
-                feature_values_over_trials = [trace_dict[feature_name].tolist() for trace_dict 
+                feature_values_over_trials = [trace_dict[feature_name].tolist() for trace_dict
                                               in feature_results if trace_dict[feature_name] is not None]
                 feature_mean_over_trials = [np.nanmean(trace_dict[feature_name])
-                                  for trace_dict in feature_results
-                                  if trace_dict[feature_name] is not None]
+                                            for trace_dict in feature_results
+                                            if trace_dict[feature_name] is not None]
                 if len(feature_mean_over_trials) == 0:
                     continue
                 else:
-                    mean = np.nanmean(list(itertools.chain.from_iterable(feature_values_over_trials)))
-                    std = (np.nanstd(list(itertools.chain.from_iterable(feature_values_over_trials))) or 
-                                0.05*np.abs(mean) or 0.05)
-                    
+                    mean = np.nanmean(
+                        list(itertools.chain.from_iterable(feature_values_over_trials)))
+                    std = (np.nanstd(list(itertools.chain.from_iterable(feature_values_over_trials))) or
+                           0.05*np.abs(mean) or 0.05)
+
                 if feature_name == 'peak_time':
-                    mean,std = None,None
-                
+                    mean, std = None, None
+
                 features_meanstd[stim_name]['soma'][
                     feature_name] = [mean, std, feature_values_over_trials]
-                
-        return stim_map,features_meanstd
-                
-    
+
+        return stim_map, features_meanstd
 
     def get_ephys_features(self, feature_set_filename, ephys_data_path, stimmap_filename,
                            filter_rule_func, *args, **kwargs):
@@ -703,6 +701,7 @@ class NwbExtractor(object):
 
         return train_features_write_path, test_features_write_path,\
             train_protocols_write_path
+
 
 def get_passed_sweeps(dataset, specimen_id):
     iclamp_st = dataset.filtered_sweep_table(clamp_mode=AibsDataSet.CURRENT_CLAMP)
